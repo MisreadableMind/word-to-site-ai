@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordToSite | Create your website</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #FFFDF7;
+            --bg-subtle: #FFF8F0;
+            --surface: #FFFFFF;
+            --surface-hover: #FFF5EC;
+            --border: rgba(140, 120, 100, 0.18);
+            --border-hover: rgba(140, 120, 100, 0.30);
+            --text: #2D2926;
+            --text-secondary: #4A4540;
+            --text-muted: #8A8580;
+            --accent: #6C5CE7;
+            --accent-bright: #5A4BD1;
+            --accent-dim: rgba(108,92,231,0.10);
+            --green: #16A34A;
+            --green-dim: rgba(22,163,74,0.12);
+            --yellow: #D97706;
+            --yellow-dim: rgba(217,119,6,0.10);
+            --pink: #DB2777;
+            --pink-dim: rgba(219,39,119,0.10);
+            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
+            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
+            --orange: #EA580C;
+            --error: #DC2626;
+            --error-dim: rgba(220,38,38,0.06);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        ::selection { background: rgba(108,92,231,0.2); color: #2D2926; }
+
+        .grid-bg {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+            background-size: 64px 64px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .grid-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent);
+        }
+
+        /* --- NAV --- */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(255,253,247,0.8);
+            backdrop-filter: blur(16px) saturate(1.2);
+            -webkit-backdrop-filter: blur(16px) saturate(1.2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: -0.3px;
+        }
+
+        .nav-logo {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
+        }
+
+        .nav-logo svg { width: 15px; height: 15px; }
+
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+
+        .nav-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .nav-badge .pulse {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(52,211,153,0); }
+        }
+
+        .nav-link-back {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 150ms;
+        }
+
+        .nav-link-back:hover { color: var(--text-secondary); background: rgba(0,0,0,0.04); }
+        .nav-link-back svg { width: 14px; height: 14px; }
+
+        /* --- MAIN --- */
+        .main {
+            position: relative;
+            z-index: 1;
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 100px 24px 120px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 12px;
+        }
+
+        .page-header h1 .gradient {
+            background: linear-gradient(135deg, #5A4BD1 0%, #9333EA 50%, #BE185D 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* --- SECTION LABEL --- */
+        .section-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 16px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        /* --- FLOW CARDS (Accordion) --- */
+        .flow-selection { margin-bottom: 24px; }
+
+        .flow-card-wrapper { margin-bottom: 12px; }
+
+        .flow-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            cursor: pointer;
+            transition: all 200ms;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .flow-card:hover {
+            border-color: var(--border-hover);
+            background: var(--surface);
+            box-shadow: var(--shadow-md);
+        }
+
+        .flow-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            box-shadow: 0 0 0 1px var(--accent), 0 4px 24px rgba(108,92,231,0.12);
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        .flow-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .flow-icon.migrate { background: rgba(108,92,231,0.14); color: var(--accent); }
+        .flow-icon.fresh { background: rgba(22,163,74,0.14); color: var(--green); }
+        .flow-icon svg { width: 22px; height: 22px; }
+
+        .flow-text { flex: 1; }
+
+        .flow-text h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .flow-text p {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .time-badge {
+            display: inline-flex;
+            align-items: center;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 100px;
+            background: rgba(22,163,74,0.12);
+            color: #15803D;
+        }
+
+        .flow-arrow {
+            color: var(--text-muted);
+            transition: transform 200ms;
+        }
+
+        .flow-card:hover .flow-arrow { transform: translateX(3px); }
+        .flow-card svg { flex-shrink: 0; }
+
+        /* Accordion panel under each flow card */
+        .flow-accordion {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease, padding 0.35s ease;
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+            padding: 0 28px;
+        }
+
+        .flow-accordion.open {
+            max-height: 800px;
+            padding: 24px 28px;
+        }
+
+        /* --- ONBOARDING FORM --- */
+        .onboarding-form { display: flex; flex-direction: column; gap: 18px; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-group label .required { color: var(--error); margin-left: 2px; }
+
+        .input-with-mic {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .input-with-mic input,
+        .input-with-mic textarea { flex: 1; }
+
+        textarea {
+            width: 100%;
+            padding: 11px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition: all 150ms;
+            outline: none;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        textarea:hover { border-color: var(--border-hover); }
+        textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108,92,231,0.12); }
+
+        .mic-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 150ms;
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        .mic-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+        .mic-btn svg { width: 16px; height: 16px; }
+
+        .mic-btn.recording {
+            background: var(--error);
+            border-color: var(--error);
+            color: #fff;
+            animation: pulse-btn 1.5s ease infinite;
+        }
+
+        /* --- TAGLINE BOX --- */
+        .tagline-box {
+            padding: 12px 16px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(108,92,231,0.18);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 44px;
+        }
+
+        .tagline-box .tagline-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-style: italic;
+            flex: 1;
+        }
+
+        .tagline-box .tagline-text.loading { color: var(--text-muted); font-style: normal; }
+
+        .tagline-box .regenerate-btn {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            background: none;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .tagline-box .regenerate-btn:hover { background: rgba(108,92,231,0.1); }
+
+        /* --- INCLUDED FEATURES (static) --- */
+        .included-features { margin-bottom: 24px; }
+
+        .included-features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .included-feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border: 1px solid rgba(22,163,74,0.2);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: var(--green-dim);
+        }
+
+        .included-feature-item svg {
+            width: 16px;
+            height: 16px;
+            color: var(--green);
+            flex-shrink: 0;
+        }
+
+        /* --- WIZARD STEP 2 --- */
+        .wizard-step { display: none; animation: fadeUp 0.4s ease; }
+        .wizard-step.active { display: block; }
+
+        .step-nav {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .step-nav .btn { flex: 1; }
+
+        .input-row { display: flex; gap: 10px; }
+        .input-row input { flex: 1; }
+
+        input[type="text"],
+        input[type="url"],
+        input[type="email"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 11px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition: all 150ms;
+            outline: none;
+        }
+
+        input::placeholder { color: var(--text-muted); }
+        input:hover { border-color: var(--border-hover); }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(108,92,231,0.12);
+        }
+
+        .input-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 150ms;
+            border: none;
+            outline: none;
+            white-space: nowrap;
+        }
+
+        .btn:focus-visible { box-shadow: 0 0 0 3px rgba(108,92,231,0.2); }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover { background: #5A4BD1; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(90,75,209,0.25); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover { background: rgba(0,0,0,0.03); color: var(--text-secondary); border-color: var(--border-hover); }
+
+        .btn-full { width: 100%; }
+
+        .btn-lg { padding: 14px 28px; font-size: 15px; border-radius: 10px; }
+
+        .btn-launch {
+            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 32px;
+            border-radius: 10px;
+            width: 100%;
+            box-shadow: 0 4px 16px rgba(108,92,231,0.3);
+        }
+
+        .btn-launch:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(108,92,231,0.35); }
+        .btn-launch svg { width: 16px; height: 16px; }
+
+        @keyframes pulse-btn {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.3); }
+            50% { box-shadow: 0 0 0 10px rgba(220,38,38,0); }
+        }
+
+        /* --- ANSWER SUMMARY --- */
+        .answer-summary {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .answer-summary-title {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        .summary-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .summary-item:last-child { border-bottom: none; }
+
+        .summary-item .summary-label {
+            font-family: var(--mono);
+            font-weight: 500;
+            color: var(--accent);
+            min-width: 70px;
+            flex-shrink: 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding-top: 2px;
+        }
+
+        .summary-item .summary-value {
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* --- CELEBRATION --- */
+        .celebration {
+            text-align: center;
+            padding: 56px 24px;
+            animation: fadeUp 0.5s ease;
+        }
+
+        .celebration-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 24px;
+            background: var(--green-dim);
+            border: 1px solid rgba(22,163,74,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s ease;
+        }
+
+        .celebration-icon svg {
+            width: 36px;
+            height: 36px;
+            color: var(--green);
+        }
+
+        .celebration h2 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .celebration p {
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        /* --- TEMPLATE PREVIEW --- */
+        .template-preview { display: none; margin-bottom: 16px; }
+        .template-preview.active { display: block; }
+
+        .template-card-inner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 24px;
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius);
+            box-shadow: 0 0 0 1px var(--accent), 0 4px 20px rgba(108,92,231,0.12);
+        }
+
+        .template-thumb {
+            width: 48px;
+            height: 48px;
+            background: var(--accent-dim);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .template-thumb svg { width: 24px; height: 24px; }
+
+        .template-meta { flex: 1; }
+        .template-meta h4 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .template-meta p { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 10px;
+            border-radius: 100px;
+        }
+
+        .badge-success { background: rgba(22,163,74,0.12); color: #15803D; }
+
+        .badge .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* --- DOMAIN STEP --- */
+        .domain-step { display: none; margin-bottom: 24px; }
+        .domain-step.active { display: block; }
+
+        /* --- PRE-DEPLOY SUMMARY --- */
+        .pre-deploy-summary {
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .pre-deploy-summary.active { display: block; }
+
+        /* --- LOADING --- */
+        .loading { display: none; text-align: center; padding: 48px 24px; }
+        .loading.active { display: block; }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 2.5px solid rgba(0,0,0,0.08);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .loading-sub { font-size: 13px; color: var(--text-muted); }
+
+        /* --- WORKFLOW PROGRESS --- */
+        .workflow-progress { display: none; margin-top: 24px; }
+        .workflow-progress.active { display: block; }
+
+        .workflow-progress .progress-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .progress-steps { display: flex; flex-direction: column; gap: 2px; }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            transition: all 150ms;
+        }
+
+        .progress-step.pending { opacity: 0.3; }
+
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1.5px solid rgba(0,0,0,0.1);
+            color: var(--text-muted);
+            background: var(--bg);
+            transition: all 150ms;
+        }
+
+        .progress-step.active .step-icon {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+            animation: pulse-ring 1.5s ease infinite;
+        }
+
+        .progress-step.completed .step-icon {
+            border-color: var(--green);
+            background: var(--green);
+            color: #064E3B;
+        }
+
+        .progress-step.error .step-icon {
+            border-color: var(--error);
+            background: var(--error);
+            color: #fff;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(108,92,231,0.2); }
+            50% { box-shadow: 0 0 0 6px rgba(108,92,231,0); }
+        }
+
+        .step-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .progress-step.active .step-label { color: var(--text); }
+        .progress-step.completed .step-label { color: var(--text-secondary); }
+
+        /* --- RESULT --- */
+        .result { display: none; margin-top: 24px; }
+        .result.active { display: block; }
+
+        .result-card {
+            border-radius: var(--radius);
+            padding: 28px;
+            border: 1px solid;
+            box-shadow: var(--shadow-md);
+        }
+
+        .result-card.success {
+            background: var(--green-dim);
+            border-color: rgba(22,163,74,0.2);
+        }
+
+        .result-card.error {
+            background: var(--error-dim);
+            border-color: rgba(220,38,38,0.15);
+        }
+
+        .result-card h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-card.success h3 { color: var(--green); }
+        .result-card.error h3 { color: var(--error); }
+
+        .result-row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .result-label {
+            font-family: var(--mono);
+            font-weight: 500;
+            color: var(--text-muted);
+            min-width: 80px;
+            flex-shrink: 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .result-value a {
+            color: var(--accent-bright);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .result-value a:hover { text-decoration: underline; }
+
+        .credentials-card {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(0,0,0,0.02);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .credentials-card .result-row { margin-bottom: 4px; }
+
+        .credentials-card .result-value {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        .result-note {
+            margin-top: 16px;
+            padding: 12px 14px;
+            background: rgba(0,0,0,0.02);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .site-url-prominent {
+            display: block;
+            margin-top: 12px;
+            padding: 14px 18px;
+            background: var(--surface);
+            border: 1px solid rgba(22,163,74,0.2);
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+
+        .site-url-prominent a {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .site-url-prominent a:hover { text-decoration: underline; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes checkmarkPop {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            60% { transform: scale(1.15); }
+            to { transform: scale(1); }
+        }
+
+        .checkmark-pop {
+            display: inline-flex;
+            animation: checkmarkPop 0.4s ease;
+        }
+
+        /* --- HIDDEN --- */
+        .hidden { display: none !important; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 640px) {
+            .main { padding: 80px 16px 100px; }
+            .page-header h1 { font-size: 26px; }
+            .editor-grid { grid-template-columns: 1fr; }
+            .included-features-grid { grid-template-columns: 1fr; }
+            .flow-card { padding: 18px 20px; }
+            .flow-accordion.open { padding: 18px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="/">
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <span>WordToSite</span>
+        </a>
+        <div class="nav-right">
+            <a class="nav-link-back" href="/">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Home
+            </a>
+            <div class="nav-badge">
+                <span class="pulse"></span>
+                v3.0
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+    <div class="page-header">
+        <h1>Create your <span class="gradient">website</span></h1>
+        <p>Choose your path. You're 90 seconds from production.</p>
+    </div>
+
+    <!-- Flow Selection (Accordion) -->
+    <div class="flow-selection" id="flowSelection">
+        <div class="section-label">choose your path</div>
+
+        <!-- Rebuild flow -->
+        <div class="flow-card-wrapper">
+            <div class="flow-card" id="flowCopy" onclick="selectFlow('copy')">
+                <div class="flow-icon migrate">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <div class="flow-text">
+                    <h3>Rebuild from my website <span class="time-badge">~2 min</span></h3>
+                    <p>Paste your URL. We'll scrape it, extract your brand, and rebuild it better.</p>
+                </div>
+                <div class="flow-arrow">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+            </div>
+            <div class="flow-accordion" id="copyAccordion">
+                <div class="input-row">
+                    <input type="url" id="sourceUrl" placeholder="https://yourwebsite.com">
+                    <button class="btn btn-primary" onclick="analyzeWebsite()">Analyze</button>
+                </div>
+                <p class="input-hint">We'll scrape your site, extract branding, and match the best template</p>
+            </div>
+        </div>
+
+        <!-- Start fresh flow -->
+        <div class="flow-card-wrapper">
+            <div class="flow-card" id="flowVoice" onclick="selectFlow('voice')">
+                <div class="flow-icon fresh">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </div>
+                <div class="flow-text">
+                    <h3>Start fresh <span class="time-badge">~90 sec</span></h3>
+                    <p>Fill out a quick form about your business. We'll build your site from scratch.</p>
+                </div>
+                <div class="flow-arrow">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+            </div>
+            <div class="flow-accordion" id="voiceAccordion">
+                <form class="onboarding-form" id="onboardingStep1Form" onsubmit="return submitStep1(event)">
+                    <div class="form-group">
+                        <label>Email<span class="required">*</span></label>
+                        <div class="input-with-mic">
+                            <input type="email" id="field-email" placeholder="you@company.com" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Company name<span class="required">*</span></label>
+                        <div class="input-with-mic">
+                            <input type="text" id="field-companyName" placeholder="e.g., BrightPath" required>
+                            <button type="button" class="mic-btn" onclick="recordForField('companyName')" id="mic-companyName">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Industry<span class="required">*</span></label>
+                        <div class="input-with-mic">
+                            <input type="text" id="field-industry" placeholder="e.g., Technology, Healthcare, Consulting" required>
+                            <button type="button" class="mic-btn" onclick="recordForField('industry')" id="mic-industry">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Tagline auto-generated -->
+                    <div class="form-group" id="taglineGroup" style="display:none">
+                        <label>Tagline</label>
+                        <div class="tagline-box">
+                            <span class="tagline-text" id="taglineText">Generating...</span>
+                            <button type="button" class="regenerate-btn" onclick="regenerateTagline()">Regenerate</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Services / Products<span class="required">*</span></label>
+                        <div class="input-with-mic">
+                            <input type="text" id="field-services" placeholder="e.g., Web design, SEO, Branding" required>
+                            <button type="button" class="mic-btn" onclick="recordForField('services')" id="mic-services">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>About your business<span class="required">*</span></label>
+                        <div class="input-with-mic">
+                            <textarea id="field-aboutUs" placeholder="Brief description of what you do and who you serve..." rows="3" required></textarea>
+                            <button type="button" class="mic-btn" onclick="recordForField('aboutUs')" id="mic-aboutUs">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Continue</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wizard Step 2: Additional Details -->
+    <div class="wizard-step" id="onboardingStep2">
+        <div class="section-label">additional details (optional)</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow-sm);">
+            <form class="onboarding-form" id="onboardingStep2Form" onsubmit="return submitStep2(event)">
+                <div class="form-group">
+                    <label>Business address</label>
+                    <div class="input-with-mic">
+                        <input type="text" id="field-address" placeholder="123 Main St, City, State">
+                        <button type="button" class="mic-btn" onclick="recordForField('address')" id="mic-address">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Phone number</label>
+                    <div class="input-with-mic">
+                        <input type="tel" id="field-phone" placeholder="+1 (555) 123-4567">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>About your team</label>
+                    <div class="input-with-mic">
+                        <textarea id="field-team" placeholder="e.g., 10-person team led by industry veterans..." rows="2"></textarea>
+                        <button type="button" class="mic-btn" onclick="recordForField('team')" id="mic-team">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>What makes you different?</label>
+                    <div class="input-with-mic">
+                        <textarea id="field-advantages" placeholder="Your competitive advantages, unique selling points..." rows="2"></textarea>
+                        <button type="button" class="mic-btn" onclick="recordForField('advantages')" id="mic-advantages">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="step-nav">
+                    <button type="button" class="btn btn-ghost" onclick="backToStep1()">Back</button>
+                    <button type="submit" class="btn btn-primary btn-full">Continue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Celebration -->
+    <div id="celebrationSection" style="display:none">
+        <div class="celebration">
+            <div class="celebration-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <h2>All done!</h2>
+            <p>Building your website configuration...</p>
+        </div>
+    </div>
+
+    <!-- Pre-deploy Summary -->
+    <div class="pre-deploy-summary" id="preDeploySummary">
+        <div class="section-label">your website brief</div>
+        <div class="answer-summary">
+            <div id="preDeploySummaryItems"></div>
+        </div>
+    </div>
+
+    <!-- Template Preview -->
+    <div class="template-preview" id="templatePreview">
+        <div class="section-label">recommended template</div>
+        <div class="template-card-inner">
+            <div class="template-thumb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            </div>
+            <div class="template-meta">
+                <h4 id="templateName">Flexify</h4>
+                <p id="templateReason">Modern business theme with flexible layouts</p>
+                <span class="badge badge-success"><span class="dot"></span> <span id="templateConfidence">85% match</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Included Features (static, always shown with results) -->
+    <div class="included-features" id="includedFeatures" style="display:none">
+        <div class="section-label">included features</div>
+        <div class="included-features-grid">
+            <div class="included-feature-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                Contact Form
+            </div>
+            <div class="included-feature-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                AI Blog Posts
+            </div>
+            <div class="included-feature-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                SEO Optimization
+            </div>
+            <div class="included-feature-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                Analytics
+            </div>
+        </div>
+    </div>
+
+    <!-- Domain Step (separate) -->
+    <div class="domain-step" id="domainStep">
+        <div class="section-label">domain (optional)</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-sm);">
+            <input type="text" id="domainInput" placeholder="example.com" style="margin-bottom:10px;">
+            <label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:13px;color:var(--text-secondary);cursor:pointer;">
+                <input type="checkbox" id="registerNewDomain" style="accent-color:var(--accent);"> Register new domain
+            </label>
+            <p class="input-hint">Leave blank for a free temporary InstaWP URL.</p>
+            <div class="step-nav">
+                <button class="btn btn-ghost" onclick="backFromDomain()">Back</button>
+                <button class="btn btn-primary btn-full" onclick="proceedFromDomain()">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Launch Button -->
+    <div id="confirmSection" style="display:none; margin-bottom: 24px;">
+        <button class="btn-launch" onclick="confirmOnboarding()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Launch My Website
+        </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p class="loading-text" id="loadingText">Creating your website...</p>
+        <p class="loading-sub">This usually takes 30-60 seconds</p>
+    </div>
+
+    <!-- Workflow Progress -->
+    <div class="workflow-progress" id="workflowProgress">
+        <div class="progress-card">
+            <div class="progress-steps" id="progressSteps"></div>
+        </div>
+    </div>
+
+    <!-- Result -->
+    <div class="result" id="result"></div>
+
+    <!-- Hidden API key for server fallback -->
+    <input type="hidden" id="apiKey" value="">
+</div>
+
+<script>
+    let selectedFlow = null;
+    let interviewAnswers = {};
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordingFieldId = null;
+    let selectedEditor = 'light';
+    let onboardingResult = null;
+    let taglineTimer = null;
+    let generatedTagline = '';
+
+    const fieldLabels = {
+        email: 'Email',
+        companyName: 'Company',
+        industry: 'Industry',
+        services: 'Services',
+        aboutUs: 'About',
+        address: 'Address',
+        phone: 'Phone',
+        team: 'Team',
+        advantages: 'USPs',
+    };
+
+    // --- Flow Selection (Accordion) ---
+    function selectFlow(flow) {
+        const isClosing = selectedFlow === flow;
+
+        if (isClosing) {
+            // Click same card again — collapse it
+            selectedFlow = null;
+            document.getElementById(flow === 'copy' ? 'flowCopy' : 'flowVoice').classList.remove('selected');
+            document.getElementById(flow === 'copy' ? 'copyAccordion' : 'voiceAccordion').classList.remove('open');
+        } else {
+            // Open new, close other
+            selectedFlow = flow;
+            document.querySelectorAll('.flow-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById(flow === 'copy' ? 'flowCopy' : 'flowVoice').classList.add('selected');
+            document.getElementById('copyAccordion').classList.toggle('open', flow === 'copy');
+            document.getElementById('voiceAccordion').classList.toggle('open', flow === 'voice');
+        }
+    }
+
+    // --- Website Analysis (Flow A) ---
+    async function analyzeWebsite() {
+        const url = document.getElementById('sourceUrl').value.trim();
+        if (!url) return;
+
+        document.getElementById('flowSelection').style.display = 'none';
+
+        const loading = document.getElementById('loading');
+        const workflowProgress = document.getElementById('workflowProgress');
+
+        loading.classList.add('active');
+        document.getElementById('loadingText').textContent = 'Analyzing your website...';
+
+        const steps = [
+            { id: 'analyzing_source', label: 'Scraping website content' },
+            { id: 'matching_template', label: 'Matching template' },
+            { id: 'generating_contexts', label: 'Generating configuration' },
+            { id: 'complete', label: 'Done' },
+        ];
+        renderProgressSteps(steps);
+        workflowProgress.classList.add('active');
+
+        const eventSource = new EventSource(`/api/onboard/analyze-url/stream?url=${encodeURIComponent(url)}`);
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.step === 'result') {
+                eventSource.close();
+                loading.classList.remove('active');
+                workflowProgress.classList.remove('active');
+                handleOnboardingResult(data.data);
+            } else if (data.step === 'error') {
+                eventSource.close();
+                loading.classList.remove('active');
+                updateProgressStep(data.step, 'error');
+                displayError(data.error || data.message);
+            } else {
+                updateProgressStep(data.step);
+            }
+        };
+
+        eventSource.onerror = () => {
+            eventSource.close();
+            loading.classList.remove('active');
+            displayError('Connection lost during analysis.');
+        };
+    }
+
+    // --- Step 1 Form Submit ---
+    function submitStep1(e) {
+        e.preventDefault();
+
+        // Collect Step 1 answers
+        interviewAnswers.email = document.getElementById('field-email').value.trim();
+        interviewAnswers.companyName = document.getElementById('field-companyName').value.trim();
+        interviewAnswers.industry = document.getElementById('field-industry').value.trim();
+        interviewAnswers.services = document.getElementById('field-services').value.trim();
+        interviewAnswers.aboutUs = document.getElementById('field-aboutUs').value.trim();
+
+        if (generatedTagline) {
+            interviewAnswers.tagline = generatedTagline;
+        }
+
+        // Hide flow selection, show Step 2
+        document.getElementById('flowSelection').style.display = 'none';
+        document.getElementById('onboardingStep2').classList.add('active');
+        return false;
+    }
+
+    function backToStep1() {
+        document.getElementById('onboardingStep2').classList.remove('active');
+        document.getElementById('flowSelection').style.display = '';
+    }
+
+    // --- Step 2 Form Submit ---
+    function submitStep2(e) {
+        e.preventDefault();
+
+        // Collect Step 2 answers (optional fields)
+        const address = document.getElementById('field-address').value.trim();
+        const phone = document.getElementById('field-phone').value.trim();
+        const team = document.getElementById('field-team').value.trim();
+        const advantages = document.getElementById('field-advantages').value.trim();
+
+        if (address) interviewAnswers.address = address;
+        if (phone) interviewAnswers.phone = phone;
+        if (team) interviewAnswers.team = team;
+        if (advantages) interviewAnswers.advantages = advantages;
+
+        // Hide Step 2, show celebration
+        document.getElementById('onboardingStep2').classList.remove('active');
+        completeInterview();
+        return false;
+    }
+
+    async function completeInterview() {
+        const celebrationEl = document.getElementById('celebrationSection');
+        celebrationEl.style.display = 'block';
+
+        try {
+            const res = await fetch('/api/onboard/interview/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ answers: interviewAnswers, language: 'en' }),
+            });
+            const data = await res.json();
+            celebrationEl.style.display = 'none';
+            data.success ? handleOnboardingResult(data) : displayError(data.error);
+        } catch (e) {
+            celebrationEl.style.display = 'none';
+            displayError('Failed: ' + e.message);
+        }
+    }
+
+    // --- Tagline Generation ---
+    function setupTaglineAutoGenerate() {
+        const companyInput = document.getElementById('field-companyName');
+        const industryInput = document.getElementById('field-industry');
+
+        const trigger = () => {
+            clearTimeout(taglineTimer);
+            const company = companyInput.value.trim();
+            const industry = industryInput.value.trim();
+            if (company && industry) {
+                taglineTimer = setTimeout(() => generateTagline(company, industry), 800);
+            }
+        };
+
+        companyInput.addEventListener('input', trigger);
+        industryInput.addEventListener('input', trigger);
+    }
+
+    async function generateTagline(companyName, industry) {
+        const group = document.getElementById('taglineGroup');
+        const textEl = document.getElementById('taglineText');
+
+        group.style.display = '';
+        textEl.textContent = 'Generating tagline...';
+        textEl.className = 'tagline-text loading';
+
+        try {
+            const res = await fetch('/api/onboard/generate-tagline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyName, industry }),
+            });
+            const data = await res.json();
+            if (data.success && data.tagline) {
+                generatedTagline = data.tagline;
+                textEl.textContent = `"${data.tagline}"`;
+                textEl.className = 'tagline-text';
+            } else {
+                textEl.textContent = 'Could not generate tagline';
+                textEl.className = 'tagline-text loading';
+            }
+        } catch {
+            textEl.textContent = 'Could not generate tagline';
+            textEl.className = 'tagline-text loading';
+        }
+    }
+
+    function regenerateTagline() {
+        const company = document.getElementById('field-companyName').value.trim();
+        const industry = document.getElementById('field-industry').value.trim();
+        if (company && industry) generateTagline(company, industry);
+    }
+
+    // --- Per-field Voice Recording ---
+    async function recordForField(fieldId) {
+        const btn = document.getElementById(`mic-${fieldId}`);
+        const isTextarea = document.getElementById(`field-${fieldId}`).tagName === 'TEXTAREA';
+        const targetEl = document.getElementById(`field-${fieldId}`);
+
+        // If already recording for this field, stop
+        if (isRecording && recordingFieldId === fieldId) {
+            mediaRecorder.stop();
+            isRecording = false;
+            recordingFieldId = null;
+            btn.classList.remove('recording');
+            return;
+        }
+
+        // If recording for a different field, stop that first
+        if (isRecording && mediaRecorder) {
+            mediaRecorder.stop();
+            const prevBtn = document.getElementById(`mic-${recordingFieldId}`);
+            if (prevBtn) prevBtn.classList.remove('recording');
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            recordingFieldId = fieldId;
+
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+            mediaRecorder.onstop = async () => {
+                stream.getTracks().forEach(t => t.stop());
+                if (audioChunks.length === 0) return;
+
+                const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+
+                try {
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.webm');
+
+                    const res = await fetch('/api/voice/transcribe', {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    const data = await res.json();
+
+                    if (data.success && data.text) {
+                        targetEl.value = data.text;
+                        targetEl.dispatchEvent(new Event('input'));
+                    }
+                } catch {
+                    // Silently fail - user can type manually
+                }
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+            btn.classList.add('recording');
+        } catch {
+            // Mic access denied - silently fail
+        }
+    }
+
+    // --- Onboarding Result ---
+    function handleOnboardingResult(data) {
+        onboardingResult = data;
+        document.getElementById('flowSelection').style.display = 'none';
+
+        // Show pre-deploy summary
+        if (Object.keys(interviewAnswers).length > 0) {
+            const summaryEl = document.getElementById('preDeploySummary');
+            const itemsEl = document.getElementById('preDeploySummaryItems');
+            itemsEl.innerHTML = '';
+            for (const [key, value] of Object.entries(interviewAnswers)) {
+                if (key === 'tagline') continue;
+                const label = fieldLabels[key] || key;
+                const truncated = value.length > 80 ? value.slice(0, 77) + '...' : value;
+                const div = document.createElement('div');
+                div.className = 'summary-item';
+                div.innerHTML = `<span class="summary-label">${label}</span><span class="summary-value">${truncated}</span>`;
+                itemsEl.appendChild(div);
+            }
+            summaryEl.classList.add('active');
+        }
+
+        // Show template preview
+        if (data.templateMatch) {
+            document.getElementById('templatePreview').classList.add('active');
+            document.getElementById('templateName').textContent = data.templateMatch.slug || 'Flexify';
+            document.getElementById('templateReason').textContent = data.templateMatch.reason || 'Best match for your business';
+            document.getElementById('templateConfidence').textContent = `${Math.round((data.templateMatch.confidence || 0.8) * 100)}% match`;
+        }
+
+        // Show static features
+        document.getElementById('includedFeatures').style.display = 'block';
+
+        // Show domain step
+        document.getElementById('domainStep').classList.add('active');
+    }
+
+    function backFromDomain() {
+        document.getElementById('domainStep').classList.remove('active');
+        document.getElementById('includedFeatures').style.display = 'none';
+        document.getElementById('templatePreview').classList.remove('active');
+        document.getElementById('preDeploySummary').classList.remove('active');
+        // Go back to the flow selection
+        document.getElementById('flowSelection').style.display = '';
+    }
+
+    function proceedFromDomain() {
+        document.getElementById('domainStep').classList.remove('active');
+        document.getElementById('confirmSection').style.display = 'block';
+    }
+
+    async function confirmOnboarding() {
+        if (!onboardingResult) return;
+
+        const loading = document.getElementById('loading');
+        const workflowProgress = document.getElementById('workflowProgress');
+
+        loading.classList.add('active');
+        document.getElementById('loadingText').textContent = 'Deploying your website...';
+
+        document.getElementById('preDeploySummary').classList.remove('active');
+        document.getElementById('templatePreview').classList.remove('active');
+        document.getElementById('includedFeatures').style.display = 'none';
+        document.getElementById('confirmSection').style.display = 'none';
+
+        // Hardcoded features (always included)
+        const dc = onboardingResult.deploymentContext || {};
+        dc.features = ['contact-form', 'ai-blog-posts', 'seo', 'analytics'];
+
+        const domain = document.getElementById('domainInput').value.trim();
+        const registerNewDomain = document.getElementById('registerNewDomain').checked;
+
+        // Show SSE deploy progress
+        const deploySteps = [
+            { id: 'creating_site', label: 'Creating WordPress site' },
+            { id: 'applying_deployment', label: 'Applying site configuration' },
+            { id: 'generating_content', label: 'Generating AI content' },
+            { id: 'pushing_content', label: 'Publishing pages' },
+            { id: 'complete', label: 'Done' },
+        ];
+        renderProgressSteps(deploySteps);
+        workflowProgress.classList.add('active');
+
+        // Build query params for SSE
+        const params = new URLSearchParams({
+            deploymentContext: JSON.stringify(dc),
+            contentContext: JSON.stringify(onboardingResult.contentContext || {}),
+            templateSlug: onboardingResult.templateMatch?.slug || '',
+            apiKey: document.getElementById('apiKey').value || '',
+        });
+        if (domain) {
+            params.set('domain', domain);
+            params.set('registerNewDomain', String(registerNewDomain));
+        }
+
+        const eventSource = new EventSource(`/api/onboard/confirm/stream?${params.toString()}`);
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.step === 'result') {
+                eventSource.close();
+                loading.classList.remove('active');
+                workflowProgress.classList.remove('active');
+                data.data.success ? displayWizardResult(data.data) : displayError(data.data.error || 'Deployment failed');
+            } else if (data.step === 'error') {
+                eventSource.close();
+                loading.classList.remove('active');
+                updateProgressStep(data.step, 'error');
+                displayError(data.error || data.message);
+            } else {
+                updateProgressStep(data.step, 'active', data.message);
+            }
+        };
+
+        eventSource.onerror = () => {
+            eventSource.close();
+            fallbackConfirm(dc, domain, registerNewDomain);
+        };
+    }
+
+    async function fallbackConfirm(dc, domain, registerNewDomain) {
+        const loading = document.getElementById('loading');
+        const workflowProgress = document.getElementById('workflowProgress');
+
+        try {
+            const body = {
+                deploymentContext: dc,
+                contentContext: onboardingResult.contentContext,
+                templateSlug: onboardingResult.templateMatch?.slug,
+                editorPreference: selectedEditor,
+                apiKey: document.getElementById('apiKey').value || undefined,
+            };
+            if (domain) {
+                body.domain = domain;
+                body.registerNewDomain = registerNewDomain;
+            }
+
+            const res = await fetch('/api/onboard/confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            const data = await res.json();
+            loading.classList.remove('active');
+            workflowProgress.classList.remove('active');
+            data.success ? displayWizardResult(data) : displayError(data.error);
+        } catch (e) {
+            loading.classList.remove('active');
+            workflowProgress.classList.remove('active');
+            displayError(e.message);
+        }
+    }
+
+    /**
+     * Normalize the site object since InstaWP returns different field names
+     */
+    function normalizeSite(site) {
+        if (!site) return null;
+
+        let url = site.wp_url || site.url || site.site_url || site.siteUrl
+                || site.wordpress_url || site.domain || '';
+
+        if (!url) {
+            for (const v of Object.values(site)) {
+                if (typeof v === 'string' && /^https?:\/\/.+\..+/.test(v)
+                    && !v.includes('/api/') && !v.includes('/wp-json/')) {
+                    url = v;
+                    break;
+                }
+            }
+        }
+
+        if (url && !url.startsWith('http')) {
+            url = 'https://' + url;
+        }
+
+        return {
+            url,
+            adminUrl: site.wp_admin_url || (url ? url + '/wp-admin' : ''),
+            username: site.wp_username || site.username || site.admin_user || '',
+            password: site.wp_password || site.password || site.admin_pass || '',
+            id: site.id || site.siteId || '',
+            magicLoginUrl: site.magic_login_url || '',
+        };
+    }
+
+    function displayWizardResult(data) {
+        const el = document.getElementById('result');
+        el.classList.add('active');
+
+        const site = normalizeSite(data.site);
+        const finalUrl = data.finalUrls?.site || data.finalUrls?.temporaryUrl || '';
+
+        const siteUrl = site?.url || finalUrl;
+        const adminUrl = site?.adminUrl || (siteUrl ? siteUrl + '/wp-admin' : '');
+        const username = site?.username || '';
+        const password = site?.password || '';
+
+        let h = `<div class="result-card success"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Website deployed</h3>`;
+
+        if (siteUrl) {
+            h += `<div class="site-url-prominent"><a href="${siteUrl}" target="_blank">${siteUrl} &nearr;</a></div>`;
+            const loginTarget = site?.magicLoginUrl || adminUrl;
+            h += `<div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">`;
+            h += `<a href="${loginTarget}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--accent-bright,#6c5ce7);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:opacity .15s;cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Open Admin Dashboard</a>`;
+            h += `<a href="${siteUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:transparent;color:var(--text-secondary,#aaa);border:1px solid var(--border,#333);border-radius:8px;text-decoration:none;font-weight:500;font-size:15px;transition:opacity .15s;cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">View Site &nearr;</a>`;
+            h += `</div>`;
+        }
+
+        if (data.finalUrls?.temporaryUrl && siteUrl && data.finalUrls.temporaryUrl !== siteUrl) {
+            h += `<div class="result-row"><span class="result-label">Temp URL</span><span class="result-value"><a href="${data.finalUrls.temporaryUrl}" target="_blank">${data.finalUrls.temporaryUrl}</a></span></div>`;
+        }
+
+        if (data.editor) {
+            h += `<div class="result-note">Editor: <a href="${data.editor.url}" target="_blank" style="color:var(--accent-bright);font-weight:500;">${data.editor.mode === 'light' ? 'Light Editor' : 'WP Admin'}</a>${data.editor.bounced ? ` (bounced: ${data.editor.reason})` : ''}</div>`;
+        }
+
+        const contentStep = (data.steps || []).find(s => s.step === 'content_generated' && s.success);
+        if (contentStep) {
+            h += `<div class="result-note" style="margin-top:8px;">AI content generated and published to your site.</div>`;
+        }
+
+        h += '</div>';
+        el.innerHTML = h;
+    }
+
+    // --- Progress helpers ---
+    function renderProgressSteps(steps) {
+        document.getElementById('progressSteps').innerHTML = steps.map(s => `
+            <div class="progress-step pending" id="step-${s.id}">
+                <span class="step-icon"></span>
+                <span class="step-label">${s.label}</span>
+            </div>
+        `).join('');
+    }
+
+    function updateProgressStep(stepId, status = 'active', message) {
+        const steps = document.querySelectorAll('.progress-step');
+        let found = false;
+        steps.forEach(s => {
+            if (s.id === `step-${stepId}`) {
+                s.className = 'progress-step ' + status;
+                s.querySelector('.step-icon').innerHTML = status === 'completed' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>' : status === 'error' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>' : '';
+                // Update the label with live message if provided
+                if (message && status === 'active') {
+                    s.querySelector('.step-label').textContent = message;
+                }
+                found = true;
+            } else if (!found && status !== 'error') {
+                s.className = 'progress-step completed';
+                s.querySelector('.step-icon').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>';
+            }
+        });
+    }
+
+    function displayError(msg) {
+        const el = document.getElementById('result');
+        el.classList.add('active');
+        el.innerHTML = `<div class="result-card error">
+            <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Something went wrong</h3>
+            <p style="font-size:13px;color:var(--error);">${msg}</p>
+            <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">Check your configuration and try again.</p>
+        </div>`;
+    }
+
+    // --- Initialize ---
+    setupTaglineAutoGenerate();
+</script>
+</body>
+</html>

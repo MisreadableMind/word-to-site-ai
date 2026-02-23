@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog | WordToSite</title>
+    <meta name="description" content="WordToSite changelog. See what's new, improved, and fixed in each release.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #09090B; --bg-subtle: #0F0F12; --surface: #18181B;
+            --border: rgba(255,255,255,0.06); --text: #FAFAFA;
+            --text-secondary: #A1A1AA; --text-muted: #71717A;
+            --accent: #818CF8; --accent-bright: #A5B4FC;
+            --green: #34D399; --green-dim: rgba(52,211,153,0.1);
+            --yellow: #FBBF24; --yellow-dim: rgba(251,191,36,0.1);
+            --pink: #F472B6; --pink-dim: rgba(244,114,182,0.1);
+            --radius: 12px; --mono: 'JetBrains Mono', monospace;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+        a { color: inherit; text-decoration: none; }
+        .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 64px 64px; pointer-events: none; z-index: 0; }
+        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(9,9,11,0.6); backdrop-filter: blur(16px) saturate(1.5); border-bottom: 1px solid var(--border); }
+        .nav-inner { max-width: 1120px; margin: 0 auto; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+        .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: -0.3px; }
+        .nav-logo { width: 28px; height: 28px; background: linear-gradient(135deg, #818CF8, #6366F1); border-radius: 7px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(129,140,248,0.3); }
+        .nav-logo svg { width: 15px; height: 15px; }
+        .btn-nav { padding: 8px 16px; font-size: 13px; font-weight: 600; background: #fff; color: #000; border-radius: 8px; transition: opacity 150ms; }
+        .btn-nav:hover { opacity: 0.9; }
+        .page-content { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 120px 32px 80px; }
+        .page-title { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+        .page-subtitle { font-size: 17px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 48px; }
+        .release { margin-bottom: 48px; padding-bottom: 48px; border-bottom: 1px solid var(--border); }
+        .release:last-child { border-bottom: none; }
+        .release-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .release-version { font-family: var(--mono); font-size: 14px; font-weight: 600; padding: 4px 10px; background: var(--accent); color: #fff; border-radius: 6px; }
+        .release-date { font-size: 13px; color: var(--text-muted); }
+        .release-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+        .change-list { list-style: none; padding: 0; }
+        .change-list li { padding: 8px 0 8px 28px; position: relative; font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+        .change-tag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 6px; border-radius: 4px; margin-right: 8px; position: absolute; left: 0; top: 10px; }
+        .tag-new { background: var(--green-dim); color: var(--green); }
+        .tag-improved { background: var(--yellow-dim); color: var(--yellow); }
+        .tag-fixed { background: var(--pink-dim); color: var(--pink); }
+        .change-text { margin-left: 56px; }
+        .footer { position: relative; z-index: 1; border-top: 1px solid var(--border); }
+        .footer-inner { max-width: 1120px; margin: 0 auto; padding: 32px; display: flex; align-items: center; justify-content: space-between; }
+        .footer-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+        .footer-logo { width: 18px; height: 18px; background: linear-gradient(135deg, #818CF8, #6366F1); border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .footer-logo svg { width: 10px; height: 10px; }
+        .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+        .footer-link { font-size: 13px; color: var(--text-muted); transition: color 150ms; }
+        .footer-link:hover { color: var(--text-secondary); }
+        .footer-right { display: flex; align-items: center; gap: 12px; }
+        .footer-version { font-family: var(--mono); font-size: 11px; color: var(--text-muted); padding: 3px 8px; background: var(--surface); border-radius: 4px; border: 1px solid var(--border); }
+        @media (max-width: 640px) {
+            .page-content { padding: 100px 16px 56px; }
+            .page-title { font-size: 24px; }
+            .page-subtitle { font-size: 15px; }
+            .release-header { flex-wrap: wrap; }
+            .footer-inner { flex-direction: column; gap: 16px; text-align: center; padding: 24px 16px; }
+            .footer-links { justify-content: center; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<nav class="nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="/">
+            <div class="nav-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            WordToSite
+        </a>
+        <a class="btn-nav" href="/app.html">Launch app</a>
+    </div>
+</nav>
+
+<main class="page-content">
+    <h1 class="page-title">Changelog</h1>
+    <p class="page-subtitle">Everything new, improved, and fixed in WordToSite.</p>
+
+    <div class="release">
+        <div class="release-header">
+            <span class="release-version">v3.0.0</span>
+            <span class="release-date">February 2026</span>
+        </div>
+        <h2 class="release-title">The Zero-Click Release</h2>
+        <ul class="change-list">
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Complete rebrand to WordToSite with new dark theme and landing page.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">AEO (Answer Engine Optimization) and GEO (Generative Engine Optimization) built into every site.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Voice-first website management via real-time transcription.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Multi-AI content generation: OpenAI, Anthropic Claude, and Google Gemini.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Automatic Cloudflare DNS zone creation and SSL provisioning.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Site migration via URL: paste your existing site and rebuild it AI-optimized.</span></li>
+            <li><span class="change-tag tag-improved">improved</span><span class="change-text">Mobile-first responsive design across all interfaces.</span></li>
+            <li><span class="change-tag tag-improved">improved</span><span class="change-text">Deployment speed reduced to under 60 seconds.</span></li>
+        </ul>
+    </div>
+
+    <div class="release">
+        <div class="release-header">
+            <span class="release-version">v2.1.0</span>
+            <span class="release-date">January 2026</span>
+        </div>
+        <h2 class="release-title">End-to-End Onboarding</h2>
+        <ul class="change-list">
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Three onboarding paths: migrate, voice create, and start from scratch.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Real-time deployment progress via Server-Sent Events.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Firecrawl integration for website scraping and migration.</span></li>
+            <li><span class="change-tag tag-improved">improved</span><span class="change-text">WordPress template system for faster deployments.</span></li>
+            <li><span class="change-tag tag-fixed">fixed</span><span class="change-text">Voice transcription accuracy improvements for noisy environments.</span></li>
+        </ul>
+    </div>
+
+    <div class="release">
+        <div class="release-header">
+            <span class="release-version">v2.0.0</span>
+            <span class="release-date">December 2025</span>
+        </div>
+        <h2 class="release-title">Domain & SSL Automation</h2>
+        <ul class="change-list">
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Complete domain registration and SSL workflow.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Cloudflare API integration for automated DNS management.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">InstaWP deployment integration.</span></li>
+            <li><span class="change-tag tag-improved">improved</span><span class="change-text">Landing page redesign with AEO/GEO messaging.</span></li>
+            <li><span class="change-tag tag-fixed">fixed</span><span class="change-text">SSL certificate renewal edge cases resolved.</span></li>
+        </ul>
+    </div>
+
+    <div class="release">
+        <div class="release-header">
+            <span class="release-version">v1.0.0</span>
+            <span class="release-date">November 2025</span>
+        </div>
+        <h2 class="release-title">Initial Release</h2>
+        <ul class="change-list">
+            <li><span class="change-tag tag-new">new</span><span class="change-text">AI-powered website creation with OpenAI integration.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Basic WordPress deployment pipeline.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Voice transcription prototype.</span></li>
+            <li><span class="change-tag tag-new">new</span><span class="change-text">Docker support for self-hosting.</span></li>
+        </ul>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <div class="footer-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            WordToSite
+        </div>
+        <div class="footer-links">
+            <a class="footer-link" href="/app.html">Dashboard</a>
+            <a class="footer-link" href="/#faq">FAQ</a>
+            <a class="footer-link" href="/privacy.html">Privacy</a>
+            <a class="footer-link" href="/terms.html">Terms</a>
+            <a class="footer-link" href="/mission.html">Mission</a>
+            <a class="footer-link" href="/docs.html">Docs</a>
+            <a class="footer-link" href="/changelog.html">Changelog</a>
+        </div>
+        <div class="footer-right">
+            <span class="footer-version">v3.0.0</span>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

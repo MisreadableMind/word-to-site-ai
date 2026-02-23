@@ -1,0 +1,14 @@
+node_modules
+.env
+.env.*
+.git
+.gitignore
+.claude
+docs
+legal
+mockups
+planning
+tools
+*.md
+.DS_Store
+.archive

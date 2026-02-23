@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission | WordToSite</title>
+    <meta name="description" content="Our mission: make the web work for the AI age. Websites that answer engines cite, built by anyone in seconds.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #09090B; --bg-subtle: #0F0F12; --surface: #18181B;
+            --border: rgba(255,255,255,0.06); --text: #FAFAFA;
+            --text-secondary: #A1A1AA; --text-muted: #71717A;
+            --accent: #818CF8; --accent-bright: #A5B4FC;
+            --radius: 12px; --mono: 'JetBrains Mono', monospace;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+        a { color: inherit; text-decoration: none; }
+        .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 64px 64px; pointer-events: none; z-index: 0; }
+        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(9,9,11,0.6); backdrop-filter: blur(16px) saturate(1.5); border-bottom: 1px solid var(--border); }
+        .nav-inner { max-width: 1120px; margin: 0 auto; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+        .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: -0.3px; }
+        .nav-logo { width: 28px; height: 28px; background: linear-gradient(135deg, #818CF8, #6366F1); border-radius: 7px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(129,140,248,0.3); }
+        .nav-logo svg { width: 15px; height: 15px; }
+        .btn-nav { padding: 8px 16px; font-size: 13px; font-weight: 600; background: #fff; color: #000; border-radius: 8px; transition: opacity 150ms; }
+        .btn-nav:hover { opacity: 0.9; }
+        .page-content { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 120px 32px 80px; }
+        .page-title { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+        .page-subtitle { font-size: 17px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 48px; }
+        .page-section { margin-bottom: 40px; }
+        .page-section h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+        .page-section p { font-size: 14px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 12px; }
+        .values-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 32px; }
+        .value-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; background: var(--surface); }
+        .value-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+        .value-card p { font-size: 13px; color: var(--text-muted); line-height: 1.7; margin: 0; }
+        .footer { position: relative; z-index: 1; border-top: 1px solid var(--border); }
+        .footer-inner { max-width: 1120px; margin: 0 auto; padding: 32px; display: flex; align-items: center; justify-content: space-between; }
+        .footer-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+        .footer-logo { width: 18px; height: 18px; background: linear-gradient(135deg, #818CF8, #6366F1); border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .footer-logo svg { width: 10px; height: 10px; }
+        .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+        .footer-link { font-size: 13px; color: var(--text-muted); transition: color 150ms; }
+        .footer-link:hover { color: var(--text-secondary); }
+        .footer-right { display: flex; align-items: center; gap: 12px; }
+        .footer-version { font-family: var(--mono); font-size: 11px; color: var(--text-muted); padding: 3px 8px; background: var(--surface); border-radius: 4px; border: 1px solid var(--border); }
+        @media (max-width: 640px) {
+            .page-content { padding: 100px 16px 56px; }
+            .page-title { font-size: 24px; }
+            .page-subtitle { font-size: 15px; }
+            .values-grid { grid-template-columns: 1fr; }
+            .footer-inner { flex-direction: column; gap: 16px; text-align: center; padding: 24px 16px; }
+            .footer-links { justify-content: center; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<nav class="nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="/">
+            <div class="nav-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            WordToSite
+        </a>
+        <a class="btn-nav" href="/app.html">Launch app</a>
+    </div>
+</nav>
+
+<main class="page-content">
+    <h1 class="page-title">Our Mission</h1>
+    <p class="page-subtitle">The web changed. Over 60% of searches end without a click. AI assistants answer questions by citing websites, not sending traffic to them. Most websites weren't built for this world. We're fixing that.</p>
+
+    <div class="page-section">
+        <h2>The Problem</h2>
+        <p>The internet moved to a zero-click model. Google's AI Overviews, ChatGPT, Claude, Perplexity, and Gemini are answering user questions directly. Your website's content matters more than ever, but the way it's structured, optimized, and delivered needs to fundamentally change.</p>
+        <p>Meanwhile, building and managing a website still requires dashboards, plugins, manual SSL configuration, and technical knowledge that most people don't have. The tools haven't caught up to the reality of how the web works now.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>Our Approach</h2>
+        <p>WordToSite builds websites for the AI age. Every site we create is optimized for Answer Engine Optimization (AEO) and Generative Engine Optimization (GEO) from day one. Clean semantic HTML, proper schema markup, structured content that AI engines can parse, cite, and reference.</p>
+        <p>We removed the dashboard. You manage your website by talking to it. From your phone, between meetings, wherever you are. AI handles the complexity. You handle the intent.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>What We Believe</h2>
+        <div class="values-grid">
+            <div class="value-card">
+                <h3>Voice over dashboards</h3>
+                <p>The best interface is natural language. Say what you want, and it happens. No menus, no learning curves.</p>
+            </div>
+            <div class="value-card">
+                <h3>AI-native by default</h3>
+                <p>Every website should be optimized for AI search from the first deploy. Not as an afterthought or a plugin.</p>
+            </div>
+            <div class="value-card">
+                <h3>Speed is a feature</h3>
+                <p>60 seconds from idea to live website. Anything slower means you'll abandon it or settle for less.</p>
+            </div>
+            <div class="value-card">
+                <h3>No vendor lock-in</h3>
+                <p>Self-host with your own keys. Export your data. WordPress under the hood means you always have an escape hatch.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-section">
+        <h2>The Team</h2>
+        <p>WordToSite is built by a small team of engineers, designers, and AI practitioners who believe the web should be accessible to everyone, not just people who know how to configure nginx or write CSS. We're building the tool we wish existed.</p>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <div class="footer-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            WordToSite
+        </div>
+        <div class="footer-links">
+            <a class="footer-link" href="/app.html">Dashboard</a>
+            <a class="footer-link" href="/#faq">FAQ</a>
+            <a class="footer-link" href="/privacy.html">Privacy</a>
+            <a class="footer-link" href="/terms.html">Terms</a>
+            <a class="footer-link" href="/mission.html">Mission</a>
+            <a class="footer-link" href="/docs.html">Docs</a>
+            <a class="footer-link" href="/changelog.html">Changelog</a>
+        </div>
+        <div class="footer-right">
+            <span class="footer-version">v3.0.0</span>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

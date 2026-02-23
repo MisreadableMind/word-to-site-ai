@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation | WordToSite</title>
+    <meta name="description" content="WordToSite documentation. Get started, learn features, and deploy your first AI-optimized website.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #09090B; --bg-subtle: #0F0F12; --surface: #18181B;
+            --border: rgba(255,255,255,0.06); --text: #FAFAFA;
+            --text-secondary: #A1A1AA; --text-muted: #71717A;
+            --accent: #818CF8; --accent-bright: #A5B4FC;
+            --green: #34D399; --green-dim: rgba(52,211,153,0.1);
+            --radius: 12px; --mono: 'JetBrains Mono', monospace;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+        a { color: var(--accent-bright); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 64px 64px; pointer-events: none; z-index: 0; }
+        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(9,9,11,0.6); backdrop-filter: blur(16px) saturate(1.5); border-bottom: 1px solid var(--border); }
+        .nav-inner { max-width: 1120px; margin: 0 auto; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+        .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: -0.3px; color: var(--text); }
+        .nav-logo { width: 28px; height: 28px; background: linear-gradient(135deg, #818CF8, #6366F1); border-radius: 7px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(129,140,248,0.3); }
+        .nav-logo svg { width: 15px; height: 15px; }
+        .btn-nav { padding: 8px 16px; font-size: 13px; font-weight: 600; background: #fff; color: #000; border-radius: 8px; transition: opacity 150ms; }
+        .btn-nav:hover { opacity: 0.9; text-decoration: none; }
+        .page-content { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 120px 32px 80px; }
+        .page-title { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+        .page-subtitle { font-size: 17px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 48px; }
+        .page-section { margin-bottom: 48px; }
+        .page-section h2 { font-size: 20px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+        .page-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; margin-top: 20px; color: var(--text); }
+        .page-section p, .page-section ul, .page-section ol { font-size: 14px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 12px; }
+        .page-section ul, .page-section ol { padding-left: 20px; }
+        .page-section li { margin-bottom: 6px; }
+        code { font-family: var(--mono); font-size: 0.9em; padding: 2px 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 4px; color: var(--accent-bright); }
+        .code-block { font-family: var(--mono); font-size: 13px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin: 16px 0; overflow-x: auto; color: var(--text-secondary); line-height: 1.7; }
+        .step-list { list-style: none; padding: 0; counter-reset: step; }
+        .step-list li { counter-increment: step; padding: 16px 20px 16px 52px; position: relative; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; background: var(--surface); font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+        .step-list li::before { content: counter(step); position: absolute; left: 16px; top: 16px; width: 24px; height: 24px; background: var(--accent); color: #fff; border-radius: 50%; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .footer { position: relative; z-index: 1; border-top: 1px solid var(--border); }
+        .footer-inner { max-width: 1120px; margin: 0 auto; padding: 32px; display: flex; align-items: center; justify-content: space-between; }
+        .footer-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+        .footer-logo { width: 18px; height: 18px; background: linear-gradient(135deg, #818CF8, #6366F1); border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .footer-logo svg { width: 10px; height: 10px; }
+        .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+        .footer-link { font-size: 13px; color: var(--text-muted); transition: color 150ms; }
+        .footer-link:hover { color: var(--text-secondary); text-decoration: none; }
+        .footer-right { display: flex; align-items: center; gap: 12px; }
+        .footer-version { font-family: var(--mono); font-size: 11px; color: var(--text-muted); padding: 3px 8px; background: var(--surface); border-radius: 4px; border: 1px solid var(--border); }
+        @media (max-width: 640px) {
+            .page-content { padding: 100px 16px 56px; }
+            .page-title { font-size: 24px; }
+            .page-subtitle { font-size: 15px; }
+            .footer-inner { flex-direction: column; gap: 16px; text-align: center; padding: 24px 16px; }
+            .footer-links { justify-content: center; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<nav class="nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="/">
+            <div class="nav-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            WordToSite
+        </a>
+        <a class="btn-nav" href="/app.html">Launch app</a>
+    </div>
+</nav>
+
+<main class="page-content">
+    <h1 class="page-title">Documentation</h1>
+    <p class="page-subtitle">Everything you need to create, migrate, and manage AI-optimized websites with WordToSite.</p>
+
+    <div class="page-section">
+        <h2>Quick Start</h2>
+        <p>Get your first website live in under 60 seconds.</p>
+        <ol class="step-list">
+            <li>Go to the <a href="/app.html">WordToSite dashboard</a> and sign in.</li>
+            <li>Choose your path: <strong>Migrate</strong> an existing site, <strong>Create by voice</strong>, or <strong>Start from scratch</strong>.</li>
+            <li>Follow the guided flow. AI handles content generation, schema markup, and deployment.</li>
+            <li>Your site is live with AEO/GEO optimization, SSL, and a custom domain.</li>
+        </ol>
+    </div>
+
+    <div class="page-section">
+        <h2>Path 1: Migrate an Existing Site</h2>
+        <p>Paste your current website URL. WordToSite uses Firecrawl to scrape your site's content, structure, branding, and assets. AI then rebuilds it with proper schema markup, semantic HTML, and GEO optimization.</p>
+        <h3>What gets migrated</h3>
+        <ul>
+            <li>Page content and structure</li>
+            <li>Brand colors, fonts, and visual identity</li>
+            <li>Images and media assets</li>
+            <li>Navigation and page hierarchy</li>
+        </ul>
+        <h3>What gets added</h3>
+        <ul>
+            <li>Schema.org structured data (Organization, LocalBusiness, FAQ, etc.)</li>
+            <li>AEO-optimized content structure</li>
+            <li>Open Graph and social meta tags</li>
+            <li>Automatic SSL and DNS via Cloudflare</li>
+        </ul>
+    </div>
+
+    <div class="page-section">
+        <h2>Path 2: Create by Voice</h2>
+        <p>Tap the mic, describe your business or idea, and WordToSite transcribes your voice in real-time. AI interprets your intent and generates a complete website.</p>
+        <h3>Voice commands for management</h3>
+        <ul>
+            <li><code>"Update the homepage heading to say we're hiring"</code></li>
+            <li><code>"Write a blog post about our product launch"</code></li>
+            <li><code>"Change the primary color to blue"</code></li>
+            <li><code>"Add a pricing section with three tiers"</code></li>
+        </ul>
+    </div>
+
+    <div class="page-section">
+        <h2>Path 3: Start from Scratch</h2>
+        <p>Answer a few questions about your business: name, industry, target audience, and key services. AI generates everything: content, structure, schema markup, and design. Review, tweak, and deploy.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>AI Providers</h2>
+        <p>WordToSite uses multiple AI providers for different capabilities:</p>
+        <ul>
+            <li><strong>OpenAI (ChatGPT):</strong> Content generation, copywriting, and text optimization.</li>
+            <li><strong>Anthropic (Claude):</strong> Reasoning, content analysis, and structured data generation.</li>
+            <li><strong>Google (Gemini):</strong> Visual analysis, long-context understanding, and multimodal tasks.</li>
+        </ul>
+    </div>
+
+    <div class="page-section">
+        <h2>Domain & SSL</h2>
+        <p>WordToSite automatically provisions SSL certificates and configures DNS through Cloudflare. When you connect a custom domain:</p>
+        <ol>
+            <li>We create a DNS zone on Cloudflare.</li>
+            <li>DNS records are configured automatically.</li>
+            <li>SSL certificate is provisioned and renewed automatically.</li>
+            <li>Your site is accessible via HTTPS immediately.</li>
+        </ol>
+    </div>
+
+    <div class="page-section">
+        <h2>Self-Hosting</h2>
+        <p>WordToSite can run on your own infrastructure. Clone the repository, provide your own API keys, and deploy with Docker.</p>
+        <div class="code-block">
+git clone https://github.com/wordtosite/wordtosite.git<br>
+cp .env.example .env<br>
+# Add your API keys to .env<br>
+docker build -t wordtosite .<br>
+docker run -p 3000:3000 --env-file .env wordtosite
+        </div>
+        <p>Required API keys: OpenAI, Anthropic, Google Gemini, Cloudflare, InstaWP. Optional: Firecrawl (for migration).</p>
+    </div>
+
+    <div class="page-section">
+        <h2>AEO & GEO Explained</h2>
+        <p><strong>AEO (Answer Engine Optimization)</strong> structures your content so that answer engines like Google's Featured Snippets can extract and display your information directly in search results.</p>
+        <p><strong>GEO (Generative Engine Optimization)</strong> optimizes your content for AI-powered search engines like ChatGPT, Claude, Perplexity, and Gemini, which generate answers by referencing and citing your website.</p>
+        <p>WordToSite implements both automatically: clean semantic HTML, proper heading hierarchy, Schema.org JSON-LD, FAQ structured data, and content formatted for AI extraction.</p>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <div class="footer-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            WordToSite
+        </div>
+        <div class="footer-links">
+            <a class="footer-link" href="/app.html">Dashboard</a>
+            <a class="footer-link" href="/#faq">FAQ</a>
+            <a class="footer-link" href="/privacy.html">Privacy</a>
+            <a class="footer-link" href="/terms.html">Terms</a>
+            <a class="footer-link" href="/mission.html">Mission</a>
+            <a class="footer-link" href="/docs.html">Docs</a>
+            <a class="footer-link" href="/changelog.html">Changelog</a>
+        </div>
+        <div class="footer-right">
+            <span class="footer-version">v3.0.0</span>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

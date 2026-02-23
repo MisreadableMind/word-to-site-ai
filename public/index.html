@@ -1,0 +1,3123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordToSite | Websites for the zero-click internet</title>
+    <meta name="description" content="AEO and GEO-ready websites built in seconds. Optimized for answer engines, AI search, and generative results. Migrate your old site or create one by voice. No dashboards.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #09090B;
+            --bg-subtle: #0F0F12;
+            --surface: #18181B;
+            --surface-hover: #1F1F23;
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.1);
+            --text: #FAFAFA;
+            --text-secondary: #A1A1AA;
+            --text-muted: #71717A;
+            --accent: #818CF8;
+            --accent-bright: #A5B4FC;
+            --accent-dim: rgba(129,140,248,0.1);
+            --green: #34D399;
+            --green-dim: rgba(52,211,153,0.1);
+            --yellow: #FBBF24;
+            --yellow-dim: rgba(251,191,36,0.1);
+            --pink: #F472B6;
+            --pink-dim: rgba(244,114,182,0.1);
+            --orange: #FB923C;
+            --orange-dim: rgba(251,146,60,0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        ::selection { background: rgba(129,140,248,0.3); color: #fff; }
+        a { color: inherit; text-decoration: none; }
+
+        /* ─── GRID BACKGROUND ─── */
+        .grid-bg {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 64px 64px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .grid-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(129,140,248,0.08), transparent);
+        }
+
+        /* ─── NAV ─── */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(9,9,11,0.6);
+            backdrop-filter: blur(16px) saturate(1.5);
+            -webkit-backdrop-filter: blur(16px) saturate(1.5);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 32px; }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: -0.3px;
+        }
+
+        .nav-logo {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #818CF8, #6366F1);
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(129,140,248,0.3);
+        }
+
+        .nav-logo svg { width: 15px; height: 15px; }
+
+        .nav-links { display: flex; align-items: center; gap: 6px; }
+
+        .nav-link {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 150ms;
+        }
+
+        .nav-link:hover { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+
+        .nav-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .nav-badge .pulse {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(52,211,153,0); }
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 150ms;
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-nav:hover { background: #6366F1; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,0.4); }
+
+        /* ─── HERO ─── */
+        .hero {
+            position: relative;
+            z-index: 1;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 160px 32px 80px;
+            text-align: center;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 6px 6px 14px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(129,140,248,0.15);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--accent-bright);
+            margin-bottom: 32px;
+            animation: fadeUp 0.6s ease;
+        }
+
+        .hero-eyebrow .tag {
+            padding: 3px 10px;
+            background: rgba(129,140,248,0.15);
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .hero h1 {
+            font-size: clamp(40px, 6vw, 72px);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.05;
+            margin-bottom: 24px;
+            animation: fadeUp 0.6s ease 0.1s both;
+        }
+
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, #818CF8 0%, #C084FC 50%, #F472B6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            font-size: clamp(16px, 2vw, 19px);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+            animation: fadeUp 0.6s ease 0.2s both;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            animation: fadeUp 0.6s ease 0.3s both;
+        }
+
+        .btn-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 200ms;
+        }
+
+        .btn-hero-primary { background: #fff; color: #09090B; }
+        .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(255,255,255,0.15); }
+        .btn-hero-primary svg { width: 16px; height: 16px; }
+
+        .btn-hero-secondary { background: rgba(255,255,255,0.06); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-hero-secondary:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+        .hero-hint {
+            font-size: 13px;
+            color: var(--text-muted);
+            animation: fadeUp 0.6s ease 0.4s both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ─── HERO SHOWCASE ─── */
+        .hero-showcase {
+            margin-top: 56px;
+            animation: fadeUp 0.6s ease 0.5s both;
+            perspective: 1200px;
+        }
+
+        .showcase-row {
+            display: flex;
+            gap: 20px;
+            overflow: hidden;
+            mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+            -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+        }
+
+        .showcase-track {
+            display: flex;
+            gap: 20px;
+            animation: showcaseScroll 40s linear infinite;
+            width: max-content;
+        }
+
+        .showcase-track:hover { animation-play-state: paused; }
+
+        @keyframes showcaseScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .showcase-card {
+            flex-shrink: 0;
+            width: 280px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            overflow: hidden;
+            transition: all 300ms ease;
+            transform: rotateX(2deg);
+        }
+
+        .showcase-card:hover {
+            border-color: var(--border-hover);
+            transform: rotateX(0deg) translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .showcase-browser-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .showcase-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .showcase-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .showcase-url {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: var(--text-muted);
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 3px;
+            border: 1px solid var(--border);
+        }
+
+        .showcase-body {
+            padding: 14px;
+            min-height: 160px;
+        }
+
+        /* Showcase site mock variants */
+        .sc-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .sc-nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sc-nav-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .sc-nav-text {
+            width: 40px;
+            height: 5px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .sc-nav-links {
+            display: flex;
+            gap: 6px;
+        }
+
+        .sc-nav-link {
+            width: 20px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.06);
+        }
+
+        .sc-hero-block {
+            text-align: center;
+            padding: 14px 8px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+
+        .sc-hero-title {
+            width: 70%;
+            height: 8px;
+            border-radius: 4px;
+            margin: 0 auto 6px;
+        }
+
+        .sc-hero-sub {
+            width: 55%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.06);
+            margin: 0 auto 8px;
+        }
+
+        .sc-hero-btn {
+            width: 48px;
+            height: 14px;
+            border-radius: 4px;
+            margin: 0 auto;
+            opacity: 0.7;
+        }
+
+        .sc-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .sc-col-block {
+            height: 24px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+        }
+
+        .sc-3cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 4px;
+        }
+
+        .sc-3col-block {
+            padding: 6px 4px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+        }
+
+        .sc-3col-icon {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            margin-bottom: 4px;
+        }
+
+        .sc-3col-line {
+            width: 80%;
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.08);
+            margin-bottom: 2px;
+        }
+
+        .sc-3col-line2 {
+            width: 60%;
+            height: 2px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.04);
+        }
+
+        .sc-img-block {
+            width: 100%;
+            height: 48px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .sc-text-lines {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-bottom: 8px;
+        }
+
+        .sc-text-line {
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.06);
+        }
+
+        /* Showcase card color themes */
+        .sc-theme-indigo .sc-nav-icon { background: var(--accent-dim); }
+        .sc-theme-indigo .sc-hero-block { background: linear-gradient(180deg, rgba(129,140,248,0.1) 0%, transparent); }
+        .sc-theme-indigo .sc-hero-title { background: rgba(129,140,248,0.25); }
+        .sc-theme-indigo .sc-hero-btn { background: var(--accent); }
+        .sc-theme-indigo .sc-3col-icon { background: var(--accent-dim); }
+        .sc-theme-indigo .sc-img-block { background: linear-gradient(135deg, var(--accent-dim), rgba(129,140,248,0.05)); }
+
+        .sc-theme-green .sc-nav-icon { background: var(--green-dim); }
+        .sc-theme-green .sc-hero-block { background: linear-gradient(180deg, rgba(52,211,153,0.08) 0%, transparent); }
+        .sc-theme-green .sc-hero-title { background: rgba(52,211,153,0.2); }
+        .sc-theme-green .sc-hero-btn { background: var(--green); }
+        .sc-theme-green .sc-3col-icon { background: var(--green-dim); }
+        .sc-theme-green .sc-img-block { background: linear-gradient(135deg, var(--green-dim), rgba(52,211,153,0.05)); }
+
+        .sc-theme-pink .sc-nav-icon { background: var(--pink-dim); }
+        .sc-theme-pink .sc-hero-block { background: linear-gradient(180deg, rgba(244,114,182,0.08) 0%, transparent); }
+        .sc-theme-pink .sc-hero-title { background: rgba(244,114,182,0.2); }
+        .sc-theme-pink .sc-hero-btn { background: var(--pink); }
+        .sc-theme-pink .sc-3col-icon { background: var(--pink-dim); }
+        .sc-theme-pink .sc-img-block { background: linear-gradient(135deg, var(--pink-dim), rgba(244,114,182,0.05)); }
+
+        .sc-theme-yellow .sc-nav-icon { background: var(--yellow-dim); }
+        .sc-theme-yellow .sc-hero-block { background: linear-gradient(180deg, rgba(251,191,36,0.08) 0%, transparent); }
+        .sc-theme-yellow .sc-hero-title { background: rgba(251,191,36,0.2); }
+        .sc-theme-yellow .sc-hero-btn { background: var(--yellow); }
+        .sc-theme-yellow .sc-3col-icon { background: var(--yellow-dim); }
+        .sc-theme-yellow .sc-img-block { background: linear-gradient(135deg, var(--yellow-dim), rgba(251,191,36,0.05)); }
+
+        .sc-theme-orange .sc-nav-icon { background: var(--orange-dim); }
+        .sc-theme-orange .sc-hero-block { background: linear-gradient(180deg, rgba(251,146,60,0.08) 0%, transparent); }
+        .sc-theme-orange .sc-hero-title { background: rgba(251,146,60,0.2); }
+        .sc-theme-orange .sc-hero-btn { background: var(--orange); }
+        .sc-theme-orange .sc-3col-icon { background: var(--orange-dim); }
+        .sc-theme-orange .sc-img-block { background: linear-gradient(135deg, var(--orange-dim), rgba(251,146,60,0.05)); }
+
+        /* ─── TRUST BAR ─── */
+        .trust-bar {
+            position: relative;
+            z-index: 1;
+            padding: 20px 32px;
+            text-align: center;
+        }
+
+        .trust-bar-inner {
+            max-width: 720px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .trust-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+        }
+
+        .trust-logos {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .trust-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.02);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 150ms;
+        }
+
+        .trust-logo:hover {
+            border-color: var(--border-hover);
+            background: rgba(255,255,255,0.04);
+        }
+
+        .trust-logo svg { width: 14px; height: 14px; opacity: 0.6; }
+
+        .trust-sep {
+            color: var(--text-muted);
+            font-size: 12px;
+            opacity: 0.4;
+        }
+
+        /* ─── MANIFESTO STRIP ─── */
+        .manifesto {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .manifesto::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, var(--bg) 0%, transparent 10%, transparent 90%, var(--bg) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .manifesto-track {
+            display: flex;
+            gap: 48px;
+            padding: 18px 0;
+            animation: scroll 30s linear infinite;
+            width: max-content;
+        }
+
+        .manifesto-item {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .manifesto-item .mi-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+        }
+
+        .mi-dot.purple { background: var(--accent); }
+        .mi-dot.green { background: var(--green); }
+        .mi-dot.pink { background: var(--pink); }
+        .mi-dot.yellow { background: var(--yellow); }
+        .mi-dot.orange { background: var(--orange); }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* ─── SECTION STYLES ─── */
+        section { position: relative; z-index: 1; }
+
+        .section-container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 120px 32px;
+        }
+
+        .section-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--accent);
+            margin-bottom: 16px;
+            letter-spacing: 0.3px;
+        }
+
+        .section-eyebrow::before {
+            content: '';
+            width: 18px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .section-title {
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 16px;
+        }
+
+        .section-desc {
+            font-size: 17px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 560px;
+        }
+
+        .section-header { margin-bottom: 64px; }
+        .section-header.center { text-align: center; }
+        .section-header.center .section-desc { margin: 0 auto; }
+
+        .border-t { border-top: 1px solid var(--border); }
+
+        /* ─── THE SHIFT (VISION) ─── */
+        .shift-layout {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .shift-headline {
+            font-size: clamp(24px, 3.5vw, 32px);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            line-height: 1.25;
+            margin-bottom: 20px;
+        }
+
+        .shift-body {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 48px;
+        }
+
+        .shift-comparison {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .shift-row {
+            display: grid;
+            grid-template-columns: 1fr 24px 1fr;
+            align-items: center;
+            gap: 0;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .shift-row:last-child { border-bottom: none; }
+
+        .shift-old {
+            font-size: 14px;
+            color: var(--text-muted);
+            opacity: 0.55;
+            text-align: right;
+            padding-right: 20px;
+        }
+
+        .shift-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.15);
+        }
+
+        .shift-new {
+            font-size: 14px;
+            color: var(--text);
+            font-weight: 500;
+            padding-left: 20px;
+        }
+
+        /* ─── TWO PATHS ─── */
+        .paths-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            background: var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .path-card {
+            background: var(--bg);
+            padding: 48px 40px;
+            position: relative;
+            transition: background 300ms;
+        }
+
+        .path-card:hover { background: var(--bg-subtle); }
+
+        .path-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .path-icon svg { width: 24px; height: 24px; }
+        .path-icon.migrate { background: var(--accent-dim); color: var(--accent); }
+        .path-icon.voice { background: var(--green-dim); color: var(--green); }
+
+        .path-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .path-card:first-child .path-label { color: var(--accent); }
+        .path-card:last-child .path-label { color: var(--green); }
+
+        .path-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .path-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .path-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .path-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .path-step-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .path-card:first-child .path-step-num { background: var(--accent-dim); color: var(--accent); }
+        .path-card:last-child .path-step-num { background: var(--green-dim); color: var(--green); }
+
+        .path-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 28px;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 150ms;
+            color: #fff;
+        }
+
+        .path-card:first-child .path-cta { background: var(--accent); }
+        .path-card:first-child .path-cta:hover { background: #6366F1; }
+        .path-card:last-child .path-cta { background: var(--green); color: #064E3B; }
+        .path-card:last-child .path-cta:hover { background: #2DD4BF; }
+
+        .path-cta svg { width: 14px; height: 14px; }
+
+        /* ─── VOICE FIRST ─── */
+        .voice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .voice-mockup {
+            background: #0C0C0F;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 16px;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        .phone-notch {
+            width: 100px;
+            height: 5px;
+            background: var(--surface);
+            border-radius: 100px;
+            margin: 0 auto 20px;
+        }
+
+        .phone-body { padding: 0 8px 24px; }
+
+        .phone-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .phone-header h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .phone-header p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .phone-wave {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 48px;
+            margin-bottom: 20px;
+        }
+
+        .wave-bar {
+            width: 3px;
+            border-radius: 100px;
+            background: var(--accent);
+            animation: waveAnim 1.2s ease-in-out infinite;
+        }
+
+        .wave-bar:nth-child(1) { height: 12px; animation-delay: 0s; }
+        .wave-bar:nth-child(2) { height: 24px; animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { height: 36px; animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { height: 20px; animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { height: 32px; animation-delay: 0.15s; }
+        .wave-bar:nth-child(6) { height: 16px; animation-delay: 0.25s; }
+        .wave-bar:nth-child(7) { height: 28px; animation-delay: 0.05s; }
+
+        @keyframes waveAnim {
+            0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+            50% { transform: scaleY(1); opacity: 1; }
+        }
+
+        .phone-transcript {
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .phone-transcript .t-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .phone-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .phone-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            border: none;
+            font-family: inherit;
+        }
+
+        .phone-btn.secondary { background: var(--surface); color: var(--text-secondary); }
+        .phone-btn.primary { background: var(--accent); color: #fff; }
+
+        .voice-info h3 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        .voice-info p {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .voice-capabilities {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .voice-cap {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition: all 150ms;
+        }
+
+        .voice-cap:hover { border-color: var(--border-hover); }
+
+        .voice-cap-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .voice-cap-icon svg { width: 14px; height: 14px; }
+        .voice-cap-icon.v1 { background: var(--accent-dim); color: var(--accent); }
+        .voice-cap-icon.v2 { background: var(--green-dim); color: var(--green); }
+        .voice-cap-icon.v3 { background: var(--pink-dim); color: var(--pink); }
+
+        .voice-cap-text h4 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+        .voice-cap-text p { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin: 0; }
+
+        /* ─── UNDER THE HOOD ─── */
+        .hood-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .hood-card {
+            background: var(--bg);
+            padding: 32px;
+            transition: background 300ms;
+        }
+
+        .hood-card:hover { background: var(--bg-subtle); }
+
+        .hood-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .hood-icon svg { width: 20px; height: 20px; }
+
+        .hood-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 6px; }
+        .hood-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        .hood-tag {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 3px 8px;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        /* ─── COMPARISON TABLE ─── */
+        .compare-table {
+            max-width: 720px;
+            margin: 0 auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .compare-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .compare-header-cell {
+            padding: 16px 24px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .compare-header-cell:first-child {
+            color: var(--text-muted);
+            background: var(--bg-subtle);
+            border-right: 1px solid var(--border);
+        }
+
+        .compare-header-cell:last-child {
+            color: var(--accent-bright);
+            background: var(--accent-dim);
+        }
+
+        .compare-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .compare-row:last-child { border-bottom: none; }
+
+        .compare-cell {
+            padding: 14px 24px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .compare-cell:first-child {
+            color: var(--text-muted);
+            border-right: 1px solid var(--border);
+            background: var(--bg-subtle);
+            text-decoration: line-through;
+            text-decoration-color: rgba(255,255,255,0.15);
+        }
+
+        .compare-cell:last-child {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .compare-x {
+            color: rgba(255,255,255,0.15);
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .compare-check {
+            color: var(--green);
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        /* ─── AI CITATIONS ─── */
+        .citation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 840px;
+            margin: 0 auto;
+        }
+
+        .citation-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .citation-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.02);
+        }
+
+        .citation-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .citation-platform {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .citation-body {
+            padding: 16px;
+        }
+
+        .citation-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .citation-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .citation-text strong {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .citation-source {
+            margin-top: 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .citation-source-link {
+            color: var(--accent);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        /* ─── TESTIMONIALS ─── */
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .testimonial-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .testimonial-stars {
+            display: flex;
+            gap: 2px;
+            color: var(--yellow);
+            font-size: 14px;
+        }
+
+        .testimonial-quote {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            flex: 1;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .testimonial-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .testimonial-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .testimonial-role {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* ─── FAQ ─── */
+        .faq-list {
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .faq-question {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 24px 0;
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            text-align: left;
+            letter-spacing: -0.01em;
+            transition: color 150ms;
+        }
+
+        .faq-question:hover { color: var(--accent-bright); }
+
+        .faq-chevron {
+            width: 20px;
+            height: 20px;
+            color: var(--text-muted);
+            transition: transform 300ms;
+            flex-shrink: 0;
+        }
+
+        .faq-item.open .faq-chevron { transform: rotate(180deg); }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 300ms ease, padding 300ms ease;
+        }
+
+        .faq-item.open .faq-answer {
+            max-height: 300px;
+        }
+
+        .faq-answer-inner {
+            padding-bottom: 24px;
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        .faq-answer-inner code {
+            font-family: var(--mono);
+            font-size: 0.9em;
+            padding: 2px 6px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--accent-bright);
+        }
+
+        /* ─── CTA ─── */
+        .cta-section { text-align: center; position: relative; }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(ellipse, rgba(129,140,248,0.08), transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-title {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 16px;
+        }
+
+        .cta-desc {
+            font-size: 17px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            line-height: 1.6;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .cta-powered {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .cta-lab {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .cta-dot {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        /* ─── DUAL VIEW: HUMAN vs AI ─── */
+        .dual-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .view-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .view-label {
+            padding: 12px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .view-label-ai {
+            color: var(--green);
+            background: var(--green-dim);
+        }
+
+        .view-browser {
+            padding: 0;
+        }
+
+        .browser-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .browser-dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .browser-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .browser-url {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 3px 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .browser-body { padding: 20px; }
+
+        .mock-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mock-logo {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mock-logo-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            background: var(--accent);
+            opacity: 0.7;
+        }
+
+        .mock-logo-text {
+            width: 48px;
+            height: 7px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.18);
+        }
+
+        .mock-nav-links {
+            display: flex;
+            gap: 12px;
+        }
+
+        .mock-nav-link {
+            width: 28px;
+            height: 5px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .mock-nav-btn {
+            width: 40px;
+            height: 16px;
+            border-radius: 4px;
+            background: var(--accent);
+            opacity: 0.4;
+        }
+
+        .mock-hero {
+            text-align: center;
+            padding: 18px 12px 16px;
+            margin-bottom: 12px;
+            background: linear-gradient(180deg, rgba(129,140,248,0.08) 0%, transparent 100%);
+            border-radius: 6px;
+        }
+
+        .mock-hero-title {
+            width: 75%;
+            height: 10px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.2);
+            margin: 0 auto 8px;
+        }
+
+        .mock-hero-sub {
+            width: 60%;
+            height: 5px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.08);
+            margin: 0 auto 10px;
+        }
+
+        .mock-hero-cta {
+            width: 56px;
+            height: 16px;
+            border-radius: 4px;
+            background: var(--accent);
+            opacity: 0.6;
+            margin: 0 auto;
+        }
+
+        .mock-section-label {
+            width: 36px;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--accent);
+            opacity: 0.35;
+            margin-bottom: 6px;
+        }
+
+        .mock-section-title {
+            width: 55%;
+            height: 7px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.14);
+            margin-bottom: 12px;
+        }
+
+        .mock-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .mock-card {
+            border-radius: 5px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 10px 8px 8px;
+        }
+
+        .mock-card-icon {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .mock-card:nth-child(1) .mock-card-icon { background: var(--accent-dim); }
+        .mock-card:nth-child(2) .mock-card-icon { background: var(--green-dim); }
+        .mock-card:nth-child(3) .mock-card-icon { background: var(--pink-dim); }
+
+        .mock-card-title {
+            width: 70%;
+            height: 5px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.12);
+            margin-bottom: 4px;
+        }
+
+        .mock-card-desc {
+            width: 90%;
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 2px;
+        }
+
+        .mock-card-desc2 {
+            width: 65%;
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.04);
+        }
+
+        .mock-testimonial {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            margin-bottom: 16px;
+        }
+
+        .mock-avatar {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-dim), var(--pink-dim));
+            flex-shrink: 0;
+        }
+
+        .mock-testimonial-lines { flex: 1; padding-top: 2px; }
+
+        .mock-testimonial-line {
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.07);
+            margin-bottom: 4px;
+        }
+
+        .mock-testimonial-line:nth-child(1) { width: 95%; }
+        .mock-testimonial-line:nth-child(2) { width: 80%; }
+        .mock-testimonial-line:nth-child(3) { width: 50%; }
+
+        .mock-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .mock-footer-logo {
+            width: 32px;
+            height: 5px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.06);
+        }
+
+        .mock-footer-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mock-footer-link {
+            width: 20px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .view-code {
+            padding: 16px 20px;
+            overflow-x: auto;
+        }
+
+        .view-code pre {
+            margin: 0;
+            font-family: var(--mono);
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--text-muted);
+            white-space: pre;
+        }
+
+        .view-code .hl-tag { color: var(--accent-bright); }
+        .view-code .hl-attr { color: var(--pink); }
+        .view-code .hl-str { color: var(--green); }
+        .view-code .hl-key { color: var(--yellow); }
+        .view-code .hl-comment { color: var(--text-muted); opacity: 0.5; }
+
+        @media (max-width: 900px) {
+            .dual-view { grid-template-columns: 1fr; }
+        }
+
+        /* ─── FOOTER ─── */
+        .footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-inner {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .footer-logo {
+            width: 18px; height: 18px;
+            background: linear-gradient(135deg, #818CF8, #6366F1);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo svg { width: 10px; height: 10px; }
+
+        .footer-links { display: flex; gap: 24px; }
+        .footer-link { font-size: 13px; color: var(--text-muted); transition: color 150ms; }
+        .footer-link:hover { color: var(--text-secondary); }
+        .footer-right { display: flex; align-items: center; gap: 12px; }
+
+        .footer-version {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 3px 8px;
+            background: var(--surface);
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* ─── ANIMATIONS ─── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        /* ─── RESPONSIVE: TABLET (901-640) ─── */
+        @media (max-width: 900px) {
+            .nav-links, .nav-badge { display: none; }
+            .nav-inner { padding: 0 20px; }
+
+            .section-container { padding: 80px 24px; }
+
+            .showcase-card { width: 240px; }
+            .hero-showcase { margin-top: 40px; }
+
+            .voice-grid { grid-template-columns: 1fr; gap: 40px; }
+            .voice-grid > :first-child { order: 1; }
+            .voice-grid > :last-child { order: 0; }
+            .voice-mockup { max-width: 300px; margin: 0 auto 0; }
+            .voice-info { text-align: center; }
+            .voice-capabilities { max-width: 400px; margin: 24px auto 0; }
+
+            .paths-grid { grid-template-columns: 1fr; }
+            .dual-view { grid-template-columns: 1fr; gap: 16px; }
+            .hood-grid { grid-template-columns: 1fr 1fr; }
+            .citation-grid { grid-template-columns: 1fr 1fr; }
+            .testimonials-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* ─── RESPONSIVE: MOBILE (<=640, centered) ─── */
+        @media (max-width: 640px) {
+            /* ── Global spacing ── */
+            .hero { padding: 110px 20px 48px; }
+            .section-container { padding: 56px 16px; }
+            .section-header { margin-bottom: 40px; }
+
+            /* ── Center everything ── */
+            .section-header,
+            .section-header.center { text-align: center; }
+            .section-header .section-desc {
+                margin-left: auto;
+                margin-right: auto;
+                font-size: 15px;
+            }
+            .section-eyebrow {
+                justify-content: center;
+                font-size: 12px;
+            }
+            .section-title { font-size: 24px; }
+
+            /* ── Nav ── */
+            .nav-inner { padding: 0 16px; height: 52px; }
+            .btn-nav { padding: 6px 12px; font-size: 12px; }
+
+            /* ── Hero ── */
+            .hero h1 { font-size: 32px; margin-bottom: 16px; }
+            .hero-sub { font-size: 15px; margin-bottom: 28px; }
+            .hero-eyebrow { font-size: 12px; padding: 5px 5px 5px 12px; margin-bottom: 24px; }
+            .hero-eyebrow .tag { font-size: 10px; }
+            .hero-actions { flex-direction: column; align-items: stretch; gap: 10px; }
+            .btn-hero {
+                width: 100%;
+                justify-content: center;
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+            .hero-hint { font-size: 12px; }
+
+            /* ── Showcase ── */
+            .hero-showcase { margin-top: 32px; }
+            .showcase-card { width: 220px; }
+            .showcase-body { min-height: 130px; padding: 10px; }
+            .showcase-row { gap: 12px; }
+            .showcase-track { gap: 12px; }
+
+            /* ── Trust bar ── */
+            .trust-bar { padding: 16px; }
+            .trust-bar-inner { gap: 6px; }
+            .trust-label { font-size: 11px; width: 100%; margin-bottom: 4px; }
+            .trust-logo { font-size: 11px; padding: 3px 8px; }
+            .trust-logo svg { width: 12px; height: 12px; }
+
+            /* ── Manifesto ── */
+            .manifesto-track { gap: 32px; padding: 14px 0; }
+            .manifesto-item { font-size: 11px; gap: 8px; }
+
+            /* ── Shift ── */
+            .shift-layout { text-align: center; }
+            .shift-headline { font-size: 22px; margin-bottom: 14px; }
+            .shift-body { font-size: 14px; text-align: center; margin-bottom: 32px; }
+            .shift-row {
+                grid-template-columns: 1fr;
+                gap: 2px;
+                padding: 12px 0;
+                text-align: center;
+            }
+            .shift-old {
+                font-size: 12px;
+                text-align: center;
+                padding: 0;
+                opacity: 0.4;
+            }
+            .shift-arrow { display: none; }
+            .shift-new {
+                font-size: 13px;
+                font-weight: 600;
+                text-align: center;
+                padding: 0;
+            }
+
+            /* ── Dual view (AEO/GEO) ── */
+            .dual-view { grid-template-columns: 1fr; gap: 12px; }
+            .view-label { font-size: 11px; padding: 10px 16px; }
+            .browser-body { padding: 14px; }
+            .mock-hero { padding: 12px 8px; }
+            .mock-cards { grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+            .mock-card { padding: 6px 4px 4px; }
+            .mock-card-icon { width: 10px; height: 10px; margin-bottom: 3px; border-radius: 3px; }
+            .mock-card-title { height: 3px; margin-bottom: 3px; }
+            .mock-card-desc { height: 2px; margin-bottom: 2px; }
+            .mock-card-desc2 { height: 2px; }
+            .mock-testimonial { padding: 6px; gap: 6px; }
+            .mock-avatar { width: 14px; height: 14px; }
+            .view-code { padding: 12px 14px; }
+            .view-code pre { font-size: 9.5px; line-height: 1.5; }
+
+            /* ── Paths ── */
+            .paths-grid {
+                grid-template-columns: 1fr;
+                border-radius: var(--radius);
+                gap: 1px;
+            }
+            .path-card {
+                padding: 28px 20px;
+                text-align: center;
+            }
+            .path-icon { margin: 0 auto 20px; width: 40px; height: 40px; }
+            .path-icon svg { width: 20px; height: 20px; }
+            .path-label { font-size: 10px; }
+            .path-title { font-size: 20px; margin-bottom: 10px; }
+            .path-desc { font-size: 13px; margin-bottom: 20px; }
+            .path-steps { align-items: center; gap: 8px; }
+            .path-step { font-size: 12px; justify-content: center; }
+            .path-step-num { width: 20px; height: 20px; font-size: 10px; }
+            .path-cta {
+                display: flex;
+                width: 100%;
+                justify-content: center;
+                margin-top: 20px;
+                padding: 11px 20px;
+            }
+
+            /* ── Voice ── */
+            .voice-grid { grid-template-columns: 1fr; gap: 32px; }
+            .voice-grid > :first-child { order: 1; }
+            .voice-grid > :last-child { order: 0; }
+            .voice-mockup { max-width: 260px; margin: 0 auto; }
+            .voice-info { text-align: center; }
+            .voice-info h3 { font-size: 20px; }
+            .voice-info p { font-size: 14px; }
+            .voice-capabilities {
+                max-width: 100%;
+                margin: 20px auto 0;
+                gap: 8px;
+            }
+            .voice-cap { padding: 12px; }
+            .voice-cap-text h4 { font-size: 12px; }
+            .voice-cap-text p { font-size: 11px; }
+            .phone-header h4 { font-size: 14px; }
+            .phone-header p { font-size: 11px; }
+            .phone-transcript { font-size: 12px; padding: 10px 12px; }
+            .phone-btn { font-size: 11px; padding: 8px; }
+
+            /* ── Hood ── */
+            .hood-grid { grid-template-columns: 1fr; }
+            .hood-card { text-align: center; padding: 24px 20px; }
+            .hood-icon { margin: 0 auto 12px; width: 36px; height: 36px; }
+            .hood-icon svg { width: 18px; height: 18px; }
+            .hood-title { font-size: 14px; }
+            .hood-desc { font-size: 12px; }
+            .hood-tag { margin: 10px auto 0; font-size: 10px; }
+
+            /* ── Comparison ── */
+            .compare-cell { padding: 10px 14px; font-size: 12px; gap: 8px; }
+            .compare-header-cell { padding: 12px 14px; font-size: 11px; }
+
+            /* ── Citations ── */
+            .citation-grid { grid-template-columns: 1fr; }
+            .citation-text { font-size: 12px; }
+
+            /* ── Testimonials ── */
+            .testimonials-grid { grid-template-columns: 1fr; }
+            .testimonial-card { padding: 20px; }
+            .testimonial-quote { font-size: 13px; }
+
+            /* ── FAQ ── */
+            .faq-list { max-width: 100%; }
+            .faq-question { font-size: 14px; padding: 18px 0; gap: 12px; }
+            .faq-chevron { width: 16px; height: 16px; }
+            .faq-answer-inner { font-size: 13px; padding-bottom: 18px; }
+
+            /* ── CTA ── */
+            .cta-title { font-size: 26px; }
+            .cta-desc { font-size: 14px; margin-bottom: 24px; }
+            .cta-actions { flex-direction: column; align-items: stretch; gap: 10px; }
+            .cta-powered {
+                flex-wrap: wrap;
+                justify-content: center;
+                font-size: 12px;
+                gap: 8px;
+            }
+
+            /* ── Footer ── */
+            .footer-inner {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+                padding: 24px 16px;
+            }
+            .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+            .footer-link { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav class="nav">
+    <div class="nav-inner">
+        <div class="nav-left">
+            <a class="nav-brand" href="/">
+                <div class="nav-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <span>WordToSite</span>
+            </a>
+            <div class="nav-links">
+                <a class="nav-link" href="#vision">Vision</a>
+                <a class="nav-link" href="#paths">Get started</a>
+                <a class="nav-link" href="#voice">Voice</a>
+                <a class="nav-link" href="#faq">FAQ</a>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="nav-badge">
+                <span class="pulse"></span>
+                v3.0
+            </div>
+            <a class="btn-nav" href="/app.html">
+                Launch App
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+    <div class="hero-eyebrow">
+        Building for the post-dashboard era
+    </div>
+
+    <h1>Websites for the<br><span class="gradient">zero-click internet.</span></h1>
+
+    <p class="hero-sub">
+        Search is going zero-click. AI answers questions before anyone visits your page. Your website needs AEO and GEO to stay visible, and you shouldn't need a dashboard to make it happen.
+    </p>
+
+    <div class="hero-actions">
+        <a class="btn-hero btn-hero-primary" href="/app.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Create your site
+        </a>
+        <a class="btn-hero btn-hero-secondary" href="#paths">
+            See how it works
+        </a>
+    </div>
+
+    <p class="hero-hint">
+        No code. No dashboards. Just talk and we build.
+    </p>
+
+    <!-- Website Showcase Carousel -->
+    <div class="hero-showcase">
+        <div class="showcase-row">
+            <div class="showcase-track">
+                <!-- Card 1: SaaS / Business -->
+                <div class="showcase-card sc-theme-indigo">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">acme-saas.com</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-hero-block">
+                            <div class="sc-hero-title"></div>
+                            <div class="sc-hero-sub"></div>
+                            <div class="sc-hero-btn"></div>
+                        </div>
+                        <div class="sc-3cols">
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Portfolio -->
+                <div class="showcase-card sc-theme-pink">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">studio-portfolio.com</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-img-block"></div>
+                        <div class="sc-cols">
+                            <div class="sc-col-block"></div>
+                            <div class="sc-col-block"></div>
+                        </div>
+                        <div class="sc-cols">
+                            <div class="sc-col-block"></div>
+                            <div class="sc-col-block"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Restaurant / Local -->
+                <div class="showcase-card sc-theme-green">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">greenbowl-cafe.com</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-hero-block">
+                            <div class="sc-hero-title"></div>
+                            <div class="sc-hero-sub"></div>
+                            <div class="sc-hero-btn"></div>
+                        </div>
+                        <div class="sc-text-lines">
+                            <div class="sc-text-line" style="width:90%"></div>
+                            <div class="sc-text-line" style="width:75%"></div>
+                            <div class="sc-text-line" style="width:60%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: E-commerce -->
+                <div class="showcase-card sc-theme-yellow">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">urban-threads.shop</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-img-block"></div>
+                        <div class="sc-3cols">
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Agency -->
+                <div class="showcase-card sc-theme-orange">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">spark-agency.co</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-hero-block">
+                            <div class="sc-hero-title"></div>
+                            <div class="sc-hero-sub"></div>
+                        </div>
+                        <div class="sc-cols">
+                            <div class="sc-col-block"></div>
+                            <div class="sc-col-block"></div>
+                        </div>
+                        <div class="sc-text-lines">
+                            <div class="sc-text-line" style="width:85%"></div>
+                            <div class="sc-text-line" style="width:70%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 6: Blog -->
+                <div class="showcase-card sc-theme-indigo">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">daily-thoughts.blog</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-img-block"></div>
+                        <div class="sc-text-lines">
+                            <div class="sc-text-line" style="width:95%"></div>
+                            <div class="sc-text-line" style="width:80%"></div>
+                            <div class="sc-text-line" style="width:90%"></div>
+                            <div class="sc-text-line" style="width:65%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Duplicate cards for seamless loop -->
+                <div class="showcase-card sc-theme-indigo">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">acme-saas.com</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-hero-block">
+                            <div class="sc-hero-title"></div>
+                            <div class="sc-hero-sub"></div>
+                            <div class="sc-hero-btn"></div>
+                        </div>
+                        <div class="sc-3cols">
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-card sc-theme-pink">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">studio-portfolio.com</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-img-block"></div>
+                        <div class="sc-cols">
+                            <div class="sc-col-block"></div>
+                            <div class="sc-col-block"></div>
+                        </div>
+                        <div class="sc-cols">
+                            <div class="sc-col-block"></div>
+                            <div class="sc-col-block"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-card sc-theme-green">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">greenbowl-cafe.com</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-hero-block">
+                            <div class="sc-hero-title"></div>
+                            <div class="sc-hero-sub"></div>
+                            <div class="sc-hero-btn"></div>
+                        </div>
+                        <div class="sc-text-lines">
+                            <div class="sc-text-line" style="width:90%"></div>
+                            <div class="sc-text-line" style="width:75%"></div>
+                            <div class="sc-text-line" style="width:60%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-card sc-theme-yellow">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">urban-threads.shop</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-img-block"></div>
+                        <div class="sc-3cols">
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                            <div class="sc-3col-block"><div class="sc-3col-icon"></div><div class="sc-3col-line"></div><div class="sc-3col-line2"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-card sc-theme-orange">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">spark-agency.co</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-hero-block">
+                            <div class="sc-hero-title"></div>
+                            <div class="sc-hero-sub"></div>
+                        </div>
+                        <div class="sc-cols">
+                            <div class="sc-col-block"></div>
+                            <div class="sc-col-block"></div>
+                        </div>
+                        <div class="sc-text-lines">
+                            <div class="sc-text-line" style="width:85%"></div>
+                            <div class="sc-text-line" style="width:70%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-card sc-theme-indigo">
+                    <div class="showcase-browser-bar">
+                        <span class="showcase-dots"><span></span><span></span><span></span></span>
+                        <span class="showcase-url">daily-thoughts.blog</span>
+                    </div>
+                    <div class="showcase-body">
+                        <div class="sc-nav">
+                            <div class="sc-nav-logo"><div class="sc-nav-icon"></div><div class="sc-nav-text"></div></div>
+                            <div class="sc-nav-links"><div class="sc-nav-link"></div><div class="sc-nav-link"></div></div>
+                        </div>
+                        <div class="sc-img-block"></div>
+                        <div class="sc-text-lines">
+                            <div class="sc-text-line" style="width:95%"></div>
+                            <div class="sc-text-line" style="width:80%"></div>
+                            <div class="sc-text-line" style="width:90%"></div>
+                            <div class="sc-text-line" style="width:65%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+    <div class="trust-bar-inner">
+        <span class="trust-label">Powered by</span>
+        <div class="trust-logos">
+            <span class="trust-logo">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>
+                OpenAI
+            </span>
+            <span class="trust-logo">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.304 2.016H6.696C4.212 2.016 2.016 4.212 2.016 6.696v10.608c0 2.484 2.196 4.68 4.68 4.68h10.608c2.484 0 4.68-2.196 4.68-4.68V6.696c0-2.484-2.196-4.68-4.68-4.68zm-4.32 14.784h-1.2V8.4h-2.4v7.2h-1.2V8.4a1.2 1.2 0 0 1 1.2-1.2h2.4a1.2 1.2 0 0 1 1.2 1.2v8.4zm3.6 0h-1.2v-4.8h-1.2v-1.2h1.2V9.6h1.2v1.2h1.2v1.2h-1.2v4.8z"/></svg>
+                Anthropic
+            </span>
+            <span class="trust-logo">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                Gemini
+            </span>
+            <span class="trust-logo">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5088 16.8447C15.981 17.0258 15.27 17.1936 14.3811 17.3541L13.881 14.5765L16.5088 16.8447ZM7.49121 16.8447L10.1191 14.5765L9.61893 17.3541C8.72998 17.1936 8.01904 17.0258 7.49121 16.8447ZM12 3.8073L8.59473 10.4141H15.4053L12 3.8073ZM4.14844 13.9688C3.70898 13.1406 3.41992 12.2598 3.28418 11.3438L6.3252 14.0039L4.14844 13.9688ZM20.6748 11.3438C20.5391 12.2598 20.2501 13.1406 19.8115 13.9688L17.6748 14.0039L20.6748 11.3438ZM12 21.6C10.3477 21.6 8.74805 21.1898 7.30078 20.4023L9.87891 18.5039L12 21.1875L14.1211 18.5039L16.6992 20.4023C15.252 21.1898 13.6523 21.6 12 21.6Z"/></svg>
+                Cloudflare
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- MANIFESTO TICKER -->
+<div class="manifesto">
+    <div class="manifesto-track">
+        <span class="manifesto-item"><span class="mi-dot purple"></span> No dashboards</span>
+        <span class="manifesto-item"><span class="mi-dot green"></span> Voice-first management</span>
+        <span class="manifesto-item"><span class="mi-dot pink"></span> Migrate from any website</span>
+        <span class="manifesto-item"><span class="mi-dot yellow"></span> AEO + GEO optimized</span>
+        <span class="manifesto-item"><span class="mi-dot orange"></span> Manage from your phone</span>
+        <span class="manifesto-item"><span class="mi-dot purple"></span> Auto SSL + custom domains</span>
+        <span class="manifesto-item"><span class="mi-dot green"></span> 60-second deploys</span>
+        <span class="manifesto-item"><span class="mi-dot pink"></span> Schema markup built-in</span>
+        <!-- duplicate for seamless loop -->
+        <span class="manifesto-item"><span class="mi-dot purple"></span> No dashboards</span>
+        <span class="manifesto-item"><span class="mi-dot green"></span> Voice-first management</span>
+        <span class="manifesto-item"><span class="mi-dot pink"></span> Migrate from any website</span>
+        <span class="manifesto-item"><span class="mi-dot yellow"></span> AEO + GEO optimized</span>
+        <span class="manifesto-item"><span class="mi-dot orange"></span> Manage from your phone</span>
+        <span class="manifesto-item"><span class="mi-dot purple"></span> Auto SSL + custom domains</span>
+        <span class="manifesto-item"><span class="mi-dot green"></span> 60-second deploys</span>
+        <span class="manifesto-item"><span class="mi-dot pink"></span> Schema markup built-in</span>
+    </div>
+</div>
+
+<!-- THE SHIFT -->
+<section id="vision" class="border-t">
+    <div class="section-container">
+        <div class="shift-layout fade-in">
+            <div class="section-eyebrow">the shift</div>
+            <h3 class="shift-headline">The internet changed.<br>Website creation didn't.</h3>
+            <p class="shift-body">
+                Most searches now end before anyone clicks a link. AI reads your site so humans don't have to. Your site needs Answer Engine Optimization (AEO) and Generative Engine Optimization (GEO) to stay visible. But theme hunting, block dragging, dashboard wrangling? That was designed for a different era.
+            </p>
+
+            <div class="shift-comparison">
+                <div class="shift-row">
+                    <div class="shift-old">Browse 200 themes</div>
+                    <svg class="shift-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <div class="shift-new">AI picks your template</div>
+                </div>
+                <div class="shift-row">
+                    <div class="shift-old">Write all your copy</div>
+                    <svg class="shift-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <div class="shift-new">Describe it, we write it</div>
+                </div>
+                <div class="shift-row">
+                    <div class="shift-old">Configure DNS yourself</div>
+                    <svg class="shift-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <div class="shift-new">Domain + SSL, handled</div>
+                </div>
+                <div class="shift-row">
+                    <div class="shift-old">Open wp-admin</div>
+                    <svg class="shift-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <div class="shift-new">"Update the homepage"</div>
+                </div>
+                <div class="shift-row">
+                    <div class="shift-old">Sit at your desk</div>
+                    <svg class="shift-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <div class="shift-new">Manage from your phone</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- DUAL VIEW: HUMAN vs AI -->
+<section class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">the difference</div>
+            <h2 class="section-title">AEO + GEO, built in.</h2>
+            <p class="section-desc">Your visitors see a beautiful page. Answer engines and generative AI see clean, structured data. WordToSite builds for both. Automatically.</p>
+        </div>
+
+        <div class="dual-view fade-in">
+            <div class="view-card">
+                <div class="view-label">What your visitors see</div>
+                <div class="view-browser">
+                    <div class="browser-bar">
+                        <span class="browser-dots"><span></span><span></span><span></span></span>
+                        <span class="browser-url">yourbusiness.com</span>
+                    </div>
+                    <div class="browser-body">
+                        <div class="mock-nav">
+                            <div class="mock-logo">
+                                <div class="mock-logo-icon"></div>
+                                <div class="mock-logo-text"></div>
+                            </div>
+                            <div class="mock-nav-links">
+                                <div class="mock-nav-link"></div>
+                                <div class="mock-nav-link"></div>
+                                <div class="mock-nav-link"></div>
+                            </div>
+                            <div class="mock-nav-btn"></div>
+                        </div>
+
+                        <div class="mock-hero">
+                            <div class="mock-hero-title"></div>
+                            <div class="mock-hero-sub"></div>
+                            <div class="mock-hero-cta"></div>
+                        </div>
+
+                        <div class="mock-section-label"></div>
+                        <div class="mock-section-title"></div>
+
+                        <div class="mock-cards">
+                            <div class="mock-card">
+                                <div class="mock-card-icon"></div>
+                                <div class="mock-card-title"></div>
+                                <div class="mock-card-desc"></div>
+                                <div class="mock-card-desc2"></div>
+                            </div>
+                            <div class="mock-card">
+                                <div class="mock-card-icon"></div>
+                                <div class="mock-card-title"></div>
+                                <div class="mock-card-desc"></div>
+                                <div class="mock-card-desc2"></div>
+                            </div>
+                            <div class="mock-card">
+                                <div class="mock-card-icon"></div>
+                                <div class="mock-card-title"></div>
+                                <div class="mock-card-desc"></div>
+                                <div class="mock-card-desc2"></div>
+                            </div>
+                        </div>
+
+                        <div class="mock-testimonial">
+                            <div class="mock-avatar"></div>
+                            <div class="mock-testimonial-lines">
+                                <div class="mock-testimonial-line"></div>
+                                <div class="mock-testimonial-line"></div>
+                                <div class="mock-testimonial-line"></div>
+                            </div>
+                        </div>
+
+                        <div class="mock-footer">
+                            <div class="mock-footer-logo"></div>
+                            <div class="mock-footer-links">
+                                <div class="mock-footer-link"></div>
+                                <div class="mock-footer-link"></div>
+                                <div class="mock-footer-link"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view-card">
+                <div class="view-label view-label-ai">What answer engines see (AEO/GEO)</div>
+                <div class="view-code"><pre><span class="hl-comment">&lt;!-- AEO: Structured data for answer engines --&gt;</span>
+<span class="hl-tag">&lt;script</span> <span class="hl-attr">type</span>=<span class="hl-str">"application/ld+json"</span><span class="hl-tag">&gt;</span>
+{
+  <span class="hl-key">"@context"</span>: <span class="hl-str">"schema.org"</span>,
+  <span class="hl-key">"@type"</span>: <span class="hl-str">"LocalBusiness"</span>,
+  <span class="hl-key">"name"</span>: <span class="hl-str">"Your Business"</span>,
+  <span class="hl-key">"description"</span>: <span class="hl-str">"..."</span>,
+  <span class="hl-key">"address"</span>: { ... },
+  <span class="hl-key">"openingHours"</span>: <span class="hl-str">"Mo-Fr 09:00-17:00"</span>
+}
+<span class="hl-tag">&lt;/script&gt;</span>
+
+<span class="hl-tag">&lt;article</span> <span class="hl-attr">itemscope</span>
+  <span class="hl-attr">itemtype</span>=<span class="hl-str">"schema.org/Service"</span><span class="hl-tag">&gt;</span>
+  <span class="hl-tag">&lt;h1</span> <span class="hl-attr">itemprop</span>=<span class="hl-str">"name"</span><span class="hl-tag">&gt;</span>Web Design<span class="hl-tag">&lt;/h1&gt;</span>
+  <span class="hl-tag">&lt;p</span> <span class="hl-attr">itemprop</span>=<span class="hl-str">"description"</span><span class="hl-tag">&gt;</span>
+    Professional web design for
+    small businesses...
+  <span class="hl-tag">&lt;/p&gt;</span>
+  <span class="hl-tag">&lt;span</span> <span class="hl-attr">itemprop</span>=<span class="hl-str">"price"</span><span class="hl-tag">&gt;</span>$499<span class="hl-tag">&lt;/span&gt;</span>
+<span class="hl-tag">&lt;/article&gt;</span>
+
+<span class="hl-comment">&lt;!-- GEO: Semantic HTML for generative AI --&gt;</span>
+<span class="hl-tag">&lt;nav</span> <span class="hl-attr">aria-label</span>=<span class="hl-str">"main"</span><span class="hl-tag">&gt;</span>...<span class="hl-tag">&lt;/nav&gt;</span>
+<span class="hl-tag">&lt;main</span> <span class="hl-attr">role</span>=<span class="hl-str">"main"</span><span class="hl-tag">&gt;</span>...<span class="hl-tag">&lt;/main&gt;</span>
+<span class="hl-tag">&lt;meta</span> <span class="hl-attr">name</span>=<span class="hl-str">"robots"</span>
+  <span class="hl-attr">content</span>=<span class="hl-str">"max-snippet:-1"</span><span class="hl-tag"> /&gt;</span></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TWO PATHS -->
+<section id="paths" class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">get started</div>
+            <h2 class="section-title">Two paths. One destination.</h2>
+            <p class="section-desc">Whether you're migrating an existing website or building from scratch, you're 60 seconds from production.</p>
+        </div>
+
+        <div class="paths-grid fade-in">
+            <!-- Path A: Migrate -->
+            <div class="path-card">
+                <div class="path-icon migrate">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <div class="path-label">I have a website</div>
+                <h3 class="path-title">Bring your old site<br>into the new internet</h3>
+                <p class="path-desc">Paste your URL. Our AI scrapes it, extracts your brand, analyzes your layout, and rebuilds it. AEO-ready with structured data, schema markup, and content optimized for answer engines.</p>
+
+                <div class="path-steps">
+                    <div class="path-step"><span class="path-step-num">1</span> Paste your current website URL</div>
+                    <div class="path-step"><span class="path-step-num">2</span> AI extracts brand, content, structure</div>
+                    <div class="path-step"><span class="path-step-num">3</span> Template matched, content regenerated</div>
+                    <div class="path-step"><span class="path-step-num">4</span> Live site with your custom domain</div>
+                </div>
+
+                <a class="path-cta" href="/app.html">
+                    Migrate my site
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+
+            <!-- Path B: Voice/New -->
+            <div class="path-card">
+                <div class="path-icon voice">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </div>
+                <div class="path-label">I need a new website</div>
+                <h3 class="path-title">Just talk.<br>We'll build it.</h3>
+                <p class="path-desc">Answer 8 quick questions by voice or text, from your laptop or phone. Our AI builds your complete site brief, picks the right template, and generates all your content.</p>
+
+                <div class="path-steps">
+                    <div class="path-step"><span class="path-step-num">1</span> Answer questions by voice or text</div>
+                    <div class="path-step"><span class="path-step-num">2</span> AI builds your business brief</div>
+                    <div class="path-step"><span class="path-step-num">3</span> Template, content, and features selected</div>
+                    <div class="path-step"><span class="path-step-num">4</span> Production site deployed instantly</div>
+                </div>
+
+                <a class="path-cta" href="/app.html">
+                    Start talking
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- VOICE-FIRST MANAGEMENT -->
+<section id="voice" class="border-t">
+    <div class="section-container">
+        <div class="voice-grid fade-in">
+            <div class="voice-mockup">
+                <div class="phone-notch"></div>
+                <div class="phone-body">
+                    <div class="phone-header">
+                        <h4>WordToSite</h4>
+                        <p>Managing your-business.com</p>
+                    </div>
+                    <div class="phone-wave">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                    <div class="phone-transcript">
+                        <div class="t-label">You said:</div>
+                        "Update the homepage hero to say we now serve Europe. Add a blog post about our expansion."
+                    </div>
+                    <div class="phone-actions">
+                        <div class="phone-btn secondary">Redo</div>
+                        <div class="phone-btn primary">Apply changes</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="voice-info">
+                <div class="section-eyebrow">voice-first</div>
+                <h3>Your website, managed<br>from your pocket.</h3>
+                <p>
+                    No more opening a laptop to update a heading. No more learning wp-admin. Talk to your website like you'd talk to a colleague. From your phone, on the bus, between meetings.
+                </p>
+                <p>
+                    This is where website management is going. We're just building it first.
+                </p>
+
+                <div class="voice-capabilities">
+                    <div class="voice-cap">
+                        <div class="voice-cap-icon v1">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </div>
+                        <div class="voice-cap-text">
+                            <h4>Edit by speaking</h4>
+                            <p>"Change the tagline to 'Built for speed'". Done.</p>
+                        </div>
+                    </div>
+                    <div class="voice-cap">
+                        <div class="voice-cap-icon v2">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        </div>
+                        <div class="voice-cap-text">
+                            <h4>Create content by voice</h4>
+                            <p>"Write a blog post about our new pricing". Published.</p>
+                        </div>
+                    </div>
+                    <div class="voice-cap">
+                        <div class="voice-cap-icon v3">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                        </div>
+                        <div class="voice-cap-text">
+                            <h4>Fully mobile</h4>
+                            <p>No desktop required. Manage everything from your phone.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- UNDER THE HOOD -->
+<section id="tech" class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">under the hood</div>
+            <h2 class="section-title">Boring tech. Wild results.</h2>
+            <p class="section-desc">A clean UI that orchestrates AI from the world's best labs, handles DNS, and deploys WordPress. So you never have to.</p>
+        </div>
+
+        <div class="hood-grid fade-in">
+            <div class="hood-card">
+                <div class="hood-icon" style="background:var(--accent-dim);color:var(--accent)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <h3 class="hood-title">Firecrawl Scraping</h3>
+                <p class="hood-desc">Deep-crawl any site. Extract content, brand elements, color palettes, and page structures automatically.</p>
+                <span class="hood-tag">website analysis</span>
+            </div>
+
+            <div class="hood-card">
+                <div class="hood-icon" style="background:var(--green-dim);color:var(--green)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                </div>
+                <h3 class="hood-title">Whisper + WebSocket</h3>
+                <p class="hood-desc">Real-time voice transcription via WebSocket. Stream audio, get text back instantly. Works on mobile browsers.</p>
+                <span class="hood-tag">voice pipeline</span>
+            </div>
+
+            <div class="hood-card">
+                <div class="hood-icon" style="background:var(--yellow-dim);color:var(--yellow)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h3 class="hood-title">Multi-AI Content Engine</h3>
+                <p class="hood-desc">Page copy, blog posts, and meta descriptions generated by top-tier AI labs: OpenAI ChatGPT, Anthropic Claude, and Google Gemini.</p>
+                <span class="hood-tag">content gen</span>
+            </div>
+
+            <div class="hood-card">
+                <div class="hood-icon" style="background:var(--pink-dim);color:var(--pink)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+                <h3 class="hood-title">Gemini Vision</h3>
+                <p class="hood-desc">Visual layout analysis with Google Gemini's 1M+ token context. Understands your site's design, not just its code.</p>
+                <span class="hood-tag">visual AI</span>
+            </div>
+
+            <div class="hood-card">
+                <div class="hood-icon" style="background:var(--orange-dim);color:var(--orange)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h3 class="hood-title">Cloudflare DNS + SSL</h3>
+                <p class="hood-desc">Automatic DNS zone creation, record management, and SSL provisioning. Zero manual nameserver config.</p>
+                <span class="hood-tag">infrastructure</span>
+            </div>
+
+            <div class="hood-card">
+                <div class="hood-icon" style="background:var(--accent-dim);color:var(--accent)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <h3 class="hood-title">InstaWP Deploy</h3>
+                <p class="hood-desc">Full WordPress instances in seconds. Template-based. No servers to manage. Auto-configured with your content.</p>
+                <span class="hood-tag">deploy</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">the comparison</div>
+            <h2 class="section-title">Regular websites vs WordToSite</h2>
+            <p class="section-desc">Everything your current site is missing, built in from day one.</p>
+        </div>
+
+        <div class="compare-table fade-in">
+            <div class="compare-header">
+                <div class="compare-header-cell">Regular websites</div>
+                <div class="compare-header-cell">WordToSite</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell"><span class="compare-x">&#x2717;</span> No AEO / Schema markup</div>
+                <div class="compare-cell"><span class="compare-check">&#x2713;</span> AEO &amp; Schema markup</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell"><span class="compare-x">&#x2717;</span> No GEO optimization</div>
+                <div class="compare-cell"><span class="compare-check">&#x2713;</span> GEO optimization</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell"><span class="compare-x">&#x2717;</span> No voice management</div>
+                <div class="compare-cell"><span class="compare-check">&#x2713;</span> Voice management</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell"><span class="compare-x">&#x2717;</span> Manual SSL &amp; DNS</div>
+                <div class="compare-cell"><span class="compare-check">&#x2713;</span> Auto SSL &amp; DNS</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell"><span class="compare-x">&#x2717;</span> No AI content generation</div>
+                <div class="compare-cell"><span class="compare-check">&#x2713;</span> AI content generation</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell"><span class="compare-x">&#x2717;</span> Desktop-first editing</div>
+                <div class="compare-cell"><span class="compare-check">&#x2713;</span> Mobile-first editing</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell"><span class="compare-x">&#x2717;</span> Complex dashboards</div>
+                <div class="compare-cell"><span class="compare-check">&#x2713;</span> Dashboard-free</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell"><span class="compare-x">&#x2717;</span> Slow deploy cycles</div>
+                <div class="compare-cell"><span class="compare-check">&#x2713;</span> 60-second deploys</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AI CITATIONS -->
+<section class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">visibility</div>
+            <h2 class="section-title">Where your site appears</h2>
+            <p class="section-desc">AEO and GEO-optimized sites get cited by AI engines. Here's what that looks like.</p>
+        </div>
+
+        <div class="citation-grid fade-in">
+            <div class="citation-card">
+                <div class="citation-header">
+                    <div class="citation-icon" style="background:#4285F4;color:#fff;">G</div>
+                    <span class="citation-platform">Google Featured Snippet</span>
+                </div>
+                <div class="citation-body">
+                    <div class="citation-label" style="color:var(--text-muted);">Featured answer</div>
+                    <p class="citation-text"><strong>Bella's Bakery</strong> is a family-owned artisan bakery in Portland, OR specializing in sourdough breads and French pastries. Open Tuesday through Sunday, 7 AM to 6 PM.</p>
+                    <div class="citation-source">
+                        <span>Source:</span>
+                        <span class="citation-source-link">bellasbakery.com</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="citation-card">
+                <div class="citation-header">
+                    <div class="citation-icon" style="background:#10A37F;color:#fff;">C</div>
+                    <span class="citation-platform">ChatGPT</span>
+                </div>
+                <div class="citation-body">
+                    <div class="citation-label" style="color:#10A37F;">Answer</div>
+                    <p class="citation-text">Based on their website, <strong>Bella's Bakery</strong> offers custom wedding cakes starting at $150. They use locally sourced organic flour and offer gluten-free options.</p>
+                    <div class="citation-source">
+                        <span>Referenced:</span>
+                        <span class="citation-source-link">bellasbakery.com/wedding-cakes</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="citation-card">
+                <div class="citation-header">
+                    <div class="citation-icon" style="background:linear-gradient(135deg,#D97706,#CA8A04);color:#fff;">A</div>
+                    <span class="citation-platform">Claude</span>
+                </div>
+                <div class="citation-body">
+                    <div class="citation-label" style="color:#D97706;">Response</div>
+                    <p class="citation-text">According to <strong>Bella's Bakery</strong>, their most popular items include the San Francisco-style sourdough loaf and the seasonal fruit tarts made with organic ingredients.</p>
+                    <div class="citation-source">
+                        <span>Cited:</span>
+                        <span class="citation-source-link">bellasbakery.com/menu</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="citation-card">
+                <div class="citation-header">
+                    <div class="citation-icon" style="background:linear-gradient(135deg,#4285F4,#34A853);color:#fff;">G</div>
+                    <span class="citation-platform">Gemini</span>
+                </div>
+                <div class="citation-body">
+                    <div class="citation-label" style="color:#4285F4;">AI Overview</div>
+                    <p class="citation-text"><strong>Bella's Bakery</strong> in Portland has a 4.9-star rating. Reviewers highlight the artisan sourdough and welcoming atmosphere. They also offer baking classes on weekends.</p>
+                    <div class="citation-source">
+                        <span>From:</span>
+                        <span class="citation-source-link">bellasbakery.com/about</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">what people say</div>
+            <h2 class="section-title">Trusted by builders who ship</h2>
+            <p class="section-desc">Founders, freelancers, and agencies who switched to WordToSite.</p>
+        </div>
+
+        <div class="testimonials-grid fade-in">
+            <div class="testimonial-card">
+                <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <p class="testimonial-quote">"I rebuilt my entire agency portfolio in 20 minutes. The AEO markup alone would have taken my dev team a week. Now our clients show up in AI search results."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,#818CF8,#6366F1);"></div>
+                    <div>
+                        <div class="testimonial-name">Sarah Chen</div>
+                        <div class="testimonial-role">Founder, Pixel & Co Agency</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <p class="testimonial-quote">"Voice management is a game-changer. I updated my restaurant menu from my phone while prepping for dinner service. Said it, reviewed it, published. Done."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,#34D399,#059669);"></div>
+                    <div>
+                        <div class="testimonial-name">Marcus Rivera</div>
+                        <div class="testimonial-role">Owner, The Green Fork</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <p class="testimonial-quote">"We migrated 12 client sites in a single afternoon. Pasted the URLs, WordToSite analyzed everything, and rebuilt them with proper schema. Our SEO metrics jumped 40%."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,#F472B6,#DB2777);"></div>
+                    <div>
+                        <div class="testimonial-name">Priya Patel</div>
+                        <div class="testimonial-role">Digital Strategist, BrightPath</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <p class="testimonial-quote">"I'm not technical at all. I described my coaching business in a voice note and had a full website live in 60 seconds. My clients find me through ChatGPT now."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,#FBBF24,#D97706);"></div>
+                    <div>
+                        <div class="testimonial-name">James Okafor</div>
+                        <div class="testimonial-role">Life Coach & Speaker</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <p class="testimonial-quote">"The zero-dashboard approach sold me. No more logging into wp-admin, no more plugin updates. I just talk to my site and it does what I want. This is the future."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,#FB923C,#EA580C);"></div>
+                    <div>
+                        <div class="testimonial-name">Lena Vogt</div>
+                        <div class="testimonial-role">Freelance Designer, Berlin</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card">
+                <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <p class="testimonial-quote">"We white-label WordToSite for our agency clients. They get AI-optimized sites, we get recurring revenue, and nobody touches a CMS dashboard. Everyone wins."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,#A78BFA,#7C3AED);"></div>
+                    <div>
+                        <div class="testimonial-name">Tom Andersen</div>
+                        <div class="testimonial-role">CEO, Nordic Digital</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">faq</div>
+            <h2 class="section-title">Questions you're thinking</h2>
+        </div>
+
+        <div class="faq-list fade-in">
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    What are AEO, GEO, and the "zero-click internet"?
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        Over 60% of Google searches now end without a click. AI assistants like ChatGPT, Perplexity, and Google's AI Overviews answer questions by pulling from your website directly. AEO (Answer Engine Optimization) means structuring your content so answer engines can find and cite you. GEO (Generative Engine Optimization) means optimizing for AI-generated search results. Your content matters more than ever, but visitors may never actually visit your page. WordToSite builds websites with AEO and GEO from day one: clean semantic HTML, proper schema markup, and content structured for AI extraction.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    I already have a website. Why would I switch?
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        You don't have to abandon your existing site. Paste your URL, and we'll analyze everything: your brand, content, colors, page structure. Then rebuild it on modern infrastructure. Same brand, same message, but now with AEO-ready structured data, GEO-optimized content, automatic SSL, and the ability to manage it all by voice. Think of it as migrating your website to the future.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    How does voice management work?
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        Open WordToSite on your phone. Tap the mic. Say "Update the homepage heading to say we're hiring" or "Write a blog post about our new product launch." Your voice is transcribed in real-time, AI interprets your intent and generates the changes, and you tap one button to publish. No wp-admin. No laptop. No learning curve.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    Can I actually manage my site from my phone?
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        Yes. That's the entire point. Traditional CMS dashboards were designed for desktop. WordToSite is designed for the way you actually work. On your phone, between meetings, on the go. Voice commands for quick edits, a mobile-first interface for reviewing changes, and an AI that understands context so you don't have to navigate menus.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    Is this just another WordPress wrapper?
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        WordPress is the engine, not the interface. You never need to see wp-admin unless you want to. It's always there if you do. WordToSite is an AI orchestration layer powered by OpenAI, Anthropic Claude, and Google Gemini for content and intelligence, Firecrawl for scraping, Cloudflare for DNS, and InstaWP for hosting. WordPress is a battle-tested runtime for websites. We handle everything on top.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    What's the tech stack?
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        AI from the best labs in the world: OpenAI ChatGPT for content, Anthropic Claude for reasoning, Google Gemini for visual analysis and long-context understanding. Firecrawl for web scraping. Cloudflare for DNS and SSL. InstaWP for WordPress deployment. Real-time voice via WebSocket, live deployment progress via Server-Sent Events. All wrapped in a simple UI. You don't need to know any of this to use it.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    Can I self-host this?
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        Yes. WordToSite can run on your own infrastructure. You bring your own API keys for the AI services you want to use (OpenAI, Anthropic, Gemini, Cloudflare, etc.) and the platform runs entirely under your control. No vendor lock-in. Your data, your keys, your servers. We'll have a simple setup wizard to get you going in minutes.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="border-t cta-section">
+    <div class="section-container">
+        <div class="fade-in">
+            <h2 class="cta-title">The web moved on.<br>Your website should too.</h2>
+            <p class="cta-desc">Migrate your existing site or create one by talking to it. AEO and GEO-ready from the first deploy.</p>
+
+            <div class="cta-actions">
+                <a class="btn-hero btn-hero-primary" href="/app.html">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    Create your site
+                </a>
+                <a class="btn-hero btn-hero-secondary" href="#faq">
+                    Read FAQ
+                </a>
+            </div>
+
+            <div class="cta-powered">
+                Powered by AI from
+                <span class="cta-lab">OpenAI</span>
+                <span class="cta-dot"></span>
+                <span class="cta-lab">Anthropic</span>
+                <span class="cta-dot"></span>
+                <span class="cta-lab">Google</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <div class="footer-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            WordToSite
+        </div>
+        <div class="footer-links">
+            <a class="footer-link" href="/app.html">Dashboard</a>
+            <a class="footer-link" href="#paths">Get started</a>
+            <a class="footer-link" href="#faq">FAQ</a>
+            <a class="footer-link" href="#tech">Tech</a>
+            <a class="footer-link" href="/privacy.html">Privacy</a>
+            <a class="footer-link" href="/terms.html">Terms</a>
+            <a class="footer-link" href="/mission.html">Mission</a>
+            <a class="footer-link" href="/docs.html">Docs</a>
+            <a class="footer-link" href="/changelog.html">Changelog</a>
+        </div>
+        <div class="footer-right">
+            <span class="footer-version">v3.0.0</span>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                observer.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // FAQ toggle
+    function toggleFaq(btn) {
+        const item = btn.parentElement;
+        const wasOpen = item.classList.contains('open');
+        // Close all
+        document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+        // Toggle clicked
+        if (!wasOpen) item.classList.add('open');
+    }
+
+</script>
+
+</body>
+</html>

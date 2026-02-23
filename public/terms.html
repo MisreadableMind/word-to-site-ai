@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service | WordToSite</title>
+    <meta name="description" content="WordToSite terms of service. Rules and guidelines for using our platform.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #09090B; --bg-subtle: #0F0F12; --surface: #18181B;
+            --border: rgba(255,255,255,0.06); --text: #FAFAFA;
+            --text-secondary: #A1A1AA; --text-muted: #71717A;
+            --accent: #818CF8; --accent-bright: #A5B4FC;
+            --radius: 12px; --mono: 'JetBrains Mono', monospace;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+        a { color: inherit; text-decoration: none; }
+        .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 64px 64px; pointer-events: none; z-index: 0; }
+        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(9,9,11,0.6); backdrop-filter: blur(16px) saturate(1.5); border-bottom: 1px solid var(--border); }
+        .nav-inner { max-width: 1120px; margin: 0 auto; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+        .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: -0.3px; }
+        .nav-logo { width: 28px; height: 28px; background: linear-gradient(135deg, #818CF8, #6366F1); border-radius: 7px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(129,140,248,0.3); }
+        .nav-logo svg { width: 15px; height: 15px; }
+        .btn-nav { padding: 8px 16px; font-size: 13px; font-weight: 600; background: #fff; color: #000; border-radius: 8px; transition: opacity 150ms; }
+        .btn-nav:hover { opacity: 0.9; }
+        .page-content { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 120px 32px 80px; }
+        .page-title { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+        .page-updated { font-size: 13px; color: var(--text-muted); margin-bottom: 48px; }
+        .page-section { margin-bottom: 40px; }
+        .page-section h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+        .page-section p, .page-section ul { font-size: 14px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 12px; }
+        .page-section ul { padding-left: 20px; }
+        .page-section li { margin-bottom: 6px; }
+        .footer { position: relative; z-index: 1; border-top: 1px solid var(--border); }
+        .footer-inner { max-width: 1120px; margin: 0 auto; padding: 32px; display: flex; align-items: center; justify-content: space-between; }
+        .footer-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+        .footer-logo { width: 18px; height: 18px; background: linear-gradient(135deg, #818CF8, #6366F1); border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .footer-logo svg { width: 10px; height: 10px; }
+        .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+        .footer-link { font-size: 13px; color: var(--text-muted); transition: color 150ms; }
+        .footer-link:hover { color: var(--text-secondary); }
+        .footer-right { display: flex; align-items: center; gap: 12px; }
+        .footer-version { font-family: var(--mono); font-size: 11px; color: var(--text-muted); padding: 3px 8px; background: var(--surface); border-radius: 4px; border: 1px solid var(--border); }
+        @media (max-width: 640px) {
+            .page-content { padding: 100px 16px 56px; }
+            .page-title { font-size: 24px; }
+            .footer-inner { flex-direction: column; gap: 16px; text-align: center; padding: 24px 16px; }
+            .footer-links { justify-content: center; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<nav class="nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="/">
+            <div class="nav-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            WordToSite
+        </a>
+        <a class="btn-nav" href="/app.html">Launch app</a>
+    </div>
+</nav>
+
+<main class="page-content">
+    <h1 class="page-title">Terms of Service</h1>
+    <p class="page-updated">Last updated: February 2026</p>
+
+    <div class="page-section">
+        <h2>1. Acceptance of Terms</h2>
+        <p>By accessing or using WordToSite, you agree to be bound by these Terms of Service. If you do not agree, do not use the service. These terms apply to all users, whether using the hosted version or self-hosting the platform.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>2. Description of Service</h2>
+        <p>WordToSite is an AI-powered website creation and management platform. We provide tools to create, migrate, and manage websites using artificial intelligence, voice commands, and automated deployment. The service includes integration with third-party AI providers, hosting infrastructure, and domain management tools.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>3. User Accounts</h2>
+        <ul>
+            <li>You must provide accurate information when creating an account.</li>
+            <li>You are responsible for maintaining the security of your account credentials.</li>
+            <li>You are responsible for all activity that occurs under your account.</li>
+            <li>You must notify us immediately of any unauthorized access.</li>
+        </ul>
+    </div>
+
+    <div class="page-section">
+        <h2>4. Acceptable Use</h2>
+        <p>You agree not to use WordToSite to:</p>
+        <ul>
+            <li>Create websites that violate any applicable laws or regulations.</li>
+            <li>Generate or distribute harmful, abusive, or misleading content.</li>
+            <li>Infringe on intellectual property rights of others.</li>
+            <li>Attempt to circumvent security measures or access other users' data.</li>
+            <li>Overload or interfere with the service infrastructure.</li>
+        </ul>
+    </div>
+
+    <div class="page-section">
+        <h2>5. Content Ownership</h2>
+        <p>You retain ownership of all content you create or upload to WordToSite. We do not claim any intellectual property rights over your websites, text, images, or other materials. AI-generated content created through our platform is yours to use as you see fit.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>6. Third-Party Services</h2>
+        <p>WordToSite integrates with third-party services including OpenAI, Anthropic, Google, Cloudflare, InstaWP, and Firecrawl. Your use of these services through WordToSite is also subject to their respective terms. We are not responsible for the availability or performance of third-party services.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>7. Service Availability</h2>
+        <p>We strive to maintain high availability but do not guarantee uninterrupted service. We may perform maintenance, updates, or modifications that temporarily affect availability. We will provide reasonable notice for planned downtime when possible.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>8. Limitation of Liability</h2>
+        <p>WordToSite is provided "as is" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from your use of the service, including loss of data, revenue, or business opportunities. Our total liability shall not exceed the amount you paid for the service in the preceding 12 months.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>9. Termination</h2>
+        <p>You may stop using WordToSite at any time. We may suspend or terminate your account for violation of these terms. Upon termination, you may export your data within 30 days. After that period, we may delete your account data.</p>
+    </div>
+
+    <div class="page-section">
+        <h2>10. Changes to Terms</h2>
+        <p>We may update these terms from time to time. Material changes will be communicated via email or in-app notification at least 30 days before they take effect. Continued use of WordToSite after changes constitutes acceptance.</p>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <div class="footer-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            WordToSite
+        </div>
+        <div class="footer-links">
+            <a class="footer-link" href="/app.html">Dashboard</a>
+            <a class="footer-link" href="/#faq">FAQ</a>
+            <a class="footer-link" href="/privacy.html">Privacy</a>
+            <a class="footer-link" href="/terms.html">Terms</a>
+            <a class="footer-link" href="/mission.html">Mission</a>
+            <a class="footer-link" href="/docs.html">Docs</a>
+            <a class="footer-link" href="/changelog.html">Changelog</a>
+        </div>
+        <div class="footer-right">
+            <span class="footer-version">v3.0.0</span>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
