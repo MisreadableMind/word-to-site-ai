@@ -2017,6 +2017,7 @@
                 <span class="pulse"></span>
                 v3.0
             </div>
+            <a class="nav-link" href="/login.html" id="authNavLink" style="display:none">Log in</a>
             <a class="btn-nav" href="/app.html">
                 Launch App
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -3117,6 +3118,20 @@
         if (!wasOpen) item.classList.add('open');
     }
 
+</script>
+
+<script>
+(async () => {
+    const link = document.getElementById('authNavLink');
+    try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+            link.href = '/dashboard.html';
+            link.textContent = 'Dashboard';
+        }
+    } catch {}
+    link.style.display = '';
+})();
 </script>
 
 </body>

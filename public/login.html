@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordToSite | Log in</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #FFFDF7;
+            --bg-subtle: #FFF8F0;
+            --surface: #FFFFFF;
+            --surface-hover: #FFF5EC;
+            --border: rgba(140, 120, 100, 0.18);
+            --border-hover: rgba(140, 120, 100, 0.30);
+            --text: #2D2926;
+            --text-secondary: #4A4540;
+            --text-muted: #8A8580;
+            --accent: #6C5CE7;
+            --accent-bright: #5A4BD1;
+            --accent-dim: rgba(108,92,231,0.10);
+            --error: #DC2626;
+            --error-dim: rgba(220,38,38,0.06);
+            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
+            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .grid-bg {
+            position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+            background-size: 64px 64px;
+            pointer-events: none; z-index: 0;
+        }
+        .grid-bg::after {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent);
+        }
+
+        .auth-card {
+            position: relative; z-index: 1;
+            width: 100%; max-width: 400px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 40px 32px;
+            margin: 24px;
+        }
+
+        .auth-brand {
+            display: flex; align-items: center; gap: 10px;
+            justify-content: center; margin-bottom: 32px;
+            text-decoration: none; color: var(--text);
+            font-weight: 700; font-size: 18px;
+        }
+        .auth-logo {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
+            border-radius: 8px; display: flex;
+            align-items: center; justify-content: center;
+            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
+        }
+        .auth-logo svg { width: 17px; height: 17px; }
+
+        h1 { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+        .subtitle { font-size: 14px; color: var(--text-muted); text-align: center; margin-bottom: 28px; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block; font-size: 13px; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 6px;
+        }
+        .form-input {
+            width: 100%; padding: 10px 14px;
+            font-family: inherit; font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text);
+            outline: none; transition: border-color 150ms;
+        }
+        .form-input:focus { border-color: var(--accent); }
+
+        .btn-primary {
+            width: 100%; padding: 12px;
+            font-family: inherit; font-size: 14px; font-weight: 600;
+            background: var(--accent); color: #fff;
+            border: none; border-radius: var(--radius-sm);
+            cursor: pointer; transition: all 150ms;
+            margin-top: 8px;
+        }
+        .btn-primary:hover { background: var(--accent-bright); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(108,92,231,0.3); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .error-msg {
+            background: var(--error-dim); border: 1px solid rgba(220,38,38,0.15);
+            color: var(--error); border-radius: var(--radius-sm);
+            padding: 10px 14px; font-size: 13px;
+            margin-bottom: 16px; display: none;
+        }
+        .error-msg.visible { display: block; }
+
+        .auth-footer {
+            text-align: center; margin-top: 24px;
+            font-size: 13px; color: var(--text-muted);
+        }
+        .auth-footer a { color: var(--accent); font-weight: 600; text-decoration: none; }
+        .auth-footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<div class="auth-card">
+    <a class="auth-brand" href="/">
+        <div class="auth-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <span>WordToSite</span>
+    </a>
+
+    <h1>Welcome back</h1>
+    <p class="subtitle">Log in to manage your sites</p>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input class="form-input" type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input class="form-input" type="password" id="password" name="password" required autocomplete="current-password" placeholder="Your password">
+        </div>
+        <button class="btn-primary" type="submit" id="submitBtn">Log in</button>
+    </form>
+
+    <div class="auth-footer">
+        Don't have an account? <a href="/register.html">Sign up</a>
+    </div>
+</div>
+
+<script>
+const form = document.getElementById('loginForm');
+const errorMsg = document.getElementById('errorMsg');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.classList.remove('visible');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Logging in...';
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+            }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error?.message || 'Login failed');
+        }
+
+        window.location.href = '/dashboard.html';
+    } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.add('visible');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Log in';
+    }
+});
+
+// Redirect if already logged in
+fetch('/api/auth/me').then(r => { if (r.ok) window.location.href = '/dashboard.html'; });
+</script>
+</body>
+</html>

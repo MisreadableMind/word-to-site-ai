@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordToSite | Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #FFFDF7;
+            --bg-subtle: #FFF8F0;
+            --surface: #FFFFFF;
+            --surface-hover: #FFF5EC;
+            --border: rgba(140, 120, 100, 0.18);
+            --border-hover: rgba(140, 120, 100, 0.30);
+            --text: #2D2926;
+            --text-secondary: #4A4540;
+            --text-muted: #8A8580;
+            --accent: #6C5CE7;
+            --accent-bright: #5A4BD1;
+            --accent-dim: rgba(108,92,231,0.10);
+            --green: #16A34A;
+            --green-dim: rgba(22,163,74,0.12);
+            --error: #DC2626;
+            --error-dim: rgba(220,38,38,0.06);
+            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
+            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .grid-bg {
+            position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+            background-size: 64px 64px; pointer-events: none; z-index: 0;
+        }
+        .grid-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent); }
+
+        /* NAV */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(255,253,247,0.8);
+            backdrop-filter: blur(16px) saturate(1.2);
+            -webkit-backdrop-filter: blur(16px) saturate(1.2);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            max-width: 720px; margin: 0 auto;
+            padding: 0 24px; height: 60px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: var(--text);
+            font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
+        }
+        .nav-logo {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
+            border-radius: 7px; display: flex;
+            align-items: center; justify-content: center;
+            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
+        }
+        .nav-logo svg { width: 15px; height: 15px; }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-link {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 13px; font-weight: 500;
+            color: var(--text-muted); padding: 6px 12px;
+            border-radius: 6px; transition: all 150ms;
+            text-decoration: none;
+        }
+        .nav-link:hover { color: var(--text-secondary); background: var(--accent-dim); }
+        .nav-link svg { width: 14px; height: 14px; }
+
+        /* MAIN */
+        .main {
+            position: relative; z-index: 1;
+            max-width: 720px; margin: 0 auto;
+            padding: 92px 24px 60px;
+        }
+        .main h1 { font-size: 24px; font-weight: 700; margin-bottom: 32px; }
+
+        /* SECTIONS */
+        .section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 24px; margin-bottom: 20px;
+        }
+        .section h2 { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+        .section.danger { border-color: rgba(220,38,38,0.2); }
+        .section.danger h2 { color: var(--error); }
+
+        .form-row { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-input {
+            width: 100%; padding: 10px 14px;
+            font-family: inherit; font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg); color: var(--text);
+            outline: none; transition: border-color 150ms;
+        }
+        .form-input:focus { border-color: var(--accent); }
+        .form-input:read-only { background: var(--bg-subtle); color: var(--text-muted); cursor: default; }
+
+        .info-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--text-muted); font-size: 13px; }
+        .info-value { font-weight: 500; }
+
+        .badge {
+            display: inline-flex; align-items: center;
+            padding: 3px 10px; border-radius: 100px;
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 0.3px; text-transform: uppercase;
+        }
+        .badge-plan { background: var(--accent-dim); color: var(--accent); }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 20px;
+            font-family: inherit; font-size: 13px; font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer; transition: all 150ms;
+            border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary);
+        }
+        .btn:hover { border-color: var(--border-hover); background: var(--surface-hover); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn-primary:hover { background: var(--accent-bright); }
+        .btn-danger { background: var(--error); color: #fff; border-color: var(--error); }
+        .btn-danger:hover { background: #b91c1c; }
+
+        .msg {
+            padding: 10px 14px; border-radius: var(--radius-sm);
+            font-size: 13px; margin-bottom: 16px; display: none;
+        }
+        .msg.success { display: block; background: var(--green-dim); color: var(--green); border: 1px solid rgba(22,163,74,0.15); }
+        .msg.error { display: block; background: var(--error-dim); color: var(--error); border: 1px solid rgba(220,38,38,0.15); }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="/">
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <span>WordToSite</span>
+        </a>
+        <div class="nav-right">
+            <a class="nav-link" href="/dashboard.html">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="main">
+    <h1>Profile</h1>
+
+    <!-- Account Info -->
+    <div class="section">
+        <h2>Account</h2>
+        <div id="profileMsg" class="msg"></div>
+        <div class="form-row">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" id="emailField" readonly>
+        </div>
+        <div class="form-row">
+            <label class="form-label">Display name</label>
+            <input class="form-input" type="text" id="displayNameField" placeholder="Your name">
+        </div>
+        <div class="info-row">
+            <span class="info-label">Plan</span>
+            <span class="badge badge-plan" id="planBadge">free</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Member since</span>
+            <span class="info-value" id="memberSince">-</span>
+        </div>
+        <div style="margin-top:16px">
+            <button class="btn btn-primary" id="saveProfileBtn">Save changes</button>
+        </div>
+    </div>
+
+    <!-- Change Password -->
+    <div class="section">
+        <h2>Change password</h2>
+        <div id="passwordMsg" class="msg"></div>
+        <div class="form-row">
+            <label class="form-label">Current password</label>
+            <input class="form-input" type="password" id="currentPassword" autocomplete="current-password">
+        </div>
+        <div class="form-row">
+            <label class="form-label">New password</label>
+            <input class="form-input" type="password" id="newPassword" autocomplete="new-password" placeholder="At least 8 characters" minlength="8">
+        </div>
+        <div class="form-row">
+            <label class="form-label">Confirm new password</label>
+            <input class="form-input" type="password" id="confirmNewPassword" autocomplete="new-password">
+        </div>
+        <button class="btn" id="changePasswordBtn">Update password</button>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="section danger">
+        <h2>Danger zone</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+            Permanently delete your account and all associated data. This action cannot be undone.
+        </p>
+        <div id="deleteMsg" class="msg"></div>
+        <div class="form-row">
+            <label class="form-label">Confirm your password</label>
+            <input class="form-input" type="password" id="deletePassword" placeholder="Enter your password">
+        </div>
+        <button class="btn btn-danger" id="deleteAccountBtn">Delete my account</button>
+    </div>
+</div>
+
+<script>
+let currentUser = null;
+
+async function checkAuth() {
+    try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        currentUser = data.user;
+        populateProfile();
+    } catch {
+        window.location.href = '/login.html';
+    }
+}
+
+function populateProfile() {
+    document.getElementById('emailField').value = currentUser.email;
+    document.getElementById('displayNameField').value = currentUser.displayName || '';
+    document.getElementById('planBadge').textContent = currentUser.planTier || 'free';
+    const since = currentUser.createdAt || currentUser.created_at;
+    if (since) {
+        document.getElementById('memberSince').textContent = new Date(since).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+}
+
+function showMsg(id, type, text) {
+    const el = document.getElementById(id);
+    el.className = `msg ${type}`;
+    el.textContent = text;
+}
+
+function clearMsg(id) {
+    const el = document.getElementById(id);
+    el.className = 'msg';
+    el.textContent = '';
+}
+
+// Save profile
+document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+    clearMsg('profileMsg');
+    const btn = document.getElementById('saveProfileBtn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/auth/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                displayName: document.getElementById('displayNameField').value,
+            }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Failed');
+        showMsg('profileMsg', 'success', 'Profile updated');
+    } catch (err) {
+        showMsg('profileMsg', 'error', err.message);
+    }
+    btn.disabled = false;
+});
+
+// Change password
+document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+    clearMsg('passwordMsg');
+
+    const newPw = document.getElementById('newPassword').value;
+    const confirmPw = document.getElementById('confirmNewPassword').value;
+
+    if (newPw !== confirmPw) {
+        showMsg('passwordMsg', 'error', 'Passwords do not match');
+        return;
+    }
+
+    if (newPw.length < 8) {
+        showMsg('passwordMsg', 'error', 'Password must be at least 8 characters');
+        return;
+    }
+
+    const btn = document.getElementById('changePasswordBtn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/auth/password', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                currentPassword: document.getElementById('currentPassword').value,
+                newPassword: newPw,
+            }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Failed');
+        showMsg('passwordMsg', 'success', 'Password updated');
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmNewPassword').value = '';
+    } catch (err) {
+        showMsg('passwordMsg', 'error', err.message);
+    }
+    btn.disabled = false;
+});
+
+// Delete account
+document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+    clearMsg('deleteMsg');
+
+    const password = document.getElementById('deletePassword').value;
+    if (!password) {
+        showMsg('deleteMsg', 'error', 'Enter your password to confirm');
+        return;
+    }
+
+    if (!confirm('Are you sure? This permanently deletes your account and all data.')) return;
+
+    const btn = document.getElementById('deleteAccountBtn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/auth/account', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Failed');
+        window.location.href = '/';
+    } catch (err) {
+        showMsg('deleteMsg', 'error', err.message);
+        btn.disabled = false;
+    }
+});
+
+checkAuth();
+</script>
+</body>
+</html>
