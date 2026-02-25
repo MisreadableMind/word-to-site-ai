@@ -786,7 +786,7 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
 });
 
 // SSE streaming confirm endpoint for real-time deploy progress
-app.get('/api/onboard/confirm/stream', async (req, res) => {
+app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -843,6 +843,25 @@ app.get('/api/onboard/confirm/stream', async (req, res) => {
         deploymentContext,
         contentContext,
       });
+
+      // Save to user's dashboard
+      if (req.user && result.site) {
+        try {
+          await siteService.createSite(req.user.id, {
+            domain,
+            instawpId: result.site.id || null,
+            templateSlug: templateSlug || deploymentContext.template?.slug,
+            wpUrl: result.site.wp_url,
+            wpUsername: result.site.wp_username,
+            wpPassword: result.site.wp_password,
+            siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
+            onboardType: 'domain',
+            onboardData: { deploymentContext, contentContext },
+          });
+        } catch (err) {
+          console.warn('Failed to save site to user dashboard (stream):', err.message);
+        }
+      }
 
       res.write(`data: ${JSON.stringify({ step: 'result', data: result })}\n\n`);
     } else {
@@ -942,6 +961,25 @@ app.get('/api/onboard/confirm/stream', async (req, res) => {
           } catch (error) {
             result.steps.push({ step: 'content_generated', success: false, error: error.message });
           }
+        }
+      }
+
+      // Save to user's dashboard
+      if (req.user && site) {
+        try {
+          await siteService.createSite(req.user.id, {
+            domain: site.domain || null,
+            instawpId: site.id || null,
+            templateSlug: templateSlug || deploymentContext.template?.slug,
+            wpUrl: site.wp_url,
+            wpUsername: site.wp_username,
+            wpPassword: site.wp_password,
+            siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
+            onboardType: 'simple',
+            onboardData: { deploymentContext, contentContext },
+          });
+        } catch (err) {
+          console.warn('Failed to save site to user dashboard (stream):', err.message);
         }
       }
 
