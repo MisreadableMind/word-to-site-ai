@@ -316,28 +316,36 @@ async function init() {
         return;
     }
 
+    // Auth check
     try {
         const authRes = await fetch('/api/auth/me');
         if (!authRes.ok) throw new Error();
         const authData = await authRes.json();
         currentUser = authData.user;
+    } catch {
+        window.location.href = '/login.html';
+        return;
+    }
 
+    // Load site
+    try {
         const siteRes = await fetch(`/api/sites/${siteId}`);
         if (!siteRes.ok) throw new Error('Site not found');
         const siteData = await siteRes.json();
         currentSite = siteData.site;
-
-        document.getElementById('siteName').textContent = currentSite.site_name || 'Untitled Site';
-        document.title = `Editor | ${currentSite.site_name || 'WordToSite'}`;
-
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('editorLayout').style.display = 'flex';
-
-        await loadSessions();
-        await createNewSession();
     } catch {
-        window.location.href = '/login.html';
+        window.location.href = '/dashboard.html';
+        return;
     }
+
+    document.getElementById('siteName').textContent = currentSite.site_name || 'Untitled Site';
+    document.title = `Editor | ${currentSite.site_name || 'WordToSite'}`;
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('editorLayout').style.display = 'flex';
+
+    await loadSessions();
+    await createNewSession();
 }
 
 // Sessions
@@ -374,12 +382,14 @@ async function createNewSession() {
             body: JSON.stringify({ siteId }),
         });
         const data = await res.json();
+        if (!data.success) throw new Error(data.error?.message || 'Failed to create session');
         currentSessionId = data.session.id;
         clearMessages();
         $welcomeMsg.style.display = '';
         await loadSessions();
     } catch (error) {
         console.error('Failed to create session:', error);
+        $welcomeMsg.innerHTML = `<h2>Could not start editor</h2><p>${escapeHtml(error.message)}<br>Check the server logs for details.</p>`;
     }
 }
 
