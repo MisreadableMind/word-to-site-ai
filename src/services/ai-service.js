@@ -437,6 +437,55 @@ Return JSON:
   }
 
   // ==========================================
+  // Chat (multi-turn conversation)
+  // ==========================================
+
+  /**
+   * Send a multi-turn conversation to OpenAI chat completions
+   * @param {Object[]} messages - Array of {role, content} messages
+   * @param {Object} options - Model options
+   * @returns {Promise<{content: string, usage: Object}>}
+   */
+  async chat(messages, options = {}) {
+    if (!this.hasOpenAI) {
+      throw new Error('OpenAI API key is required for chat');
+    }
+
+    const {
+      model = 'gpt-4o',
+      maxTokens = 4096,
+      temperature = 0.7,
+    } = options;
+
+    const body = {
+      model,
+      messages,
+      max_tokens: maxTokens,
+      temperature,
+    };
+
+    const response = await fetch(`${this.openaiBaseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error?.message || `OpenAI request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      content: data.choices[0].message.content,
+      usage: data.usage || null,
+    };
+  }
+
+  // ==========================================
   // API Calls
   // ==========================================
 

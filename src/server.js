@@ -19,6 +19,12 @@ import PluginAPIService from './services/plugin-api-service.js';
 import createPluginRouter from './routes/plugin-routes.js';
 import ProxyService from './services/proxy-service.js';
 import createProxyRouter from './routes/proxy-routes.js';
+import AuthService from './services/auth-service.js';
+import SiteService from './services/site-service.js';
+import createAuthRouter from './routes/auth-routes.js';
+import createSiteRouter from './routes/site-routes.js';
+import createEditorRouter from './routes/editor-routes.js';
+import { createOptionalUserAuth } from './middleware/user-auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,9 +44,20 @@ if (config.proxy?.enabled !== false) {
   app.use('/api/proxy', express.json({ limit: '1mb' }), createProxyRouter(proxyService));
 }
 
-// Basic auth middleware (skipped when NODE_ENV=development)
+// User Auth & Sites routes (mounted BEFORE basic auth - uses its own session auth)
+const authService = new AuthService();
+const siteService = new SiteService();
+const aiService = new AIService({ openaiApiKey: config.openai?.apiKey, geminiApiKey: config.gemini?.apiKey });
+const editorService = new EditorService({ aiService, siteService });
+if (config.auth?.enabled !== false) {
+  app.use('/api/auth', express.json(), createAuthRouter(authService));
+  app.use('/api/sites', express.json(), createSiteRouter(siteService, authService));
+  app.use('/api/editor/chat', express.json(), createEditorRouter(editorService, authService));
+}
+
+// Basic auth middleware (skipped when NODE_ENV=development or user auth is enabled)
 const BASIC_AUTH_PASSWORD = process.env.BASIC_AUTH_PASSWORD || 'WAAS';
-if (process.env.NODE_ENV !== 'development') {
+if (process.env.NODE_ENV !== 'development' && config.auth?.enabled === false) {
   app.use((req, res, next) => {
     const auth = req.headers.authorization;
     if (!auth || !auth.startsWith('Basic ')) {
@@ -561,8 +578,11 @@ app.get('/api/onboard/steps', (req, res) => {
   });
 });
 
+// Optional auth middleware for onboarding confirm endpoints
+const optionalAuth = createOptionalUserAuth(authService);
+
 // Confirm and proceed with deployment (full pipeline)
-app.post('/api/onboard/confirm', async (req, res) => {
+app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
   try {
     const {
       sessionId,
@@ -603,6 +623,25 @@ app.post('/api/onboard/confirm', async (req, res) => {
         contentContext,
         editorPreference,
       });
+
+      // Save domain-workflow site to user's dashboard if logged in
+      if (req.user && result.site) {
+        try {
+          await siteService.createSite(req.user.id, {
+            domain,
+            instawpId: result.site.id || null,
+            templateSlug: templateSlug || deploymentContext.template?.slug,
+            wpUrl: result.site.wp_url,
+            wpUsername: result.site.wp_username,
+            wpPassword: result.site.wp_password,
+            siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
+            onboardType: 'domain',
+            onboardData: { deploymentContext, contentContext },
+          });
+        } catch (err) {
+          console.warn('Failed to save site to user dashboard:', err.message);
+        }
+      }
 
       return res.json(result);
     }
@@ -717,6 +756,25 @@ app.post('/api/onboard/confirm', async (req, res) => {
       }
     }
 
+    // Save site to user's dashboard if logged in
+    if (req.user && site) {
+      try {
+        await siteService.createSite(req.user.id, {
+          domain: site.domain || null,
+          instawpId: site.id || null,
+          templateSlug: templateSlug || deploymentContext.template?.slug,
+          wpUrl: site.wp_url,
+          wpUsername: site.wp_username,
+          wpPassword: site.wp_password,
+          siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
+          onboardType: domain ? 'domain' : 'simple',
+          onboardData: { deploymentContext, contentContext },
+        });
+      } catch (err) {
+        console.warn('Failed to save site to user dashboard:', err.message);
+      }
+    }
+
     res.json(result);
   } catch (error) {
     console.error('Error confirming onboarding:', error);
@@ -728,7 +786,7 @@ app.post('/api/onboard/confirm', async (req, res) => {
 });
 
 // SSE streaming confirm endpoint for real-time deploy progress
-app.get('/api/onboard/confirm/stream', async (req, res) => {
+app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -785,6 +843,25 @@ app.get('/api/onboard/confirm/stream', async (req, res) => {
         deploymentContext,
         contentContext,
       });
+
+      // Save to user's dashboard
+      if (req.user && result.site) {
+        try {
+          await siteService.createSite(req.user.id, {
+            domain,
+            instawpId: result.site.id || null,
+            templateSlug: templateSlug || deploymentContext.template?.slug,
+            wpUrl: result.site.wp_url,
+            wpUsername: result.site.wp_username,
+            wpPassword: result.site.wp_password,
+            siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
+            onboardType: 'domain',
+            onboardData: { deploymentContext, contentContext },
+          });
+        } catch (err) {
+          console.warn('Failed to save site to user dashboard (stream):', err.message);
+        }
+      }
 
       res.write(`data: ${JSON.stringify({ step: 'result', data: result })}\n\n`);
     } else {
@@ -884,6 +961,25 @@ app.get('/api/onboard/confirm/stream', async (req, res) => {
           } catch (error) {
             result.steps.push({ step: 'content_generated', success: false, error: error.message });
           }
+        }
+      }
+
+      // Save to user's dashboard
+      if (req.user && site) {
+        try {
+          await siteService.createSite(req.user.id, {
+            domain: site.domain || null,
+            instawpId: site.id || null,
+            templateSlug: templateSlug || deploymentContext.template?.slug,
+            wpUrl: site.wp_url,
+            wpUsername: site.wp_username,
+            wpPassword: site.wp_password,
+            siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
+            onboardType: 'simple',
+            onboardData: { deploymentContext, contentContext },
+          });
+        } catch (err) {
+          console.warn('Failed to save site to user dashboard (stream):', err.message);
         }
       }
 
@@ -1216,6 +1312,18 @@ if (config.features?.voiceFlow) {
 }
 
 server.listen(PORT, () => {
+  // Hourly cleanup of expired sessions
+  if (config.auth?.enabled !== false) {
+    setInterval(async () => {
+      try {
+        const cleaned = await authService.cleanExpiredSessions();
+        if (cleaned > 0) console.log(`Cleaned ${cleaned} expired sessions`);
+      } catch (err) {
+        console.error('Session cleanup error:', err.message);
+      }
+    }, 60 * 60 * 1000);
+  }
+
   console.log(`\nWordToSite Server v3.0.0`);
   console.log(`Server running at http://localhost:${PORT}`);
   console.log(`\nCore endpoints:`);
@@ -1258,6 +1366,14 @@ server.listen(PORT, () => {
     console.log(`  POST /api/proxy/v1/chat/completions - AI proxy endpoint`);
     console.log(`  GET  /api/proxy/v1/models - Available models`);
     console.log(`  GET  /api/proxy/v1/usage - Usage stats`);
+  }
+  if (config.auth?.enabled !== false) {
+    console.log(`\nUser Auth endpoints:`);
+    console.log(`  POST /api/auth/register - Register new account`);
+    console.log(`  POST /api/auth/login - Log in`);
+    console.log(`  POST /api/auth/logout - Log out`);
+    console.log(`  GET  /api/auth/me - Current user`);
+    console.log(`  GET  /api/sites - List user's sites`);
   }
   if (config.features?.voiceFlow) {
     console.log(`\nWebSocket:`);

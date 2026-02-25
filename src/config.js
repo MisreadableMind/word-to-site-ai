@@ -80,6 +80,13 @@ export const config = {
     maxBatchSize: parseInt(process.env.PLUGIN_API_MAX_BATCH) || 500,
   },
 
+  // User Auth Configuration
+  auth: {
+    enabled: process.env.ENABLE_USER_AUTH !== 'false',
+    sessionMaxAge: parseInt(process.env.SESSION_MAX_AGE) || 7 * 24 * 60 * 60 * 1000,
+    bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 12,
+  },
+
   // Server Configuration
   server: {
     port: parseInt(process.env.PORT) || 3000,
