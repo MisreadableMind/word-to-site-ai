@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <title>WordToSite | Log in</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -185,7 +186,8 @@ form.addEventListener('submit', async (e) => {
             throw new Error(data.error?.message || 'Login failed');
         }
 
-        window.location.href = '/dashboard.html';
+        const redirect = new URLSearchParams(window.location.search).get('redirect');
+        window.location.href = redirect || '/dashboard.html';
     } catch (err) {
         errorMsg.textContent = err.message;
         errorMsg.classList.add('visible');
@@ -195,7 +197,8 @@ form.addEventListener('submit', async (e) => {
 });
 
 // Redirect if already logged in
-fetch('/api/auth/me').then(r => { if (r.ok) window.location.href = '/dashboard.html'; });
+const _redirect = new URLSearchParams(window.location.search).get('redirect');
+fetch('/api/auth/me').then(r => { if (r.ok) window.location.href = _redirect || '/dashboard.html'; });
 </script>
 </body>
 </html>
