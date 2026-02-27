@@ -67,6 +67,7 @@ export const INTERVIEW_QUESTIONS = [
   { id: 'advantages', question: 'What makes you different?', context: 'Your competitive advantages and USPs', required: false, step: 2 },
 ];
 
+// Static fallback — can be dynamically fetched via BaseSiteService.getLanguages()
 export const SUPPORTED_LANGUAGES = {
   en: 'English',
   uk: 'Ukrainian',

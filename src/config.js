@@ -87,11 +87,11 @@ export const config = {
     bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 12,
   },
 
-  // WaaS Base Site (skins & languages source)
-  waasBaseSite: {
-    url: process.env.WAAS_BASE_SITE_URL || 'https://flexify.instawp.dev',
-    username: process.env.WAAS_BASE_SITE_USERNAME || '',
-    appPassword: process.env.WAAS_BASE_SITE_APP_PASSWORD || '',
+  // Base Site Configuration (TRXWaaSWizard plugin)
+  baseSite: {
+    url: process.env.BASE_SITE_URL || 'https://flexify.instawp.dev',
+    username: process.env.BASE_SITE_USERNAME || 'lojowaguse1434',
+    appPassword: process.env.BASE_SITE_APP_PASSWORD || 'Q21m ygZS BmTp TQMG tlGq bOyi',
   },
 
   // Server Configuration

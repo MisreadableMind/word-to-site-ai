@@ -6,6 +6,7 @@
 import FirecrawlService from './services/firecrawl-service.js';
 import AIService from './services/ai-service.js';
 import VoiceService from './services/voice-service.js';
+import BaseSiteService from './services/base-site-service.js';
 import { createDeploymentContext, validateDeploymentContext } from './schemas/deployment-context.js';
 import { createContentContext, validateContentContext, buildContentContextFromInterview, buildContentContextFromScrape } from './schemas/content-context.js';
 import { DEFAULTS, ONBOARDING_FLOWS } from './constants.js';
@@ -26,10 +27,9 @@ export const OnboardingSteps = {
 };
 
 /**
- * Template catalog for matching
- * In production, this would come from a database or API
+ * Fallback template catalog used when the base site API is unavailable
  */
-const TEMPLATE_CATALOG = [
+const FALLBACK_TEMPLATE_CATALOG = [
   {
     slug: 'flexify',
     name: 'Flexify',
@@ -37,22 +37,6 @@ const TEMPLATE_CATALOG = [
     industries: ['business', 'agency', 'consulting', 'technology'],
     features: ['portfolio', 'team', 'services', 'blog', 'contact-form'],
     style: 'modern',
-  },
-  {
-    slug: 'flavor',
-    name: 'flavor',
-    description: 'Restaurant and food-focused theme',
-    industries: ['restaurant', 'food', 'cafe', 'bakery'],
-    features: ['menu', 'reservations', 'gallery', 'location'],
-    style: 'elegant',
-  },
-  {
-    slug: 'flavor',
-    name: 'flavor',
-    description: 'Blog-focused theme for content creators',
-    industries: ['blog', 'personal', 'lifestyle', 'media'],
-    features: ['blog', 'categories', 'newsletter', 'social'],
-    style: 'minimal',
   },
 ];
 
@@ -64,9 +48,41 @@ class OnboardingWorkflow {
       geminiApiKey: options.geminiApiKey,
     });
     this.voice = new VoiceService({ aiService: this.ai });
+    this.baseSite = new BaseSiteService();
 
     this.onProgress = options.onProgress || (() => {});
-    this.templateCatalog = options.templateCatalog || TEMPLATE_CATALOG;
+    this.templateCatalog = options.templateCatalog || null;
+  }
+
+  /**
+   * Load template catalog from the base site API (cached).
+   * Falls back to a hardcoded catalog if the API is unavailable.
+   * @returns {Promise<Object[]>}
+   */
+  async loadTemplateCatalog() {
+    if (this.templateCatalog) {
+      return this.templateCatalog;
+    }
+
+    try {
+      const skins = await this.baseSite.getSkins();
+      this.templateCatalog = Array.isArray(skins) && skins.length > 0
+        ? skins.map(skin => ({
+            slug: skin.slug,
+            name: skin.title || skin.slug,
+            description: skin.keywords || '',
+            industries: skin.category ? [skin.category] : [],
+            features: [],
+            style: 'modern',
+            ...skin,
+          }))
+        : FALLBACK_TEMPLATE_CATALOG;
+    } catch (error) {
+      console.warn('Failed to load skins from base site, using fallback catalog:', error.message);
+      this.templateCatalog = FALLBACK_TEMPLATE_CATALOG;
+    }
+
+    return this.templateCatalog;
   }
 
   /**
@@ -128,6 +144,7 @@ class OnboardingWorkflow {
         message: 'Matching to best template...',
       });
 
+      await this.loadTemplateCatalog();
       const analysis = await this.ai.analyzeWebsite(scraped, this.templateCatalog);
       const templateMatch = await this.ai.matchTemplate(analysis, this.templateCatalog);
 
@@ -238,6 +255,7 @@ class OnboardingWorkflow {
         message: 'Finding the perfect template...',
       });
 
+      await this.loadTemplateCatalog();
       const brief = processedInterview.brief;
       const templateMatch = await this.matchTemplateFromBrief(brief);
 
