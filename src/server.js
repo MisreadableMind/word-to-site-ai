@@ -16,6 +16,9 @@ import WordPressService from './services/wordpress-service.js';
 import BaseSiteService from './services/base-site-service.js';
 import VoiceHandler from './websocket/voice-handler.js';
 import { ONBOARDING_FLOWS, EDITOR_MODES } from './constants.js';
+import OpenAI from 'openai';
+import { zodTextFormat } from 'openai/helpers/zod';
+import { z } from 'zod';
 import PluginAPIService from './services/plugin-api-service.js';
 import createPluginRouter from './routes/plugin-routes.js';
 import ProxyService from './services/proxy-service.js';
@@ -25,7 +28,7 @@ import SiteService from './services/site-service.js';
 import createAuthRouter from './routes/auth-routes.js';
 import createSiteRouter from './routes/site-routes.js';
 import createEditorRouter from './routes/editor-routes.js';
-import { createOptionalUserAuth } from './middleware/user-auth.js';
+import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -102,6 +105,84 @@ app.get('/api/languages', async (req, res) => {
     res.json({ success: true, languages });
   } catch (error) {
     console.error('Error fetching languages:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/skins/recommend — AI-ranked skins based on user onboarding input
+const SkinRecommendation = z.object({
+  recommended: z.array(z.object({
+    slug: z.string().describe('Skin slug from the available list'),
+    reason: z.string().describe('Short reason why this skin fits, 1 sentence'),
+    confidence: z.number().describe('Match confidence from 0 to 1'),
+  })).describe('Top 5-8 skins ranked by relevance, best first'),
+});
+
+app.post('/api/skins/recommend', async (req, res) => {
+  try {
+    const { industry, services, aboutUs, companyName } = req.body;
+
+    const allSkins = await baseSiteService.getSkins();
+    const skinList = allSkins.map(s => `${s.slug} (${s.title}) [${s.category}] — ${s.keywords}`).join('\n');
+
+    if (!config.openai?.apiKey || !industry) {
+      // Fallback: keyword matching
+      const query = [industry, services, aboutUs].filter(Boolean).join(' ').toLowerCase();
+      const scored = allSkins.map(skin => {
+        const kw = (skin.keywords + ' ' + skin.category + ' ' + skin.title).toLowerCase();
+        const words = query.split(/[\s,]+/);
+        const hits = words.filter(w => w.length > 2 && kw.includes(w)).length;
+        return { ...skin, score: hits };
+      }).sort((a, b) => b.score - a.score).slice(0, 6);
+
+      return res.json({
+        success: true,
+        recommended: scored.map(s => ({
+          slug: s.slug,
+          title: s.title,
+          category: s.category,
+          demo_url: s.demo_url,
+          reason: `Matches your ${industry || 'business'} keywords`,
+          confidence: Math.min(0.9, 0.3 + s.score * 0.15),
+        })),
+      });
+    }
+
+    const openai = new OpenAI({ apiKey: config.openai.apiKey });
+
+    const response = await openai.responses.parse({
+      model: 'gpt-5-mini',
+      input: [
+        {
+          role: 'system',
+          content: `You recommend website skins/templates. Given a user's business info, pick the 5-8 most relevant skins from this catalog. Rank by relevance, best first.\n\nAvailable skins:\n${skinList}`,
+        },
+        {
+          role: 'user',
+          content: `Company: ${companyName || 'N/A'}\nIndustry: ${industry}\nServices: ${services || 'N/A'}\nAbout: ${aboutUs || 'N/A'}`,
+        },
+      ],
+      text: { format: zodTextFormat(SkinRecommendation, 'skin_recommendation') },
+    });
+
+    const recs = response.output_parsed?.recommended || [];
+
+    // Enrich with full skin data
+    const enriched = recs.map(rec => {
+      const skin = allSkins.find(s => s.slug === rec.slug);
+      return {
+        slug: rec.slug,
+        title: skin?.title || rec.slug,
+        category: skin?.category || '',
+        demo_url: skin?.demo_url || '',
+        reason: rec.reason,
+        confidence: rec.confidence,
+      };
+    });
+
+    res.json({ success: true, recommended: enriched });
+  } catch (error) {
+    console.error('Skin recommendation error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -396,8 +477,40 @@ app.get('/api/health', (req, res) => {
 // VOICE TRANSCRIPTION ENDPOINT
 // ==========================================
 
-// POST /api/voice/transcribe - Transcribe uploaded audio file
-app.post('/api/voice/transcribe', upload.single('audio'), async (req, res) => {
+// --- Voice rate limiter (15 requests per hour per user) ---
+const voiceRateLimit = new Map();
+const VOICE_RATE_LIMIT = 15;
+const VOICE_RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function checkVoiceRateLimit(userId) {
+  const now = Date.now();
+  const entry = voiceRateLimit.get(userId);
+  if (!entry || now > entry.windowStart + VOICE_RATE_WINDOW) {
+    voiceRateLimit.set(userId, { windowStart: now, count: 1 });
+    return { allowed: true, remaining: VOICE_RATE_LIMIT - 1 };
+  }
+  if (entry.count >= VOICE_RATE_LIMIT) {
+    const resetIn = Math.ceil((entry.windowStart + VOICE_RATE_WINDOW - now) / 60000);
+    return { allowed: false, remaining: 0, resetIn };
+  }
+  entry.count++;
+  return { allowed: true, remaining: VOICE_RATE_LIMIT - entry.count };
+}
+
+// Auth middleware for voice
+const requireAuth = createUserAuth(authService);
+
+// POST /api/voice/transcribe - Transcribe uploaded audio file (requires login, rate-limited)
+app.post('/api/voice/transcribe', requireAuth, upload.single('audio'), async (req, res) => {
+  // Rate limit check
+  const rateCheck = checkVoiceRateLimit(req.user.id);
+  res.set('X-RateLimit-Remaining', String(rateCheck.remaining));
+  if (!rateCheck.allowed) {
+    return res.status(429).json({
+      success: false,
+      error: `Voice limit reached (${VOICE_RATE_LIMIT}/hour). Resets in ${rateCheck.resetIn} minutes. You can still type your answers.`,
+    });
+  }
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -520,6 +633,134 @@ app.get('/api/onboard/analyze-url/stream', async (req, res) => {
 });
 
 // Generate tagline from company name and industry
+const IndustryMatch = z.object({
+  matched: z.string().describe('The closest matching industry from the provided options, or the original text if none match'),
+});
+
+app.post('/api/onboard/match-industry', async (req, res) => {
+  try {
+    const { text, options } = req.body;
+
+    if (!text || !options?.length) {
+      return res.status(400).json({ success: false, error: 'text and options are required' });
+    }
+
+    if (!config.openai?.apiKey) {
+      return res.json({ success: true, matched: text });
+    }
+
+    const openai = new OpenAI({ apiKey: config.openai.apiKey });
+
+    const response = await openai.responses.parse({
+      model: 'gpt-5-mini',
+      input: [
+        {
+          role: 'system',
+          content: `You are a classifier. The user said an industry name via voice. Match it to the closest option from this list: ${options.join(', ')}. If none match well, use the original text.`,
+        },
+        { role: 'user', content: text },
+      ],
+      text: { format: zodTextFormat(IndustryMatch, 'industry_match') },
+    });
+
+    const matched = response.output_parsed?.matched || text;
+    res.json({ success: true, matched });
+  } catch (error) {
+    console.error('Industry match error:', error);
+    res.json({ success: true, matched: req.body.text });
+  }
+});
+
+const SuggestedOptions = z.object({
+  services: z.array(z.string().describe('Short service/product name, 2-4 words')).describe('10-12 services relevant to this business'),
+  about: z.array(z.string().describe('Short about-us phrase')).describe('6-8 about-us phrases describing what this business might do'),
+});
+
+app.post('/api/onboard/suggest-options', async (req, res) => {
+  try {
+    const { companyName, industry } = req.body;
+
+    if (!companyName || !industry) {
+      return res.status(400).json({ success: false, error: 'companyName and industry are required' });
+    }
+
+    if (!config.openai?.apiKey) {
+      return res.json({ success: true, services: null, about: null });
+    }
+
+    const openai = new OpenAI({ apiKey: config.openai.apiKey });
+
+    const response = await openai.responses.parse({
+      model: 'gpt-5-mini',
+      input: [
+        {
+          role: 'system',
+          content: 'You suggest options for a business website onboarding form. Given a company name and industry, suggest relevant services/products and about-us phrases.',
+        },
+        { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}` },
+      ],
+      text: { format: zodTextFormat(SuggestedOptions, 'suggested_options') },
+    });
+
+    const parsed = response.output_parsed;
+    res.json({
+      success: true,
+      services: parsed?.services || null,
+      about: parsed?.about || null,
+    });
+  } catch (error) {
+    console.error('Suggest options error:', error);
+    res.json({ success: true, services: null, about: null });
+  }
+});
+
+const Step2Suggestions = z.object({
+  team: z.string().describe('A 2-3 sentence paragraph about the team, written in first person plural (we/our), professional but warm tone'),
+  advantages: z.string().describe('A 2-3 sentence paragraph about competitive advantages and unique selling points, written in first person plural'),
+});
+
+app.post('/api/onboard/suggest-step2', async (req, res) => {
+  try {
+    const { companyName, industry, services } = req.body;
+
+    if (!companyName || !industry) {
+      return res.status(400).json({ success: false, error: 'companyName and industry are required' });
+    }
+
+    if (!config.openai?.apiKey) {
+      return res.json({ success: true, team: null, advantages: null });
+    }
+
+    const openai = new OpenAI({ apiKey: config.openai.apiKey });
+
+    const response = await openai.responses.parse({
+      model: 'gpt-5-mini',
+      input: [
+        {
+          role: 'system',
+          content: 'You write website copy for businesses. Given a company name, industry, and services, generate an "about the team" paragraph and a "what makes us different" paragraph. Keep each to 2-3 sentences. Write in first person plural (we/our). Be specific to the industry, not generic.',
+        },
+        { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}\nServices: ${services || 'N/A'}` },
+      ],
+      text: { format: zodTextFormat(Step2Suggestions, 'step2_suggestions') },
+    });
+
+    const parsed = response.output_parsed;
+    res.json({
+      success: true,
+      team: parsed?.team || null,
+      advantages: parsed?.advantages || null,
+    });
+  } catch (error) {
+    console.error('Step 2 suggestions error:', error);
+    res.json({ success: true, team: null, advantages: null });
+  }
+});
+
+const Tagline = z.object({
+  tagline: z.string().describe('A short, catchy tagline, max 8 words'),
+});
+
 app.post('/api/onboard/generate-tagline', async (req, res) => {
   try {
     const { companyName, industry } = req.body;
@@ -531,18 +772,19 @@ app.post('/api/onboard/generate-tagline', async (req, res) => {
       });
     }
 
-    const aiService = new AIService({
-      openaiApiKey: config.openai?.apiKey,
-      geminiApiKey: config.gemini?.apiKey,
-    });
-
-    if (aiService.hasOpenAI) {
+    if (config.openai?.apiKey) {
       try {
-        const result = await aiService.chat([
-          { role: 'system', content: 'You are a branding expert. Generate a short, catchy tagline (max 8 words) for a business. Return ONLY the tagline text, nothing else.' },
-          { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}` },
-        ]);
-        return res.json({ success: true, tagline: result.trim() });
+        const openai = new OpenAI({ apiKey: config.openai.apiKey });
+        const response = await openai.responses.parse({
+          model: 'gpt-5-mini',
+          input: [
+            { role: 'system', content: 'You are a branding expert. Generate a short, catchy tagline (max 8 words) for a business.' },
+            { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}` },
+          ],
+          text: { format: zodTextFormat(Tagline, 'tagline') },
+        });
+        const tagline = response.output_parsed?.tagline;
+        if (tagline) return res.json({ success: true, tagline });
       } catch (error) {
         console.warn('AI tagline generation failed:', error.message);
       }
@@ -1373,6 +1615,10 @@ function startServer(port) {
     console.log(`\nOnboarding endpoints:`);
     console.log(`  GET  /api/onboard/flows - Get available flows`);
     console.log(`  POST /api/onboard/analyze-url - Flow A: Analyze existing website`);
+    console.log(`  POST /api/skins/recommend - AI-ranked skin recommendations`);
+    console.log(`  POST /api/onboard/match-industry - Match voice input to industry option`);
+    console.log(`  POST /api/onboard/suggest-options - AI-suggested services & about chips`);
+    console.log(`  POST /api/onboard/suggest-step2 - AI-generated team & advantages text`);
     console.log(`  POST /api/onboard/generate-tagline - Generate AI tagline`);
     console.log(`  POST /api/onboard/interview/complete - Flow B: Submit interview`);
     console.log(`  POST /api/onboard/confirm - Confirm and deploy`);
