@@ -87,6 +87,13 @@ export const config = {
     bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 12,
   },
 
+  // Base Site Configuration (TRXWaaSWizard plugin)
+  baseSite: {
+    url: process.env.BASE_SITE_URL || 'https://flexify.instawp.dev',
+    username: process.env.BASE_SITE_USERNAME || 'lojowaguse1434',
+    appPassword: process.env.BASE_SITE_APP_PASSWORD || 'Q21m ygZS BmTp TQMG tlGq bOyi',
+  },
+
   // Server Configuration
   server: {
     port: parseInt(process.env.PORT) || 3000,

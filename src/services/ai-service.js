@@ -1,9 +1,10 @@
 /**
  * AI Service
  * Multi-provider AI wrapper for content generation and analysis
- * Supports: OpenAI (GPT-4o, Whisper), Google Gemini
+ * Supports: OpenAI (GPT-4o, gpt-4o-transcribe, Whisper), Google Gemini
  */
 
+import OpenAI from 'openai';
 import { config } from '../config.js';
 import { DEFAULTS, CONTENT_TONES } from '../constants.js';
 
@@ -14,6 +15,11 @@ class AIService {
 
     this.openaiBaseUrl = 'https://api.openai.com/v1';
     this.geminiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+
+    // Initialize OpenAI SDK client if API key is available
+    this.openai = this.openaiApiKey
+      ? new OpenAI({ apiKey: this.openaiApiKey })
+      : null;
   }
 
   /**
@@ -263,47 +269,45 @@ Return ONLY the excerpt text, no quotes or formatting.`;
   }
 
   // ==========================================
-  // Interview & Voice (GPT-4o + Whisper)
+  // Interview & Voice (GPT-4o + gpt-4o-transcribe / Whisper fallback)
   // ==========================================
 
   /**
-   * Transcribe audio using Whisper
+   * Transcribe audio using OpenAI SDK
+   * Uses gpt-4o-transcribe for higher quality; falls back to whisper-1 on error.
    * @param {Buffer|Blob} audioBuffer - Audio data
    * @param {string} language - Language code (optional, 'auto' for detection)
    * @returns {Promise<Object>} Transcription result
    */
   async transcribeAudio(audioBuffer, language = 'auto') {
-    if (!this.hasOpenAI) {
+    if (!this.openai) {
       throw new Error('OpenAI API key is required for audio transcription');
     }
 
-    const formData = new FormData();
-    formData.append('file', new Blob([audioBuffer]), 'audio.webm');
-    formData.append('model', 'whisper-1');
+    const file = new File([audioBuffer], 'audio.webm', { type: 'audio/webm' });
+    const models = ['gpt-4o-transcribe', 'whisper-1'];
 
-    if (language !== 'auto') {
-      formData.append('language', language);
+    for (const model of models) {
+      try {
+        const params = { file, model };
+        if (language !== 'auto') {
+          params.language = language;
+        }
+
+        const transcription = await this.openai.audio.transcriptions.create(params);
+
+        return {
+          text: transcription.text,
+          language: transcription.language,
+        };
+      } catch (error) {
+        if (model !== models[models.length - 1]) {
+          console.warn(`${model} transcription failed, trying fallback:`, error.message);
+          continue;
+        }
+        throw error;
+      }
     }
-
-    const response = await fetch(`${this.openaiBaseUrl}/audio/transcriptions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.openaiApiKey}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.error?.message || 'Transcription failed');
-    }
-
-    const data = await response.json();
-
-    return {
-      text: data.text,
-      language: data.language,
-    };
   }
 
   /**
