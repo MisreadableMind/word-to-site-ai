@@ -25,6 +25,7 @@ import createAuthRouter from './routes/auth-routes.js';
 import createSiteRouter from './routes/site-routes.js';
 import createEditorRouter from './routes/editor-routes.js';
 import { createOptionalUserAuth } from './middleware/user-auth.js';
+import SkinsService from './services/skins-service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,6 +50,7 @@ const authService = new AuthService();
 const siteService = new SiteService();
 const aiService = new AIService({ openaiApiKey: config.openai?.apiKey, geminiApiKey: config.gemini?.apiKey });
 const editorService = new EditorService({ aiService, siteService });
+const skinsService = new SkinsService();
 if (config.auth?.enabled !== false) {
   app.use('/api/auth', express.json(), createAuthRouter(authService));
   app.use('/api/sites', express.json(), createSiteRouter(siteService, authService));
@@ -325,7 +327,7 @@ app.get('/api/ssl-status/:siteId', async (req, res) => {
 });
 
 // Updated: Config check with domain workflow and AI status
-app.get('/api/config', (req, res) => {
+app.get('/api/config', async (req, res) => {
   res.json({
     hasApiKey: !!config.instawp.apiKey,
     templateSlug: config.instawp.templateSlug,
@@ -353,7 +355,27 @@ app.get('/api/config', (req, res) => {
       onboardingFlowA: true,
       onboardingFlowB: true,
     },
+    skins: await skinsService.getSkins().catch(() => null),
   });
+});
+
+// Skins & Languages (cached server-side)
+app.get('/api/skins', async (req, res) => {
+  try {
+    const skins = await skinsService.getSkins();
+    res.json({ success: true, data: skins });
+  } catch (error) {
+    res.status(502).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/languages', async (req, res) => {
+  try {
+    const languages = await skinsService.getLanguages();
+    res.json({ success: true, data: languages });
+  } catch (error) {
+    res.status(502).json({ success: false, error: error.message });
+  }
 });
 
 // Updated: Health check with version
@@ -1329,6 +1351,8 @@ server.listen(PORT, () => {
   console.log(`\nCore endpoints:`);
   console.log(`  GET  /api/health - Health check`);
   console.log(`  GET  /api/config - Configuration status`);
+  console.log(`  GET  /api/skins - Cached skins list`);
+  console.log(`  GET  /api/languages - Cached languages list`);
   console.log(`  POST /api/create-site - Create site (no domain)`);
   console.log(`  POST /api/create-site-with-domain - Full domain workflow`);
   console.log(`\nVoice endpoints:`);
