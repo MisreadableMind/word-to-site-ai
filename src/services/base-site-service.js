@@ -89,12 +89,23 @@ class BaseSiteService {
 
   /**
    * Fetch available skins (templates) from the TRXWaaSWizard plugin
+   * Returns normalized array of skins from the get-skins endpoint.
    * @returns {Promise<Object[]>}
    */
   async getSkins() {
-    return this.getCached('skins', () =>
-      this.request('trx_waas_wizard/v1/skins')
-    );
+    return this.getCached('skins', async () => {
+      const raw = await this.request('trx-waas-wizard/v1/get-skins');
+      const skinsMap = raw.skins || {};
+      return Object.entries(skinsMap).map(([slug, skin]) => ({
+        slug,
+        title: skin.title || slug,
+        category: skin.category || '',
+        keywords: skin.keywords || '',
+        demo_url: skin.demo_url ? skin.demo_url.replace(/^\/\//, 'https://') : '',
+        version: skin.version || '',
+        installed: !!skin.installed,
+      }));
+    });
   }
 
   /**
@@ -102,9 +113,10 @@ class BaseSiteService {
    * @returns {Promise<Object[]>}
    */
   async getLanguages() {
-    return this.getCached('languages', () =>
-      this.request('trx_waas_wizard/v1/languages')
-    );
+    return this.getCached('languages', async () => {
+      const raw = await this.request('trx-waas-wizard/v1/save-wizard-data/languages');
+      return raw.languages || [];
+    });
   }
 
   /**

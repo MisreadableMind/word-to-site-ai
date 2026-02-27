@@ -66,14 +66,14 @@ class OnboardingWorkflow {
 
     try {
       const skins = await this.baseSite.getSkins();
-      this.templateCatalog = Array.isArray(skins)
+      this.templateCatalog = Array.isArray(skins) && skins.length > 0
         ? skins.map(skin => ({
-            slug: skin.slug || skin.name,
-            name: skin.name || skin.slug,
-            description: skin.description || '',
-            industries: skin.industries || [],
-            features: skin.features || [],
-            style: skin.style || 'modern',
+            slug: skin.slug,
+            name: skin.title || skin.slug,
+            description: skin.keywords || '',
+            industries: skin.category ? [skin.category] : [],
+            features: [],
+            style: 'modern',
             ...skin,
           }))
         : FALLBACK_TEMPLATE_CATALOG;
