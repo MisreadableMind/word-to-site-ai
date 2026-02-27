@@ -396,10 +396,98 @@
             animation: spin 0.7s linear infinite;
         }
 
-        .input-with-mic input.transcribing-field,
-        .input-with-mic textarea.transcribing-field {
+        /* Recording: input border glow */
+        .input-with-mic.is-recording input,
+        .input-with-mic.is-recording textarea {
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
+        }
+
+        .input-with-mic.is-transcribing input,
+        .input-with-mic.is-transcribing textarea {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(108,92,231,0.12);
             color: var(--text-muted);
             font-style: italic;
+        }
+
+        /* Recording status bar */
+        .voice-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+            animation: fadeSlideIn 200ms ease;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .voice-status.recording {
+            background: rgba(220,38,38,0.08);
+            color: var(--error);
+        }
+
+        .voice-status.transcribing {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .voice-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .voice-status.recording .voice-status-dot {
+            background: var(--error);
+            animation: blink-dot 1s ease infinite;
+        }
+
+        @keyframes blink-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .voice-status-text { flex: 1; }
+        .voice-status-timer { font-variant-numeric: tabular-nums; }
+
+        .voice-status-hint {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .voice-status-spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(108,92,231,0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        /* Audio level bars */
+        .voice-level {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            height: 16px;
+        }
+
+        .voice-level-bar {
+            width: 3px;
+            border-radius: 2px;
+            background: var(--error);
+            transition: height 80ms ease;
         }
 
         /* --- TAGLINE BOX --- */
@@ -1458,9 +1546,109 @@
     }
 
     // --- Per-field Voice Recording ---
+    let recordingTimer = null;
+    let recordingSeconds = 0;
+    let audioContext = null;
+    let analyser = null;
+    let levelAnimFrame = null;
+
+    function formatTime(s) {
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return `${m}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function getWrapper(fieldId) {
+        return document.getElementById(`field-${fieldId}`).closest('.input-with-mic');
+    }
+
+    function removeStatusBar(fieldId) {
+        const wrapper = getWrapper(fieldId);
+        const bar = wrapper?.querySelector('.voice-status');
+        if (bar) bar.remove();
+    }
+
+    function showRecordingStatus(fieldId) {
+        removeStatusBar(fieldId);
+        const wrapper = getWrapper(fieldId);
+        wrapper.classList.add('is-recording');
+        const bar = document.createElement('div');
+        bar.className = 'voice-status recording';
+        bar.innerHTML = `
+            <span class="voice-status-dot"></span>
+            <span class="voice-level" id="voiceLevel-${fieldId}">
+                <span class="voice-level-bar" style="height:4px"></span>
+                <span class="voice-level-bar" style="height:4px"></span>
+                <span class="voice-level-bar" style="height:4px"></span>
+                <span class="voice-level-bar" style="height:4px"></span>
+                <span class="voice-level-bar" style="height:4px"></span>
+            </span>
+            <span class="voice-status-text">Listening...</span>
+            <span class="voice-status-timer" id="voiceTimer-${fieldId}">0:00</span>
+            <span class="voice-status-hint">tap mic to stop</span>
+        `;
+        wrapper.appendChild(bar);
+    }
+
+    function showTranscribingStatus(fieldId) {
+        removeStatusBar(fieldId);
+        const wrapper = getWrapper(fieldId);
+        wrapper.classList.remove('is-recording');
+        wrapper.classList.add('is-transcribing');
+        const bar = document.createElement('div');
+        bar.className = 'voice-status transcribing';
+        bar.innerHTML = `
+            <span class="voice-status-spinner"></span>
+            <span class="voice-status-text">Transcribing audio...</span>
+        `;
+        wrapper.appendChild(bar);
+    }
+
+    function clearVoiceState(fieldId) {
+        removeStatusBar(fieldId);
+        const wrapper = getWrapper(fieldId);
+        wrapper.classList.remove('is-recording', 'is-transcribing');
+        if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
+        if (levelAnimFrame) { cancelAnimationFrame(levelAnimFrame); levelAnimFrame = null; }
+        recordingSeconds = 0;
+    }
+
+    function startAudioLevel(stream, fieldId) {
+        try {
+            audioContext = new AudioContext();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            function updateLevel() {
+                analyser.getByteFrequencyData(dataArray);
+                // Sample 5 frequency bands
+                const bands = [4, 8, 14, 22, 32];
+                const levelEl = document.getElementById(`voiceLevel-${fieldId}`);
+                if (!levelEl) return;
+                const bars = levelEl.querySelectorAll('.voice-level-bar');
+                bands.forEach((b, i) => {
+                    const val = dataArray[b] / 255;
+                    bars[i].style.height = `${Math.max(3, val * 16)}px`;
+                });
+                levelAnimFrame = requestAnimationFrame(updateLevel);
+            }
+            updateLevel();
+        } catch {
+            // Web Audio not supported — visual level just won't animate
+        }
+    }
+
+    function stopAudioLevel() {
+        if (levelAnimFrame) { cancelAnimationFrame(levelAnimFrame); levelAnimFrame = null; }
+        if (audioContext) { audioContext.close().catch(() => {}); audioContext = null; }
+        analyser = null;
+    }
+
     async function recordForField(fieldId) {
         const btn = document.getElementById(`mic-${fieldId}`);
-        const isTextarea = document.getElementById(`field-${fieldId}`).tagName === 'TEXTAREA';
         const targetEl = document.getElementById(`field-${fieldId}`);
 
         // If already recording for this field, stop
@@ -1469,6 +1657,7 @@
             isRecording = false;
             recordingFieldId = null;
             btn.classList.remove('recording');
+            stopAudioLevel();
             return;
         }
 
@@ -1477,6 +1666,8 @@
             mediaRecorder.stop();
             const prevBtn = document.getElementById(`mic-${recordingFieldId}`);
             if (prevBtn) prevBtn.classList.remove('recording');
+            clearVoiceState(recordingFieldId);
+            stopAudioLevel();
         }
 
         try {
@@ -1485,21 +1676,39 @@
             audioChunks = [];
             recordingFieldId = fieldId;
 
+            // Show recording UI
+            showRecordingStatus(fieldId);
+            startAudioLevel(stream, fieldId);
+
+            // Start timer
+            recordingSeconds = 0;
+            recordingTimer = setInterval(() => {
+                recordingSeconds++;
+                const timerEl = document.getElementById(`voiceTimer-${fieldId}`);
+                if (timerEl) timerEl.textContent = formatTime(recordingSeconds);
+            }, 1000);
+
             mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
 
             mediaRecorder.onstop = async () => {
                 stream.getTracks().forEach(t => t.stop());
-                if (audioChunks.length === 0) return;
+                stopAudioLevel();
+                if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
+
+                if (audioChunks.length === 0) {
+                    clearVoiceState(fieldId);
+                    return;
+                }
 
                 const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
 
                 // Show transcribing state
                 btn.classList.add('transcribing');
+                showTranscribingStatus(fieldId);
                 const prevPlaceholder = targetEl.placeholder;
                 const prevValue = targetEl.value;
                 targetEl.value = '';
-                targetEl.placeholder = 'Transcribing...';
-                targetEl.classList.add('transcribing-field');
+                targetEl.placeholder = 'Transcribing your voice...';
 
                 try {
                     const formData = new FormData();
@@ -1522,7 +1731,7 @@
                 } finally {
                     btn.classList.remove('transcribing');
                     targetEl.placeholder = prevPlaceholder;
-                    targetEl.classList.remove('transcribing-field');
+                    clearVoiceState(fieldId);
                 }
             };
 
@@ -1530,7 +1739,7 @@
             isRecording = true;
             btn.classList.add('recording');
         } catch {
-            // Mic access denied - silently fail
+            clearVoiceState(fieldId);
         }
     }
 
