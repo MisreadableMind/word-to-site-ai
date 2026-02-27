@@ -1,7 +1,7 @@
 /**
  * AI Service
  * Multi-provider AI wrapper for content generation and analysis
- * Supports: OpenAI (GPT-4o, Whisper), Google Gemini
+ * Supports: OpenAI (GPT-4o, gpt-4o-transcribe, Whisper), Google Gemini
  */
 
 import { config } from '../config.js';
@@ -263,11 +263,12 @@ Return ONLY the excerpt text, no quotes or formatting.`;
   }
 
   // ==========================================
-  // Interview & Voice (GPT-4o + Whisper)
+  // Interview & Voice (GPT-4o + gpt-4o-transcribe / Whisper fallback)
   // ==========================================
 
   /**
-   * Transcribe audio using Whisper
+   * Transcribe audio using OpenAI
+   * Uses gpt-4o-transcribe for higher quality; falls back to whisper-1 on error.
    * @param {Buffer|Blob} audioBuffer - Audio data
    * @param {string} language - Language code (optional, 'auto' for detection)
    * @returns {Promise<Object>} Transcription result
@@ -277,33 +278,51 @@ Return ONLY the excerpt text, no quotes or formatting.`;
       throw new Error('OpenAI API key is required for audio transcription');
     }
 
-    const formData = new FormData();
-    formData.append('file', new Blob([audioBuffer]), 'audio.webm');
-    formData.append('model', 'whisper-1');
+    // Try gpt-4o-transcribe first, fall back to whisper-1
+    const models = ['gpt-4o-transcribe', 'whisper-1'];
 
-    if (language !== 'auto') {
-      formData.append('language', language);
+    for (const model of models) {
+      try {
+        const formData = new FormData();
+        formData.append('file', new Blob([audioBuffer]), 'audio.webm');
+        formData.append('model', model);
+
+        if (language !== 'auto') {
+          formData.append('language', language);
+        }
+
+        const response = await fetch(`${this.openaiBaseUrl}/audio/transcriptions`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.openaiApiKey}`,
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          const message = error.error?.message || `Transcription failed: ${response.status}`;
+          // If gpt-4o-transcribe fails, try whisper-1
+          if (model !== models[models.length - 1]) {
+            console.warn(`${model} transcription failed, trying fallback:`, message);
+            continue;
+          }
+          throw new Error(message);
+        }
+
+        const data = await response.json();
+        return {
+          text: data.text,
+          language: data.language,
+        };
+      } catch (error) {
+        if (model !== models[models.length - 1]) {
+          console.warn(`${model} transcription failed, trying fallback:`, error.message);
+          continue;
+        }
+        throw error;
+      }
     }
-
-    const response = await fetch(`${this.openaiBaseUrl}/audio/transcriptions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.openaiApiKey}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.error?.message || 'Transcription failed');
-    }
-
-    const data = await response.json();
-
-    return {
-      text: data.text,
-      language: data.language,
-    };
   }
 
   /**
