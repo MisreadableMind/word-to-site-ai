@@ -377,6 +377,31 @@
             animation: pulse-btn 1.5s ease infinite;
         }
 
+        .mic-btn.transcribing {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            pointer-events: none;
+        }
+
+        .mic-btn.transcribing svg { display: none; }
+
+        .mic-btn.transcribing::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        .input-with-mic input.transcribing-field,
+        .input-with-mic textarea.transcribing-field {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
         /* --- TAGLINE BOX --- */
         .tagline-box {
             padding: 12px 16px;
@@ -1468,6 +1493,14 @@
 
                 const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
 
+                // Show transcribing state
+                btn.classList.add('transcribing');
+                const prevPlaceholder = targetEl.placeholder;
+                const prevValue = targetEl.value;
+                targetEl.value = '';
+                targetEl.placeholder = 'Transcribing...';
+                targetEl.classList.add('transcribing-field');
+
                 try {
                     const formData = new FormData();
                     formData.append('audio', audioBlob, 'recording.webm');
@@ -1481,9 +1514,15 @@
                     if (data.success && data.text) {
                         targetEl.value = data.text;
                         targetEl.dispatchEvent(new Event('input'));
+                    } else {
+                        targetEl.value = prevValue;
                     }
                 } catch {
-                    // Silently fail - user can type manually
+                    targetEl.value = prevValue;
+                } finally {
+                    btn.classList.remove('transcribing');
+                    targetEl.placeholder = prevPlaceholder;
+                    targetEl.classList.remove('transcribing-field');
                 }
             };
 
