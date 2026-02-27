@@ -1337,7 +1337,8 @@ if (config.features?.voiceFlow) {
   voiceHandler.initialize(server);
 }
 
-server.listen(PORT, () => {
+function startServer(port) {
+  server.listen(port, () => {
   // Hourly cleanup of expired sessions
   if (config.auth?.enabled !== false) {
     setInterval(async () => {
@@ -1351,7 +1352,7 @@ server.listen(PORT, () => {
   }
 
   console.log(`\nWordToSite Server v3.0.0`);
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${port}`);
   console.log(`\nCore endpoints:`);
   console.log(`  GET  /api/health - Health check`);
   console.log(`  GET  /api/config - Configuration status`);
@@ -1405,7 +1406,21 @@ server.listen(PORT, () => {
     console.log(`\nWebSocket:`);
     console.log(`  WS   /ws/voice - Voice interview handler`);
   }
-  console.log(`\n  → App:    http://localhost:${PORT}/app.html`);
-  console.log(`  → Health: http://localhost:${PORT}/api/health`);
-  console.log(`  → Config: http://localhost:${PORT}/api/config\n`);
-});
+  console.log(`\n  → App:    http://localhost:${port}/app.html`);
+  console.log(`  → Health: http://localhost:${port}/api/health`);
+  console.log(`  → Config: http://localhost:${port}/api/config\n`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      const nextPort = port + 1;
+      console.log(`Port ${port} is busy, trying ${nextPort}...`);
+      server.close();
+      startServer(nextPort);
+    } else {
+      throw err;
+    }
+  });
+}
+
+startServer(PORT);
