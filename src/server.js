@@ -1328,98 +1328,97 @@ function buildFallbackHtml(pageDef, business) {
   }
 }
 
-// Create HTTP server and attach WebSocket handler
-const server = createServer(app);
+// Create HTTP server, attach WebSocket, and start listening
 const voiceHandler = new VoiceHandler();
 
-// Initialize WebSocket for voice if enabled
-if (config.features?.voiceFlow) {
-  voiceHandler.initialize(server);
-}
-
 function startServer(port) {
-  server.listen(port, () => {
-  // Hourly cleanup of expired sessions
-  if (config.auth?.enabled !== false) {
-    setInterval(async () => {
-      try {
-        const cleaned = await authService.cleanExpiredSessions();
-        if (cleaned > 0) console.log(`Cleaned ${cleaned} expired sessions`);
-      } catch (err) {
-        console.error('Session cleanup error:', err.message);
-      }
-    }, 60 * 60 * 1000);
-  }
+  const server = createServer(app);
 
-  console.log(`\nWordToSite Server v3.0.0`);
-  console.log(`Server running at http://localhost:${port}`);
-  console.log(`\nCore endpoints:`);
-  console.log(`  GET  /api/health - Health check`);
-  console.log(`  GET  /api/config - Configuration status`);
-  console.log(`  POST /api/create-site - Create site (no domain)`);
-  console.log(`  POST /api/create-site-with-domain - Full domain workflow`);
-  console.log(`\nVoice endpoints:`);
-  console.log(`  POST /api/voice/transcribe - Transcribe audio file`);
-  console.log(`\nOnboarding endpoints:`);
-  console.log(`  GET  /api/onboard/flows - Get available flows`);
-  console.log(`  POST /api/onboard/analyze-url - Flow A: Analyze existing website`);
-  console.log(`  POST /api/onboard/generate-tagline - Generate AI tagline`);
-  console.log(`  POST /api/onboard/interview/complete - Flow B: Submit interview`);
-  console.log(`  POST /api/onboard/confirm - Confirm and deploy`);
-  console.log(`  GET  /api/onboard/confirm/stream - SSE deploy progress`);
-  console.log(`\nWizard endpoints:`);
-  console.log(`  POST /api/wizard/deploy - Apply deployment context`);
-  console.log(`  POST /api/wizard/generate-content - Generate AI content`);
-  console.log(`  POST /api/wizard/generate-excerpt - Generate excerpt`);
-  console.log(`\nEditor endpoints:`);
-  console.log(`  POST /api/editor/test - Test Light Editor capability`);
-  console.log(`  POST /api/editor/select - Select editor mode`);
-  console.log(`  GET  /api/editor/options - Get editor options`);
-  if (config.pluginApi?.enabled !== false) {
-    console.log(`\nPlugin API endpoints:`);
-    console.log(`  GET  /api/plugin/ping - Connectivity test`);
-    console.log(`  POST /api/plugin/register - Site registration`);
-    console.log(`  POST /api/plugin/heartbeat - Heartbeat`);
-    console.log(`  GET  /api/plugin/config - Pull config`);
-    console.log(`  POST /api/plugin/sync/traffic - Push traffic data`);
-    console.log(`  GET  /api/plugin/agent/actions - Get pending actions`);
-  }
-  if (config.proxy?.enabled !== false) {
-    console.log(`\nAI Proxy endpoints:`);
-    console.log(`  GET  /api/proxy/ping - Connectivity test`);
-    console.log(`  POST /api/proxy/admin/register-site - Register site`);
-    console.log(`  POST /api/proxy/admin/push-key - Push key to WP site`);
-    console.log(`  GET  /api/proxy/admin/sites - List registered sites`);
-    console.log(`  POST /api/proxy/v1/chat/completions - AI proxy endpoint`);
-    console.log(`  GET  /api/proxy/v1/models - Available models`);
-    console.log(`  GET  /api/proxy/v1/usage - Usage stats`);
-  }
-  if (config.auth?.enabled !== false) {
-    console.log(`\nUser Auth endpoints:`);
-    console.log(`  POST /api/auth/register - Register new account`);
-    console.log(`  POST /api/auth/login - Log in`);
-    console.log(`  POST /api/auth/logout - Log out`);
-    console.log(`  GET  /api/auth/me - Current user`);
-    console.log(`  GET  /api/sites - List user's sites`);
-  }
+  // Initialize WebSocket for voice if enabled
   if (config.features?.voiceFlow) {
-    console.log(`\nWebSocket:`);
-    console.log(`  WS   /ws/voice - Voice interview handler`);
+    voiceHandler.initialize(server);
   }
-  console.log(`\n  → App:    http://localhost:${port}/app.html`);
-  console.log(`  → Health: http://localhost:${port}/api/health`);
-  console.log(`  → Config: http://localhost:${port}/api/config\n`);
-  });
 
-  server.on('error', (err) => {
+  server.once('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      const nextPort = port + 1;
-      console.log(`Port ${port} is busy, trying ${nextPort}...`);
-      server.close();
-      startServer(nextPort);
+      console.log(`Port ${port} is busy, trying ${port + 1}...`);
+      startServer(port + 1);
     } else {
       throw err;
     }
+  });
+
+  server.listen(port, () => {
+    // Hourly cleanup of expired sessions
+    if (config.auth?.enabled !== false) {
+      setInterval(async () => {
+        try {
+          const cleaned = await authService.cleanExpiredSessions();
+          if (cleaned > 0) console.log(`Cleaned ${cleaned} expired sessions`);
+        } catch (err) {
+          console.error('Session cleanup error:', err.message);
+        }
+      }, 60 * 60 * 1000);
+    }
+
+    console.log(`\nWordToSite Server v3.0.0`);
+    console.log(`Server running at http://localhost:${port}`);
+    console.log(`\nCore endpoints:`);
+    console.log(`  GET  /api/health - Health check`);
+    console.log(`  GET  /api/config - Configuration status`);
+    console.log(`  POST /api/create-site - Create site (no domain)`);
+    console.log(`  POST /api/create-site-with-domain - Full domain workflow`);
+    console.log(`\nVoice endpoints:`);
+    console.log(`  POST /api/voice/transcribe - Transcribe audio file`);
+    console.log(`\nOnboarding endpoints:`);
+    console.log(`  GET  /api/onboard/flows - Get available flows`);
+    console.log(`  POST /api/onboard/analyze-url - Flow A: Analyze existing website`);
+    console.log(`  POST /api/onboard/generate-tagline - Generate AI tagline`);
+    console.log(`  POST /api/onboard/interview/complete - Flow B: Submit interview`);
+    console.log(`  POST /api/onboard/confirm - Confirm and deploy`);
+    console.log(`  GET  /api/onboard/confirm/stream - SSE deploy progress`);
+    console.log(`\nWizard endpoints:`);
+    console.log(`  POST /api/wizard/deploy - Apply deployment context`);
+    console.log(`  POST /api/wizard/generate-content - Generate AI content`);
+    console.log(`  POST /api/wizard/generate-excerpt - Generate excerpt`);
+    console.log(`\nEditor endpoints:`);
+    console.log(`  POST /api/editor/test - Test Light Editor capability`);
+    console.log(`  POST /api/editor/select - Select editor mode`);
+    console.log(`  GET  /api/editor/options - Get editor options`);
+    if (config.pluginApi?.enabled !== false) {
+      console.log(`\nPlugin API endpoints:`);
+      console.log(`  GET  /api/plugin/ping - Connectivity test`);
+      console.log(`  POST /api/plugin/register - Site registration`);
+      console.log(`  POST /api/plugin/heartbeat - Heartbeat`);
+      console.log(`  GET  /api/plugin/config - Pull config`);
+      console.log(`  POST /api/plugin/sync/traffic - Push traffic data`);
+      console.log(`  GET  /api/plugin/agent/actions - Get pending actions`);
+    }
+    if (config.proxy?.enabled !== false) {
+      console.log(`\nAI Proxy endpoints:`);
+      console.log(`  GET  /api/proxy/ping - Connectivity test`);
+      console.log(`  POST /api/proxy/admin/register-site - Register site`);
+      console.log(`  POST /api/proxy/admin/push-key - Push key to WP site`);
+      console.log(`  GET  /api/proxy/admin/sites - List registered sites`);
+      console.log(`  POST /api/proxy/v1/chat/completions - AI proxy endpoint`);
+      console.log(`  GET  /api/proxy/v1/models - Available models`);
+      console.log(`  GET  /api/proxy/v1/usage - Usage stats`);
+    }
+    if (config.auth?.enabled !== false) {
+      console.log(`\nUser Auth endpoints:`);
+      console.log(`  POST /api/auth/register - Register new account`);
+      console.log(`  POST /api/auth/login - Log in`);
+      console.log(`  POST /api/auth/logout - Log out`);
+      console.log(`  GET  /api/auth/me - Current user`);
+      console.log(`  GET  /api/sites - List user's sites`);
+    }
+    if (config.features?.voiceFlow) {
+      console.log(`\nWebSocket:`);
+      console.log(`  WS   /ws/voice - Voice interview handler`);
+    }
+    console.log(`\n  → App:    http://localhost:${port}/app.html`);
+    console.log(`  → Health: http://localhost:${port}/api/health`);
+    console.log(`  → Config: http://localhost:${port}/api/config\n`);
   });
 }
 
