@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glossary — WordToSite (Internal)</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #09090B; --bg-subtle: #0F0F12; --surface: #18181B;
+            --border: rgba(255,255,255,0.06); --text: #FAFAFA;
+            --text-secondary: #A1A1AA; --text-muted: #71717A;
+            --accent: #818CF8; --accent-bright: #A5B4FC;
+            --green: #34D399; --red: #F87171;
+            --yellow: #FBBF24;
+            --radius: 12px; --mono: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+        a { color: var(--accent-bright); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .page { max-width: 860px; margin: 0 auto; padding: 48px 32px 80px; }
+
+        .header { margin-bottom: 48px; }
+        .header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+        .header p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+        .header .badge { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--yellow); background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); border-radius: 4px; padding: 3px 8px; margin-bottom: 12px; }
+
+        .toc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 48px; }
+        .toc-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+        .toc-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+        .toc-list a { font-size: 13px; padding: 6px 12px; background: rgba(129,140,248,0.08); border: 1px solid rgba(129,140,248,0.15); border-radius: 6px; color: var(--accent-bright); transition: background 150ms; }
+        .toc-list a:hover { background: rgba(129,140,248,0.15); text-decoration: none; }
+
+        .section { margin-bottom: 48px; }
+        .section h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+        .term { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 12px; }
+        .term-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+        .term-name { font-size: 16px; font-weight: 700; }
+        .term-tag { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+        .tag-code { color: var(--accent-bright); background: rgba(129,140,248,0.1); }
+        .tag-alias { color: var(--text-muted); background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+        .tag-wrong { color: var(--red); background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.15); text-decoration: line-through; }
+        .term-body { font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+        .term-body ul { padding-left: 20px; margin-top: 8px; }
+        .term-body li { margin-bottom: 4px; font-size: 13px; color: var(--text-muted); }
+        .term-body strong { color: var(--text); }
+        .term-note { font-size: 13px; color: var(--text-muted); margin-top: 10px; padding: 10px 14px; background: rgba(251,191,36,0.05); border-left: 2px solid var(--yellow); border-radius: 0 4px 4px 0; }
+        .term-file { font-family: var(--mono); font-size: 11px; color: var(--green); margin-top: 8px; }
+        .term-example { font-family: var(--mono); font-size: 12px; color: var(--text-muted); margin-top: 8px; padding: 8px 12px; background: rgba(255,255,255,0.02); border-left: 2px solid var(--accent); border-radius: 0 4px 4px 0; }
+
+        .subterms { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+        .subterms .term { background: var(--bg-subtle); padding: 14px 18px; margin-bottom: 8px; }
+
+        code { font-family: var(--mono); font-size: 0.88em; padding: 2px 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 4px; color: var(--accent-bright); }
+
+        @media (max-width: 640px) {
+            .page { padding: 32px 16px 56px; }
+            .header h1 { font-size: 24px; }
+            .term-head { flex-direction: column; gap: 4px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+    <div class="header">
+        <span class="badge">Internal Document</span>
+        <h1>WordToSite — Glossary</h1>
+        <p>Synchronized terminology for the team. Use these terms consistently across code, tickets, and conversations.</p>
+    </div>
+
+    <nav class="toc">
+        <div class="toc-title">Sections</div>
+        <ul class="toc-list">
+            <li><a href="#core">Core Concepts</a></li>
+            <li><a href="#onboarding">Onboarding & Flows</a></li>
+            <li><a href="#ai">AI & Models</a></li>
+            <li><a href="#editor">Editor & Chat</a></li>
+            <li><a href="#deploy">Deployment & Infrastructure</a></li>
+            <li><a href="#domain">Domain & DNS</a></li>
+            <li><a href="#content">Content & SEO</a></li>
+            <li><a href="#wp">WordPress Themes</a></li>
+        </ul>
+    </nav>
+
+    <!-- ===== CORE ===== -->
+    <div class="section" id="core">
+        <h2>Core Concepts</h2>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">WaaS</span>
+                <span class="term-tag tag-code">Website-as-a-Service</span>
+            </div>
+            <div class="term-body">The core product model of WordToSite. Users don't install or manage software &mdash; they get a fully managed website created and maintained via AI. No CMS dashboards, no technical skills required.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">WaaS Wizard</span>
+                <span class="term-tag tag-code">Site Creation Wizard</span>
+                <span class="term-tag tag-wrong">Chat</span>
+            </div>
+            <div class="term-body">
+                The multi-step site creation flow that guides users from zero to a deployed website. This is the <strong>onboarding + deployment pipeline</strong>, not a chat interface.
+                <ul>
+                    <li>Step-by-step guided flow (select path &rarr; provide info &rarr; review &rarr; deploy)</li>
+                    <li>Drives template selection, content generation, and deployment</li>
+                    <li>Outputs a <strong>Wizard Payload</strong> &mdash; the unified JSON sent to WordPress</li>
+                </ul>
+            </div>
+            <div class="term-note">Do NOT call this "Chat". The WaaS Wizard is a structured creation flow. "Chat" refers to the Light Editor's editing interface.</div>
+            <div class="term-file">src/onboarding-workflow.js &rarr; src/schemas/wp-wizard-payload.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Chat</span>
+                <span class="term-tag tag-code">Light Editor Chat</span>
+                <span class="term-tag tag-wrong">Wizard</span>
+            </div>
+            <div class="term-body">
+                The conversational interface inside the <strong>Light Editor</strong> for editing an already-created site. Users type or speak natural language commands ("change the heading", "add a pricing section") and AI executes them as structured actions.
+                <ul>
+                    <li>Multi-turn conversation with message history</li>
+                    <li>Produces <strong>Action Blocks</strong> (<code>update_page</code>, <code>create_page</code>, <code>update_settings</code>)</li>
+                    <li>Available only <strong>after</strong> a site is deployed</li>
+                </ul>
+            </div>
+            <div class="term-note">Do NOT call this "Wizard". Chat is for post-creation editing. The Wizard is for site creation.</div>
+            <div class="term-file">src/services/editor-service.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">SSE Stream</span>
+                <span class="term-tag tag-code">Server-Sent Events</span>
+            </div>
+            <div class="term-body">
+                The real-time progress mechanism used during long-running operations (site creation, migration, deployment). The server pushes progress events to the client as they happen.
+                <ul>
+                    <li><code>/api/onboard/flow-a/stream</code> &mdash; Migration progress</li>
+                    <li><code>/api/onboard/confirm/stream</code> &mdash; Deployment progress</li>
+                    <li><code>/api/create-site-with-domain/stream</code> &mdash; Domain + site creation</li>
+                </ul>
+            </div>
+            <div class="term-example">Steps: creating_site &rarr; applying_deployment &rarr; generating_content &rarr; pushing_content &rarr; complete</div>
+        </div>
+    </div>
+
+    <!-- ===== ONBOARDING ===== -->
+    <div class="section" id="onboarding">
+        <h2>Onboarding & Flows</h2>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Onboarding</span>
+                <span class="term-tag tag-code">OnboardingWorkflow</span>
+            </div>
+            <div class="term-body">The entire process from a new user arriving to having a deployed website. Consists of sequential steps.</div>
+            <div class="term-example">SELECTING_FLOW &rarr; ANALYZING_SOURCE | CONDUCTING_INTERVIEW &rarr; MATCHING_TEMPLATE &rarr; GENERATING_CONTEXTS &rarr; CONFIRMING_SELECTION &rarr; COMPLETE</div>
+            <div class="term-file">src/onboarding-workflow.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Flow A</span>
+                <span class="term-tag tag-code">ONBOARDING_FLOWS.COPY</span>
+                <span class="term-tag tag-alias">Migration</span>
+            </div>
+            <div class="term-body">The user has an existing website they want to migrate. WordToSite scrapes the source URL via Firecrawl, analyzes its structure and brand with AI, matches a template, and rebuilds it with proper optimization.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Flow B</span>
+                <span class="term-tag tag-code">ONBOARDING_FLOWS.VOICE</span>
+                <span class="term-tag tag-alias">Voice Interview</span>
+            </div>
+            <div class="term-body">The user needs a new website from scratch. They go through a voice or text interview where AI asks about their business (name, industry, services, target audience). The answers are processed into a structured brief.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Interview</span>
+                <span class="term-tag tag-code">Voice/Text Interview</span>
+            </div>
+            <div class="term-body">A multi-step Q&amp;A session in Flow B. AI asks structured questions (company name, industry, services, about us, address, phone, team, advantages) and builds a brief from the answers. Can be conducted via voice (Whisper transcription) or text input.</div>
+            <div class="term-file">src/constants.js (INTERVIEW_QUESTIONS)</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Brief</span>
+                <span class="term-tag tag-code">Business Brief</span>
+            </div>
+            <div class="term-body">The structured output of an interview or migration analysis. Contains: company name, tagline, industry, services, target audience, unique selling points, location, and contact info. Used to generate the Content Context.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Scraping</span>
+                <span class="term-tag tag-code">Website Scraping</span>
+            </div>
+            <div class="term-body">The process of extracting content, structure, and brand elements from an existing website during Flow A. Uses Firecrawl API with a native fetch fallback. Extracts: markdown content, HTML, metadata, screenshots, and brand elements (logo, colors, fonts, style).</div>
+            <div class="term-file">src/services/firecrawl-service.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Template Matching</span>
+                <span class="term-tag tag-code">AI Template Match</span>
+            </div>
+            <div class="term-body">AI (Gemini) analyzes the brief or scraped data and recommends the best WordPress template from the catalog based on industry, features, and style. Falls back to <code>flexify</code> if no match.</div>
+        </div>
+    </div>
+
+    <!-- ===== AI & MODELS ===== -->
+    <div class="section" id="ai">
+        <h2>AI & Models</h2>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">AI Model</span>
+                <span class="term-tag tag-code">Correct generic term</span>
+                <span class="term-tag tag-wrong">LLM</span>
+                <span class="term-tag tag-wrong">GPT</span>
+            </div>
+            <div class="term-body">
+                The general term for any AI system used in the project. We use <strong>multiple providers</strong>, so avoid saying "GPT" or "LLM" when you mean the general concept.
+                <ul>
+                    <li><strong>"GPT"</strong> &mdash; only use when specifically referring to OpenAI's GPT-4o or GPT-4o-mini</li>
+                    <li><strong>"LLM"</strong> &mdash; technically correct for text models, but too narrow (we also use Whisper for audio, Gemini for vision)</li>
+                    <li><strong>"AI model"</strong> &mdash; use this as the default generic term</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Whisper</span>
+                <span class="term-tag tag-code">OpenAI whisper-1</span>
+            </div>
+            <div class="term-body">OpenAI's speech-to-text model used for voice transcription. Converts audio from the user's microphone into text during the Voice Interview (Flow B) and Light Editor voice commands. Supports auto language detection.</div>
+            <div class="term-note">This is NOT a text generation model. Whisper only does audio &rarr; text. Content generation uses GPT-4o.</div>
+            <div class="term-file">src/services/ai-service.js &rarr; transcribeAudio()</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">GPT-4o</span>
+                <span class="term-tag tag-code">OpenAI</span>
+            </div>
+            <div class="term-body">The primary text generation model. Handles content generation, blog posts, interview processing, chat responses, and action block creation.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">GPT-4o-mini</span>
+                <span class="term-tag tag-code">OpenAI</span>
+            </div>
+            <div class="term-body">A lighter, faster OpenAI model used for simpler tasks like excerpt generation where full GPT-4o is overkill.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Gemini</span>
+                <span class="term-tag tag-code">Google Gemini 1.5 Pro</span>
+            </div>
+            <div class="term-body">Google's multimodal model used for website analysis (visual + content) and template matching. Chosen for its large context window (1M+ tokens) which allows processing entire scraped websites at once.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Claude</span>
+                <span class="term-tag tag-code">Anthropic</span>
+            </div>
+            <div class="term-body">Anthropic's model, available via proxy service. Used for reasoning, content analysis, and structured data generation.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">TTS</span>
+                <span class="term-tag tag-code">OpenAI tts-1</span>
+            </div>
+            <div class="term-body">OpenAI's text-to-speech model. Converts AI responses to audio. Available voices: alloy, echo, fable, onyx, nova, shimmer.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">AI Provider</span>
+            </div>
+            <div class="term-body">The company behind an AI model. WordToSite uses three providers: <strong>OpenAI</strong> (GPT-4o, Whisper, TTS), <strong>Google</strong> (Gemini), and <strong>Anthropic</strong> (Claude). Different tasks route to different providers based on their strengths.</div>
+            <div class="term-file">src/services/ai-service.js</div>
+        </div>
+    </div>
+
+    <!-- ===== EDITOR & CHAT ===== -->
+    <div class="section" id="editor">
+        <h2>Editor & Chat</h2>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Light Editor</span>
+                <span class="term-tag tag-code">EDITOR_MODES.LIGHT</span>
+            </div>
+            <div class="term-body">The chat + voice interface for editing a deployed site. Users describe changes in natural language, AI converts them to structured Action Blocks, and the system executes them against the WordPress REST API.</div>
+            <div class="term-note">Requires the WAAS Controller plugin on the WP site. Falls back to Advanced Editor if not available.</div>
+            <div class="term-file">src/services/editor-service.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Advanced Editor</span>
+                <span class="term-tag tag-code">EDITOR_MODES.ADVANCED</span>
+            </div>
+            <div class="term-body">Direct access to the full WordPress Admin dashboard (<code>/wp-admin</code>). Used as a fallback when the Light Editor isn't viable or when users need full control.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Action Block</span>
+                <span class="term-tag tag-code">:::action ... :::</span>
+            </div>
+            <div class="term-body">
+                A structured JSON command embedded in AI chat responses. The Light Editor parses these and executes them against WordPress. Three types:
+                <ul>
+                    <li><code>update_page</code> &mdash; update an existing page's title or content</li>
+                    <li><code>create_page</code> &mdash; create a new page</li>
+                    <li><code>update_settings</code> &mdash; update site title or tagline</li>
+                </ul>
+            </div>
+            <div class="term-example">:::action\n{"type": "update_page", "pageId": 5, "updates": {"title": "New Title"}}\n:::</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Editor Session</span>
+            </div>
+            <div class="term-body">A persistent conversation thread between a user and the Light Editor for a specific site. Stores message history (role + content pairs) in the database so context is preserved across page reloads.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">WAAS Controller</span>
+                <span class="term-tag tag-code">WordPress Plugin</span>
+            </div>
+            <div class="term-body">A WordPress plugin installed on deployed sites that exposes a REST API at <code>/wp-json/waas-controller/v1</code>. Provides endpoints for health checks (<code>/health</code>) and site structure (<code>/site-map</code>). Required for the Light Editor to function.</div>
+        </div>
+    </div>
+
+    <!-- ===== DEPLOYMENT ===== -->
+    <div class="section" id="deploy">
+        <h2>Deployment & Infrastructure</h2>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Deployment Context</span>
+                <span class="term-tag tag-code">JSON Schema #1</span>
+            </div>
+            <div class="term-body">A JSON object that drives the technical deployment: which template to use, which plugins to install, demo content settings, branding (colors, logo, favicon), and feature flags.</div>
+            <div class="term-file">src/schemas/deployment-context.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Content Context</span>
+                <span class="term-tag tag-code">JSON Schema #2</span>
+            </div>
+            <div class="term-body">A JSON object that drives AI text generation: business info, language, tone, page structure, source analysis data, voice interview data, and SEO metadata.</div>
+            <div class="term-file">src/schemas/content-context.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Wizard Payload</span>
+                <span class="term-tag tag-code">Unified WP Payload</span>
+            </div>
+            <div class="term-body">The combined JSON sent to the WordPress WAAS Controller plugin. Merges Deployment Context + Content Context + site info + client info into a single payload. This is what WordPress actually receives.</div>
+            <div class="term-file">src/schemas/wp-wizard-payload.js &rarr; buildWizardPayload()</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">InstaWP</span>
+                <span class="term-tag tag-code">Hosting Provider</span>
+            </div>
+            <div class="term-body">The hosting platform used to create and manage WordPress instances. Provides API for site creation, status polling, SSL checks, and A record extraction for DNS.</div>
+            <div class="term-file">src/instawp.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Template</span>
+                <span class="term-tag tag-code">WP Template</span>
+            </div>
+            <div class="term-body">A WordPress theme from the template catalog, identified by a slug (e.g. <code>flexify</code>, <code>flavor</code>). Each template can have multiple <strong>skins</strong> (color schemes) and <strong>variations</strong>.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Skin</span>
+                <span class="term-tag tag-code">Template Skin</span>
+            </div>
+            <div class="term-body">A color scheme / visual variant within a template. Selected during template matching based on the brand analysis.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Magic Login URL</span>
+            </div>
+            <div class="term-body">A one-time URL provided by InstaWP that logs the user directly into their WordPress admin without credentials. Used for Advanced Editor access.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Firecrawl</span>
+                <span class="term-tag tag-code">Scraping Service</span>
+            </div>
+            <div class="term-body">Third-party API used for website scraping in Flow A (migration). Extracts HTML, markdown, metadata, and screenshots. Has a native fetch fallback if the API is unavailable.</div>
+            <div class="term-file">src/services/firecrawl-service.js</div>
+        </div>
+    </div>
+
+    <!-- ===== DOMAIN ===== -->
+    <div class="section" id="domain">
+        <h2>Domain & DNS</h2>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Domain Workflow</span>
+            </div>
+            <div class="term-body">
+                The automated pipeline for connecting a custom domain to a deployed site:
+                <ul>
+                    <li><code>CHECKING_AVAILABILITY</code> &mdash; domain availability check</li>
+                    <li><code>REGISTERING_DOMAIN</code> &mdash; register via Namecheap</li>
+                    <li><code>MAPPING_DOMAIN</code> &mdash; map in InstaWP</li>
+                    <li><code>CREATING_ZONE</code> &mdash; create Cloudflare zone</li>
+                    <li><code>SETTING_DNS_RECORDS</code> &mdash; configure A records</li>
+                    <li><code>UPDATING_NAMESERVERS</code> &mdash; point to Cloudflare NS</li>
+                    <li><code>CONFIGURING_SECURITY</code> &mdash; SSL + DDoS protection</li>
+                </ul>
+            </div>
+            <div class="term-file">src/domain-workflow.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Cloudflare</span>
+                <span class="term-tag tag-code">DNS/SSL Provider</span>
+            </div>
+            <div class="term-body">Manages DNS zones, DNS records (A, CNAME, MX), SSL/TLS certificates, and security settings (DDoS protection) for deployed sites.</div>
+            <div class="term-file">src/cloudflare.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Namecheap</span>
+                <span class="term-tag tag-code">Domain Registrar</span>
+            </div>
+            <div class="term-body">Used for domain registration, nameserver updates, and DNS host management.</div>
+            <div class="term-file">src/namecheap.js</div>
+        </div>
+    </div>
+
+    <!-- ===== CONTENT & SEO ===== -->
+    <div class="section" id="content">
+        <h2>Content & SEO</h2>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">AEO</span>
+                <span class="term-tag tag-code">Answer Engine Optimization</span>
+            </div>
+            <div class="term-body">Structuring content so answer engines (Google Featured Snippets) can extract and display information directly in search results. Implemented via semantic HTML, heading hierarchy, and FAQ structured data.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">GEO</span>
+                <span class="term-tag tag-code">Generative Engine Optimization</span>
+            </div>
+            <div class="term-body">Optimizing content for AI-powered search engines (ChatGPT, Claude, Perplexity, Gemini) that generate answers by referencing and citing your website. Implemented via Schema.org JSON-LD and AI-friendly content formatting.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Excerpt</span>
+                <span class="term-tag tag-code">Content Summary</span>
+            </div>
+            <div class="term-body">An AI-generated summary of page content, typically ~30 words. Used for SEO meta descriptions and page previews. Supports styles: informative, engaging, professional, casual. Generated via GPT-4o-mini.</div>
+            <div class="term-file">src/services/excerpt-service.js</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Page Section Types</span>
+            </div>
+            <div class="term-body">Predefined section types used when generating page content: <code>hero</code>, <code>features</code>, <code>about</code>, <code>services</code>, <code>testimonials</code>, <code>pricing</code>, <code>contact</code>, <code>cta</code>, <code>faq</code>, <code>team</code>, <code>gallery</code>, <code>blog</code>.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Default Pages</span>
+            </div>
+            <div class="term-body">The five pages generated for every new site by default: <code>home</code>, <code>about</code>, <code>services</code>, <code>contact</code>, <code>blog</code>.</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Tone</span>
+                <span class="term-tag tag-code">Content Tone</span>
+            </div>
+            <div class="term-body">The writing style applied to all generated content. Options: <code>professional</code>, <code>friendly</code>, <code>casual</code>, <code>formal</code>.</div>
+        </div>
+    </div>
+
+    <!-- ===== WP THEMES ===== -->
+    <div class="section" id="wp">
+        <h2>WordPress Theme Terminology</h2>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Theme-Clone</span>
+            </div>
+            <div class="term-body">A theme built on a source theme <strong>without modifying core files</strong> and without significant changes to the base skin. Allowed changes: renaming base skin, modifying <code>skin-setup.php</code> / <code>skin-demo-importer.php</code>, adding Fontello icons, replacing logos, adding new files (listed in <code>skin-upgrade.json</code>).</div>
+            <div class="term-note">Auto-updates replace both the theme core and the skin folder.</div>
+            <div class="subterms">
+                <div class="term">
+                    <div class="term-head"><span class="term-name">Theme-Clone-Remake</span></div>
+                    <div class="term-body">Replaces an existing portfolio theme. Starts at next major version (e.g. 3.2.1 &rarr; 4.0).</div>
+                </div>
+                <div class="term">
+                    <div class="term-head"><span class="term-name">Theme-Clone-New</span></div>
+                    <div class="term-body">Uploaded as a brand new theme, starting at version 1.0.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Theme-Branch</span>
+            </div>
+            <div class="term-body">A theme built on a source theme's core but with <strong>significant changes</strong> to styles and logic. The skin folder is fully reworked and doesn't maintain compatibility with the base skin.</div>
+            <div class="term-note">Auto-updates replace only the theme core (not the skin folder).</div>
+            <div class="subterms">
+                <div class="term">
+                    <div class="term-head"><span class="term-name">Theme-Branch-Remake</span></div>
+                    <div class="term-body">Replaces an existing portfolio theme. Starts at next major version.</div>
+                </div>
+                <div class="term">
+                    <div class="term-head"><span class="term-name">Theme-Branch-New</span></div>
+                    <div class="term-body">Uploaded as a brand new theme, starting at version 1.0.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Naming Convention</span>
+            </div>
+            <div class="term-body">
+                Theme names follow a 3-part format: <strong>Theme &mdash; Relation Type &mdash; Upload Type</strong>
+                <ul>
+                    <li>Relation Type: <strong>Clone</strong> (minor skin changes) or <strong>Branch</strong> (significant rework)</li>
+                    <li>Upload Type: <strong>Remake</strong> (replaces existing theme) or <strong>New</strong> (brand new theme)</li>
+                </ul>
+            </div>
+            <div class="term-example">Example: "WineShop: Theme-Clone-Remake based on Qwery Wine skin"</div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Fix vs Update</span>
+            </div>
+            <div class="term-body">
+                <strong>Fix</strong>: correction to a theme not yet accepted, after reviewer feedback. Always version 1.0.<br>
+                <strong>Update</strong>: new version of an accepted theme with fixes and improvements. Each update increments the version number.
+            </div>
+        </div>
+
+        <div class="term">
+            <div class="term-head">
+                <span class="term-name">Micro-niche vs Macro-niche</span>
+            </div>
+            <div class="term-body">
+                <strong>Micro-niche</strong>: templates for a very specific, narrow segment (mushroom farm, single cryptocurrency).<br>
+                <strong>Macro-niche</strong>: templates for a broad category (business theme usable as blog, personal site, or company site).
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
