@@ -432,7 +432,7 @@ app.get('/api/ssl-status/:siteId', async (req, res) => {
 });
 
 // Updated: Config check with domain workflow and AI status
-app.get('/api/config', (req, res) => {
+app.get('/api/config', async (req, res) => {
   res.json({
     hasApiKey: !!config.instawp.apiKey,
     templateSlug: config.instawp.templateSlug,
@@ -460,6 +460,7 @@ app.get('/api/config', (req, res) => {
       onboardingFlowA: true,
       onboardingFlowB: true,
     },
+    skins: await baseSiteService.getSkins().catch(() => null),
   });
 });
 

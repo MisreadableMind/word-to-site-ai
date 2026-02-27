@@ -74,6 +74,16 @@
             text-decoration: none;
         }
         .nav-link:hover { color: var(--text-secondary); background: var(--accent-dim); }
+        .nav-link-admin {
+            font-size: 13px; font-weight: 500;
+            color: var(--text-muted); padding: 6px 12px;
+            border-radius: 6px; transition: all 150ms;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .nav-link-admin:hover { color: var(--text-secondary); border-color: var(--border-hover); background: var(--surface-hover); }
+        .nav-link-admin svg { width: 14px; height: 14px; }
 
         /* LAYOUT */
         .editor-layout {
@@ -194,8 +204,86 @@
             background: var(--surface);
         }
         .chat-input-wrap {
-            display: flex; gap: 8px;
+            display: flex; flex-direction: column; gap: 12px;
             max-width: 720px; margin: 0 auto;
+        }
+
+        /* VOICE PRIMARY ZONE */
+        .voice-primary-zone {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .btn-mic-primary {
+            width: 64px; height: 64px; border-radius: 50%;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text-muted);
+            cursor: pointer; transition: all 200ms;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-mic-primary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: var(--shadow-md);
+        }
+        .btn-mic-primary:disabled {
+            opacity: 0.4; cursor: not-allowed;
+        }
+        .btn-mic-primary:disabled:hover {
+            border-color: var(--border);
+            color: var(--text-muted);
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-mic-primary svg { width: 26px; height: 26px; position: relative; z-index: 1; }
+        .btn-mic-primary.recording {
+            background: var(--error); border-color: var(--error);
+            color: #fff; box-shadow: 0 0 0 0 rgba(220,38,38,0.4);
+            animation: pulse-mic 1.5s ease-in-out infinite;
+        }
+        .btn-mic-primary.transcribing {
+            background: var(--accent); border-color: var(--accent);
+            color: #fff;
+        }
+        @keyframes pulse-mic {
+            0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+            70% { box-shadow: 0 0 0 12px rgba(220,38,38,0); }
+            100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .voice-status {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; font-weight: 500; color: var(--text-muted);
+            height: 20px;
+        }
+        .voice-status:empty { visibility: hidden; }
+        .vc-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--error);
+            animation: blink-dot 1s ease-in-out infinite;
+        }
+        @keyframes blink-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .vc-level-bars {
+            display: flex; align-items: flex-end; gap: 2px; height: 16px;
+        }
+        .vc-level-bar {
+            width: 3px; border-radius: 1.5px;
+            background: var(--error);
+            transition: height 80ms ease;
+        }
+        .vc-timer { font-variant-numeric: tabular-nums; }
+
+        /* TEXT ROW (secondary) */
+        .chat-text-row {
+            display: flex; gap: 8px;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
         }
         .chat-input {
             flex: 1; padding: 12px 16px;
@@ -227,10 +315,72 @@
             color: var(--text-muted); font-size: 14px;
         }
         .welcome-msg {
-            text-align: center; padding: 60px 24px;
+            text-align: center; padding: 40px 24px;
             color: var(--text-muted); font-size: 14px; line-height: 1.6;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
-        .welcome-msg h2 { font-size: 20px; color: var(--text); margin-bottom: 8px; }
+        .welcome-msg h2 { font-size: 20px; color: var(--text); margin-bottom: 4px; }
+        .welcome-msg .voice-hint { color: var(--text-secondary); font-size: 15px; margin-bottom: 2px; }
+        .welcome-msg .text-hint { font-size: 13px; }
+
+        /* SITE INFO CARD */
+        .site-info-card {
+            width: 100%; max-width: 520px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            text-align: left;
+        }
+        .site-preview-wrap {
+            position: relative;
+            width: 100%; height: 260px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .site-preview-wrap iframe {
+            position: absolute; top: 0; left: 0;
+            width: 1280px; height: 800px;
+            transform: scale(0.40625);
+            transform-origin: top left;
+            border: none; pointer-events: none;
+        }
+        .site-preview-overlay {
+            position: absolute; inset: 0;
+            cursor: pointer;
+        }
+        .site-preview-overlay:hover { background: rgba(0,0,0,0.03); }
+        .site-info-body {
+            padding: 14px 16px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .site-info-url {
+            font-size: 13px; color: var(--text-secondary);
+            display: flex; align-items: center; gap: 6px;
+            word-break: break-all;
+        }
+        .site-info-url svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--text-muted); }
+        .site-info-actions {
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }
+        .site-info-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 7px 14px; font-family: inherit; font-size: 12px; font-weight: 600;
+            border-radius: 6px; text-decoration: none;
+            cursor: pointer; transition: all 150ms;
+        }
+        .site-info-btn svg { width: 14px; height: 14px; }
+        .site-info-btn.primary {
+            background: var(--accent); color: #fff; border: none;
+        }
+        .site-info-btn.primary:hover { background: var(--accent-bright); }
+        .site-info-btn.secondary {
+            background: none; color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .site-info-btn.secondary:hover { border-color: var(--border-hover); background: var(--surface-hover); }
 
         /* MOBILE */
         @media (max-width: 768px) {
@@ -252,6 +402,10 @@
         </a>
         <div class="nav-center" id="siteName">Loading...</div>
         <div class="nav-right">
+            <a class="nav-link-admin" id="adminLink" style="display:none" target="_blank">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                WP Admin
+            </a>
             <a class="nav-link" href="/dashboard.html">Back to Dashboard</a>
         </div>
     </div>
@@ -272,8 +426,33 @@
     <div class="chat-area">
         <div class="messages" id="messages">
             <div class="welcome-msg" id="welcomeMsg">
-                <h2>Chat with your site</h2>
-                <p>Describe changes you want to make and AI will apply them to your live WordPress site.</p>
+                <div>
+                    <h2>Chat with your site</h2>
+                    <p class="voice-hint">Tap the mic and describe your changes</p>
+                    <p class="text-hint">or type below</p>
+                </div>
+                <div class="site-info-card" id="siteInfoCard" style="display:none">
+                    <div class="site-preview-wrap">
+                        <iframe id="sitePreviewFrame" loading="lazy" sandbox="allow-same-origin allow-scripts" tabindex="-1"></iframe>
+                        <a class="site-preview-overlay" id="sitePreviewLink" target="_blank" title="Open site in new tab"></a>
+                    </div>
+                    <div class="site-info-body">
+                        <div class="site-info-url" id="siteInfoUrl">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            <span id="siteUrlText"></span>
+                        </div>
+                        <div class="site-info-actions">
+                            <a class="site-info-btn primary" id="siteVisitBtn" target="_blank">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                Visit Site
+                            </a>
+                            <a class="site-info-btn secondary" id="siteAdminBtn" target="_blank" style="display:none">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                WP Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="typing-indicator" id="typingIndicator">
@@ -283,10 +462,18 @@
         </div>
         <div class="chat-input-area">
             <div class="chat-input-wrap">
-                <textarea class="chat-input" id="chatInput" placeholder="Describe what you want to change..." rows="1"></textarea>
-                <button class="btn-send" id="sendBtn" disabled>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
+                <div class="voice-primary-zone">
+                    <button class="btn-mic-primary" id="micBtn" title="Record voice message">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    </button>
+                    <div class="voice-status" id="voiceStatus"></div>
+                </div>
+                <div class="chat-text-row">
+                    <textarea class="chat-input" id="chatInput" placeholder="or type your changes here..." rows="1"></textarea>
+                    <button class="btn-send" id="sendBtn" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -303,50 +490,94 @@ let currentSite = null;
 let currentSessionId = null;
 let sending = false;
 
+// Voice state
+let isRecording = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let voiceTimer = null;
+let voiceSeconds = 0;
+let audioContext = null;
+let analyserNode = null;
+let voiceLevelRAF = null;
+
 const $messages = document.getElementById('messages');
 const $input = document.getElementById('chatInput');
 const $sendBtn = document.getElementById('sendBtn');
 const $typing = document.getElementById('typingIndicator');
 const $sessionList = document.getElementById('sessionList');
 const $welcomeMsg = document.getElementById('welcomeMsg');
+const $micBtn = document.getElementById('micBtn');
+const $voiceStatus = document.getElementById('voiceStatus');
 
 // Auth guard
 async function init() {
-    if (!siteId) {
-        window.location.href = '/dashboard.html';
-        return;
+    // --- MOCK MODE (remove when real API is wired up) ---
+    const isMock = !siteId;
+    if (isMock) {
+        currentSite = {
+            site_name: 'My Awesome Site',
+            wp_url: 'https://example.com',
+            wp_username: 'admin',
+            wp_password: 'demo',
+        };
     }
+    // --- END MOCK ---
 
-    // Auth check
-    try {
-        const authRes = await fetch('/api/auth/me');
-        if (!authRes.ok) throw new Error();
-        const authData = await authRes.json();
-        currentUser = authData.user;
-    } catch {
-        window.location.href = '/login.html';
-        return;
-    }
+    if (!isMock) {
+        // Auth check
+        try {
+            const authRes = await fetch('/api/auth/me');
+            if (!authRes.ok) throw new Error();
+            const authData = await authRes.json();
+            currentUser = authData.user;
+        } catch {
+            window.location.href = '/login.html';
+            return;
+        }
 
-    // Load site
-    try {
-        const siteRes = await fetch(`/api/sites/${siteId}`);
-        if (!siteRes.ok) throw new Error('Site not found');
-        const siteData = await siteRes.json();
-        currentSite = siteData.site;
-    } catch {
-        window.location.href = '/dashboard.html';
-        return;
+        // Load site
+        try {
+            const siteRes = await fetch(`/api/sites/${siteId}`);
+            if (!siteRes.ok) throw new Error('Site not found');
+            const siteData = await siteRes.json();
+            currentSite = siteData.site;
+        } catch {
+            window.location.href = '/dashboard.html';
+            return;
+        }
     }
 
     document.getElementById('siteName').textContent = currentSite.site_name || 'Untitled Site';
     document.title = `Editor | ${currentSite.site_name || 'WordToSite'}`;
 
+    // WP Admin link + site info card
+    const wpUrl = currentSite.wp_url || currentSite.url;
+    const hasCreds = currentSite.wp_username && currentSite.wp_password;
+
+    if (hasCreds) {
+        const loginUrl = `/api/wp-auto-login?url=${encodeURIComponent(currentSite.wp_url)}&u=${encodeURIComponent(currentSite.wp_username)}&p=${encodeURIComponent(currentSite.wp_password)}`;
+        document.getElementById('adminLink').href = loginUrl;
+        document.getElementById('adminLink').style.display = 'inline-flex';
+        document.getElementById('siteAdminBtn').href = loginUrl;
+        document.getElementById('siteAdminBtn').style.display = 'inline-flex';
+    }
+
+    if (wpUrl) {
+        const displayUrl = wpUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        document.getElementById('siteUrlText').textContent = displayUrl;
+        document.getElementById('siteVisitBtn').href = wpUrl;
+        document.getElementById('sitePreviewLink').href = wpUrl;
+        document.getElementById('sitePreviewFrame').src = wpUrl;
+        document.getElementById('siteInfoCard').style.display = 'block';
+    }
+
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('editorLayout').style.display = 'flex';
 
-    await loadSessions();
-    await createNewSession();
+    if (!isMock) {
+        await loadSessions();
+        await createNewSession();
+    }
 }
 
 // Sessions
@@ -462,6 +693,7 @@ async function sendMessage() {
 
     sending = true;
     $sendBtn.disabled = true;
+    $micBtn.disabled = true;
     $input.value = '';
     $input.style.height = 'auto';
 
@@ -495,8 +727,143 @@ async function sendMessage() {
     }
 
     sending = false;
+    $micBtn.disabled = false;
     updateSendBtn();
     scrollToBottom();
+}
+
+// Voice
+function toggleVoice() {
+    if (sending) return;
+    if (isRecording) {
+        stopRecording();
+    } else {
+        startRecording();
+    }
+}
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.addEventListener('dataavailable', (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+        });
+
+        mediaRecorder.addEventListener('stop', async () => {
+            stream.getTracks().forEach(t => t.stop());
+            stopVoiceAudioLevel();
+            clearInterval(voiceTimer);
+
+            if (audioChunks.length === 0) {
+                setMicState('idle');
+                return;
+            }
+
+            setMicState('transcribing');
+
+            try {
+                const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                const formData = new FormData();
+                formData.append('audio', blob, 'recording.webm');
+
+                const res = await fetch('/api/voice/transcribe', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.text && data.text.trim()) {
+                    $input.value = data.text.trim();
+                    sendMessage();
+                }
+            } catch (err) {
+                console.error('Transcription failed:', err);
+            }
+
+            setMicState('idle');
+        });
+
+        mediaRecorder.start();
+        isRecording = true;
+        voiceSeconds = 0;
+        setMicState('recording');
+        startVoiceAudioLevel(stream);
+        voiceTimer = setInterval(() => {
+            voiceSeconds++;
+            updateTimerDisplay();
+        }, 1000);
+    } catch (err) {
+        console.error('Microphone access denied:', err);
+    }
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        isRecording = false;
+        mediaRecorder.stop();
+    }
+}
+
+function setMicState(state) {
+    $micBtn.classList.remove('recording', 'transcribing');
+    isRecording = false;
+
+    if (state === 'idle') {
+        $micBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+        $voiceStatus.innerHTML = '';
+    } else if (state === 'recording') {
+        isRecording = true;
+        $micBtn.classList.add('recording');
+        $micBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+        $voiceStatus.innerHTML = '<span class="vc-dot"></span><span class="vc-level-bars" id="vcLevelBars"><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span></span><span class="vc-timer" id="vcTimer">0:00</span><span style="color:var(--text-muted)">tap to stop</span>';
+    } else if (state === 'transcribing') {
+        $micBtn.classList.add('transcribing');
+        $micBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0 1 10 10"/></svg>';
+        $voiceStatus.innerHTML = '<span style="color:var(--accent)">Transcribing...</span>';
+    }
+}
+
+function startVoiceAudioLevel(stream) {
+    try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(stream);
+        analyserNode = audioContext.createAnalyser();
+        analyserNode.fftSize = 64;
+        source.connect(analyserNode);
+        const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+
+        function updateLevels() {
+            analyserNode.getByteFrequencyData(dataArray);
+            const bars = document.querySelectorAll('#vcLevelBars .vc-level-bar');
+            if (bars.length === 0) return;
+            for (let i = 0; i < bars.length; i++) {
+                const val = dataArray[i * 2] || 0;
+                const h = Math.max(4, (val / 255) * 16);
+                bars[i].style.height = h + 'px';
+            }
+            voiceLevelRAF = requestAnimationFrame(updateLevels);
+        }
+        updateLevels();
+    } catch {
+        // AudioContext not supported — ignore
+    }
+}
+
+function stopVoiceAudioLevel() {
+    if (voiceLevelRAF) { cancelAnimationFrame(voiceLevelRAF); voiceLevelRAF = null; }
+    if (audioContext) { audioContext.close().catch(() => {}); audioContext = null; }
+    analyserNode = null;
+}
+
+function updateTimerDisplay() {
+    const el = document.getElementById('vcTimer');
+    if (el) el.textContent = formatTime(voiceSeconds);
+}
+
+function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m + ':' + String(sec).padStart(2, '0');
 }
 
 // Input handling
@@ -514,6 +881,7 @@ $input.addEventListener('keydown', (e) => {
 });
 
 $sendBtn.addEventListener('click', sendMessage);
+$micBtn.addEventListener('click', toggleVoice);
 
 document.getElementById('newSessionBtn').addEventListener('click', createNewSession);
 
