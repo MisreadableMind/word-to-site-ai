@@ -13,6 +13,7 @@ import EditorService from './services/editor-service.js';
 import VoiceService from './services/voice-service.js';
 import AIService from './services/ai-service.js';
 import WordPressService from './services/wordpress-service.js';
+import BaseSiteService from './services/base-site-service.js';
 import VoiceHandler from './websocket/voice-handler.js';
 import { ONBOARDING_FLOWS, EDITOR_MODES } from './constants.js';
 import PluginAPIService from './services/plugin-api-service.js';
@@ -79,6 +80,31 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Multer for multipart file uploads (voice transcription)
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+
+// Base site service (skins & languages from TRXWaaSWizard plugin)
+const baseSiteService = new BaseSiteService();
+
+// GET /api/skins — cached skins list from base site
+app.get('/api/skins', async (req, res) => {
+  try {
+    const skins = await baseSiteService.getSkins();
+    res.json({ success: true, skins });
+  } catch (error) {
+    console.error('Error fetching skins:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/languages — cached languages list from base site
+app.get('/api/languages', async (req, res) => {
+  try {
+    const languages = await baseSiteService.getLanguages();
+    res.json({ success: true, languages });
+  } catch (error) {
+    console.error('Error fetching languages:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Existing: Simple site creation (no domain)
 app.post('/api/create-site', async (req, res) => {
