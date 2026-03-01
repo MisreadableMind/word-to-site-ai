@@ -99,14 +99,13 @@ export default class ProxyService {
     try {
       await pool.query(
         `INSERT INTO proxy_request_log
-           (site_id, domain, provider, model, endpoint, method,
+           (site_id, domain, model, endpoint, method,
             prompt_tokens, completion_tokens, total_tokens,
             response_status, latency_ms, error_message)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           siteId,
           domain,
-          data.provider || null,
           data.model || null,
           data.endpoint || null,
           data.method || 'POST',
@@ -186,32 +185,6 @@ export default class ProxyService {
     return result.rows;
   }
 
-  async updateTier(siteId, tier) {
-    await this.initialize();
-
-    // Look up tier limits
-    const tierResult = await pool.query(
-      'SELECT * FROM proxy_subscription_tiers WHERE tier = $1',
-      [tier]
-    );
-
-    if (!tierResult.rows[0]) {
-      throw new Error(`Unknown subscription tier: ${tier}`);
-    }
-
-    const tierData = tierResult.rows[0];
-
-    const result = await pool.query(
-      `UPDATE proxy_sites
-       SET subscription_tier = $2, monthly_token_limit = $3
-       WHERE id = $1
-       RETURNING *`,
-      [siteId, tier, tierData.monthly_token_limit]
-    );
-
-    return result.rows[0] || null;
-  }
-
   async updateSiteStatus(siteId, status) {
     await this.initialize();
 
@@ -231,192 +204,33 @@ export default class ProxyService {
     return result.rows[0] || null;
   }
 
-  async getAllowedModels(tier) {
-    await this.initialize();
-
-    const result = await pool.query(
-      'SELECT allowed_models FROM proxy_subscription_tiers WHERE tier = $1',
-      [tier]
-    );
-
-    return result.rows[0]?.allowed_models || [];
-  }
-
   // ==========================================
-  // PROVIDER FORWARDING
+  // OPENAI RESPONSES API PASSTHROUGH
   // ==========================================
 
-  async forwardToProvider(model, body) {
-    if (model.startsWith('gpt-')) {
-      return this._forwardToOpenAI(model, body);
-    } else if (model.startsWith('gemini-')) {
-      return this._forwardToGemini(model, body);
-    } else if (model.startsWith('claude-')) {
-      return this._forwardToAnthropic(model, body);
-    }
-
-    throw new Error(`Unsupported model: ${model}. Use gpt-*, gemini-*, or claude-* models.`);
-  }
-
-  async _forwardToOpenAI(model, body) {
+  async forwardToOpenAI(body) {
     const apiKey = config.openai?.apiKey;
     if (!apiKey) throw new Error('OpenAI API key not configured on proxy server');
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model,
-        messages: body.messages,
-        max_tokens: body.max_tokens,
-        temperature: body.temperature,
-      }),
+      body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || `OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    return {
-      provider: 'openai',
-      content: data.choices?.[0]?.message?.content || '',
-      model: data.model,
-      usage: {
-        prompt_tokens: data.usage?.prompt_tokens || 0,
-        completion_tokens: data.usage?.completion_tokens || 0,
-        total_tokens: data.usage?.total_tokens || 0,
-      },
-      raw: data,
-    };
-  }
-
-  async _forwardToGemini(model, body) {
-    const apiKey = config.gemini?.apiKey;
-    if (!apiKey) throw new Error('Gemini API key not configured on proxy server');
-
-    // Translate OpenAI messages to Gemini format
-    const contents = [];
-    let systemInstruction = null;
-
-    for (const msg of body.messages) {
-      if (msg.role === 'system') {
-        systemInstruction = { parts: [{ text: msg.content }] };
-      } else {
-        contents.push({
-          role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }],
-        });
-      }
-    }
-
-    const geminiBody = {
-      contents,
-      generationConfig: {},
-    };
-
-    if (systemInstruction) {
-      geminiBody.systemInstruction = systemInstruction;
-    }
-    if (body.max_tokens) {
-      geminiBody.generationConfig.maxOutputTokens = body.max_tokens;
-    }
-    if (body.temperature !== undefined) {
-      geminiBody.generationConfig.temperature = body.temperature;
-    }
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiBody),
-    });
+    const data = await response.json().catch(() => null);
 
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Gemini API error: ${response.status}`);
+      const errMsg = data?.error?.message || `OpenAI API error: ${response.status}`;
+      const err = new Error(errMsg);
+      err.status = response.status;
+      err.openaiError = data;
+      throw err;
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const usageMetadata = data.usageMetadata || {};
-
-    return {
-      provider: 'gemini',
-      content: text,
-      model,
-      usage: {
-        prompt_tokens: usageMetadata.promptTokenCount || 0,
-        completion_tokens: usageMetadata.candidatesTokenCount || 0,
-        total_tokens: usageMetadata.totalTokenCount || 0,
-      },
-      raw: data,
-    };
-  }
-
-  async _forwardToAnthropic(model, body) {
-    const apiKey = config.proxy?.anthropicApiKey;
-    if (!apiKey) throw new Error('Anthropic API key not configured on proxy server');
-
-    // Extract system message from messages array
-    let system = undefined;
-    const messages = [];
-
-    for (const msg of body.messages) {
-      if (msg.role === 'system') {
-        system = msg.content;
-      } else {
-        messages.push({ role: msg.role, content: msg.content });
-      }
-    }
-
-    const anthropicBody = {
-      model,
-      messages,
-      max_tokens: body.max_tokens || 1024,
-    };
-
-    if (system) {
-      anthropicBody.system = system;
-    }
-    if (body.temperature !== undefined) {
-      anthropicBody.temperature = body.temperature;
-    }
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(anthropicBody),
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Anthropic API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const text = data.content?.[0]?.text || '';
-
-    return {
-      provider: 'anthropic',
-      content: text,
-      model: data.model,
-      usage: {
-        prompt_tokens: data.usage?.input_tokens || 0,
-        completion_tokens: data.usage?.output_tokens || 0,
-        total_tokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0),
-      },
-      raw: data,
-    };
+    return data;
   }
 }
