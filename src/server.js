@@ -1647,8 +1647,7 @@ function startServer(port) {
       console.log(`  POST /api/proxy/admin/register-site - Register site`);
       console.log(`  POST /api/proxy/admin/push-key - Push key to WP site`);
       console.log(`  GET  /api/proxy/admin/sites - List registered sites`);
-      console.log(`  POST /api/proxy/v1/chat/completions - AI proxy endpoint`);
-      console.log(`  GET  /api/proxy/v1/models - Available models`);
+      console.log(`  POST /api/proxy/v1/responses - OpenAI Responses API passthrough`);
       console.log(`  GET  /api/proxy/v1/usage - Usage stats`);
     }
     if (config.auth?.enabled !== false) {

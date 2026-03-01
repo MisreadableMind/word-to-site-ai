@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import crypto from 'crypto';
 import { config } from '../config.js';
 import createProxyAuth from '../middleware/proxy-auth.js';
 
@@ -55,7 +54,6 @@ export default function createProxyRouter(proxyService) {
           domain: site.domain,
           api_key: site.api_key,
           label: site.label,
-          subscription_tier: site.subscription_tier,
           monthly_token_limit: site.monthly_token_limit,
           created_at: site.created_at,
         },
@@ -139,7 +137,6 @@ export default function createProxyRouter(proxyService) {
         success: true,
         site_id: site.id,
         domain: site.domain,
-        subscription_tier: site.subscription_tier,
         usage: { ...quota, used },
       });
     } catch (error) {
@@ -161,22 +158,19 @@ export default function createProxyRouter(proxyService) {
     }
   });
 
-  // Update site (tier, status)
+  // Update site status
   router.patch('/admin/sites/:id', adminAuth, async (req, res) => {
     try {
-      const { tier, status } = req.body;
-      let site = null;
+      const { status } = req.body;
 
-      if (tier) {
-        site = await proxyService.updateTier(req.params.id, tier);
+      if (!status) {
+        return res.status(400).json({ error: { message: 'status is required', type: 'validation_error' } });
       }
 
-      if (status) {
-        site = await proxyService.updateSiteStatus(req.params.id, status);
-      }
+      const site = await proxyService.updateSiteStatus(req.params.id, status);
 
       if (!site) {
-        return res.status(404).json({ error: { message: 'Site not found or no changes applied', type: 'not_found' } });
+        return res.status(404).json({ error: { message: 'Site not found', type: 'not_found' } });
       }
 
       res.json({ success: true, site });
@@ -190,97 +184,50 @@ export default function createProxyRouter(proxyService) {
   // AUTHENTICATED PROXY ENDPOINTS
   // ==========================================
 
-  // Unified AI proxy — OpenAI-compatible chat completions
-  router.post('/v1/chat/completions', auth, async (req, res) => {
+  // OpenAI Responses API passthrough
+  router.post('/v1/responses', auth, async (req, res) => {
     const startTime = Date.now();
     const site = req.proxySite;
 
     try {
-      const { model, messages, max_tokens, temperature } = req.body;
-
-      if (!model || !messages || !Array.isArray(messages)) {
-        return res.status(400).json({
-          error: { message: 'model and messages array are required', type: 'validation_error' },
-        });
-      }
-
-      // Check model is allowed for this tier
-      const allowedModels = await proxyService.getAllowedModels(site.subscription_tier);
-      if (allowedModels.length > 0 && !allowedModels.includes(model)) {
-        return res.status(403).json({
-          error: {
-            message: `Model "${model}" is not available on the "${site.subscription_tier}" tier. Allowed: ${allowedModels.join(', ')}`,
-            type: 'model_not_allowed',
-          },
-        });
-      }
-
-      // Forward to the appropriate provider
-      const result = await proxyService.forwardToProvider(model, { messages, max_tokens, temperature });
-
+      const data = await proxyService.forwardToOpenAI(req.body);
       const latencyMs = Date.now() - startTime;
 
       // Log asynchronously
       proxyService.logRequest(site.id, site.domain, {
-        provider: result.provider,
-        model: result.model,
-        endpoint: '/v1/chat/completions',
+        model: data.model || req.body.model || null,
+        endpoint: '/v1/responses',
         method: 'POST',
-        prompt_tokens: result.usage.prompt_tokens,
-        completion_tokens: result.usage.completion_tokens,
-        total_tokens: result.usage.total_tokens,
+        prompt_tokens: data.usage?.input_tokens || 0,
+        completion_tokens: data.usage?.output_tokens || 0,
+        total_tokens: data.usage?.total_tokens || 0,
         response_status: 200,
         latency_ms: latencyMs,
       });
 
-      // Return OpenAI-compatible response format
-      res.json({
-        id: `chatcmpl-${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
-        object: 'chat.completion',
-        created: Math.floor(Date.now() / 1000),
-        model: result.model,
-        choices: [{
-          index: 0,
-          message: { role: 'assistant', content: result.content },
-          finish_reason: 'stop',
-        }],
-        usage: result.usage,
-      });
+      res.json(data);
     } catch (error) {
       const latencyMs = Date.now() - startTime;
 
       proxyService.logRequest(site.id, site.domain, {
-        provider: req.body?.model?.split('-')[0] || 'unknown',
         model: req.body?.model || 'unknown',
-        endpoint: '/v1/chat/completions',
+        endpoint: '/v1/responses',
         method: 'POST',
-        response_status: 502,
+        response_status: error.status || 502,
         latency_ms: latencyMs,
         error_message: error.message,
       });
 
-      console.error('Proxy forwarding error:', error);
+      console.error('Proxy forwarding error:', error.message);
+
+      // Forward OpenAI error response as-is when available
+      if (error.openaiError) {
+        return res.status(error.status).json(error.openaiError);
+      }
+
       res.status(502).json({
         error: { message: error.message, type: 'upstream_error' },
       });
-    }
-  });
-
-  // List available models for the caller's tier
-  router.get('/v1/models', auth, async (req, res) => {
-    try {
-      const allowedModels = await proxyService.getAllowedModels(req.proxySite.subscription_tier);
-
-      const models = allowedModels.map(id => ({
-        id,
-        object: 'model',
-        owned_by: id.startsWith('gpt-') ? 'openai' : id.startsWith('gemini-') ? 'google' : 'anthropic',
-      }));
-
-      res.json({ object: 'list', data: models });
-    } catch (error) {
-      console.error('Proxy list-models error:', error);
-      res.status(500).json({ error: { message: error.message, type: 'server_error' } });
     }
   });
 
@@ -292,7 +239,6 @@ export default function createProxyRouter(proxyService) {
 
       res.json({
         domain: site.domain,
-        subscription_tier: site.subscription_tier,
         period: new Date().toISOString().slice(0, 7), // YYYY-MM
         usage: quota,
       });
