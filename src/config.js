@@ -70,7 +70,6 @@ export const config = {
   proxy: {
     enabled: process.env.ENABLE_AI_PROXY !== 'false',
     adminSecret: process.env.PROXY_ADMIN_SECRET || '',
-    anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   },
 
   // Plugin API Configuration (hub-and-spoke)
