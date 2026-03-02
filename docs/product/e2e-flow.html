@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAAS Platform — End-to-End Flow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0c10;
+            color: #e1e4e8;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .header {
+            text-align: center;
+            padding: 48px 24px 32px;
+        }
+        .header h1 { font-size: 26px; color: #fff; font-weight: 700; }
+        .header p { color: #6e7681; font-size: 13px; margin-top: 6px; }
+
+        /* Main canvas */
+        .canvas {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+            position: relative;
+        }
+
+        /* Vertical spine */
+        .spine {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #1f6feb 0%, #8b5cf6 35%, #f59e0b 65%, #10b981 100%);
+            opacity: 0.3;
+            transform: translateX(-50%);
+        }
+
+        /* Stage */
+        .stage {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .stage-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+        }
+        .stage-num {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+        .stage-title {
+            font-size: 15px; font-weight: 700; color: #fff;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* Row of boxes */
+        .row {
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Node box */
+        .node {
+            border-radius: 10px;
+            padding: 14px 16px;
+            min-width: 150px;
+            max-width: 220px;
+            flex: 1;
+            position: relative;
+        }
+        .node .name {
+            font-size: 13px; font-weight: 700; color: #fff;
+        }
+        .node .tech {
+            font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px;
+        }
+        .node .what {
+            font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 6px; line-height: 1.45;
+        }
+
+        /* Color coding by layer */
+        .node.user      { background: #1e3a5f; border: 1px solid #2563eb; }
+        .node.frontend   { background: #1e3a5f; border: 1px solid #3b82f6; }
+        .node.gateway    { background: #1a2e1a; border: 1px solid #22c55e; }
+        .node.ai-gemini  { background: #1a1a3e; border: 1px solid #6366f1; }
+        .node.ai-openai  { background: #2a1a3e; border: 1px solid #a855f7; }
+        .node.crawl      { background: #2d1a3e; border: 1px solid #8b5cf6; }
+        .node.wp         { background: #1a2a3e; border: 1px solid #0ea5e9; }
+        .node.domain     { background: #3e2a1a; border: 1px solid #f59e0b; }
+        .node.data       { background: #2a2215; border: 1px solid #d97706; }
+        .node.billing    { background: #1a1a2e; border: 1px solid #818cf8; }
+        .node.result     { background: #0f2e1a; border: 1px solid #10b981; }
+
+        /* Connector arrows between stages */
+        .connector {
+            display: flex;
+            justify-content: center;
+            padding: 6px 0;
+            position: relative;
+            z-index: 2;
+        }
+        .connector svg { display: block; }
+
+        /* OR split */
+        .split {
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            gap: 24px;
+            position: relative;
+            z-index: 2;
+        }
+        .branch {
+            flex: 1;
+            max-width: 480px;
+            border: 1px dashed #30363d;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .branch-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.5px; color: #6e7681; text-align: center;
+            margin-bottom: 12px;
+        }
+        .branch .row { justify-content: center; }
+
+        /* Merge point */
+        .merge {
+            text-align: center;
+            padding: 8px 0;
+            position: relative;
+            z-index: 2;
+        }
+        .merge-pill {
+            display: inline-block;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 20px;
+            padding: 6px 20px;
+            font-size: 11px;
+            color: #8b949e;
+            font-weight: 600;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 24px;
+            margin-top: 16px;
+            border-top: 1px solid #161b22;
+        }
+        .legend-item {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 11px; color: #8b949e;
+        }
+        .legend-dot {
+            width: 10px; height: 10px; border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>End-to-End Flow &mdash; All Services</h1>
+    <p>Simplified view: every stage, every service, how they connect</p>
+</div>
+
+<div class="canvas">
+    <div class="spine"></div>
+
+    <!-- ===================== STAGE 1: ENTRY ===================== -->
+    <div class="stage">
+        <div class="stage-header">
+            <div class="stage-num" style="background:#2563eb;">1</div>
+            <div class="stage-title">User Entry</div>
+        </div>
+        <div class="row">
+            <div class="node frontend">
+                <div class="name">SolidStart App</div>
+                <div class="tech">SolidJS + SSR</div>
+                <div class="what">Landing page, auth (JWT + Google OAuth), onboarding wizard start</div>
+            </div>
+            <div class="node gateway">
+                <div class="name">Auth Service</div>
+                <div class="tech">Fastify + Postgres</div>
+                <div class="what">Register / login, issue JWT, validate session</div>
+            </div>
+            <div class="node billing">
+                <div class="name">Stripe</div>
+                <div class="tech">Checkout + Webhooks</div>
+                <div class="what">Plan selection, payment, subscription activation</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <svg width="24" height="32"><path d="M12 0 L12 24 L6 18 M12 24 L18 18" stroke="#3b82f6" stroke-width="2" fill="none"/></svg>
+    </div>
+
+    <!-- ===================== STAGE 2: ONBOARDING SPLIT ===================== -->
+    <div class="stage">
+        <div class="stage-header">
+            <div class="stage-num" style="background:#8b5cf6;">2</div>
+            <div class="stage-title">Onboarding &mdash; Gather Context</div>
+        </div>
+        <div class="split">
+            <!-- Flow A -->
+            <div class="branch">
+                <div class="branch-label">Flow A &mdash; Copy Website</div>
+                <div class="row" style="margin-bottom:10px;">
+                    <div class="node frontend">
+                        <div class="name">URL Input Form</div>
+                        <div class="tech">SolidStart</div>
+                        <div class="what">User pastes their existing website URL</div>
+                    </div>
+                </div>
+                <div class="connector">
+                    <svg width="24" height="24"><path d="M12 0 L12 18 L7 13 M12 18 L17 13" stroke="#8b5cf6" stroke-width="2" fill="none"/></svg>
+                </div>
+                <div class="row" style="margin-bottom:10px;">
+                    <div class="node crawl">
+                        <div class="name">Firecrawl</div>
+                        <div class="tech">External API</div>
+                        <div class="what">Crawl URL &rarr; markdown, metadata, screenshot, images</div>
+                    </div>
+                </div>
+                <div class="connector">
+                    <svg width="24" height="24"><path d="M12 0 L12 18 L7 13 M12 18 L17 13" stroke="#8b5cf6" stroke-width="2" fill="none"/></svg>
+                </div>
+                <div class="row">
+                    <div class="node ai-gemini">
+                        <div class="name">Gemini &mdash; Analyze</div>
+                        <div class="tech">Vision + Text</div>
+                        <div class="what">Screenshot + markdown &rarr; structured brief (industry, sections, colors, tone)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flow B -->
+            <div class="branch">
+                <div class="branch-label">Flow B &mdash; Voice Interview</div>
+                <div class="row" style="margin-bottom:10px;">
+                    <div class="node frontend">
+                        <div class="name">Voice Capture</div>
+                        <div class="tech">MediaRecorder + WS</div>
+                        <div class="what">Record audio, stream chunks over WebSocket</div>
+                    </div>
+                </div>
+                <div class="connector">
+                    <svg width="24" height="24"><path d="M12 0 L12 18 L7 13 M12 18 L17 13" stroke="#8b5cf6" stroke-width="2" fill="none"/></svg>
+                </div>
+                <div class="row" style="margin-bottom:10px;">
+                    <div class="node ai-openai">
+                        <div class="name">Whisper STT</div>
+                        <div class="tech">OpenAI</div>
+                        <div class="what">Audio &rarr; text transcription in real-time</div>
+                    </div>
+                </div>
+                <div class="connector">
+                    <svg width="24" height="24"><path d="M12 0 L12 18 L7 13 M12 18 L17 13" stroke="#8b5cf6" stroke-width="2" fill="none"/></svg>
+                </div>
+                <div class="row">
+                    <div class="node ai-openai">
+                        <div class="name">GPT-4o Q&A Engine</div>
+                        <div class="tech">OpenAI + TTS</div>
+                        <div class="what">Adaptive 5-8 questions &rarr; structured brief. TTS reads questions back.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="merge">
+        <div class="merge-pill">Both flows produce &rarr; Structured Brief (JSON)</div>
+    </div>
+
+    <div class="connector">
+        <svg width="24" height="32"><path d="M12 0 L12 24 L6 18 M12 24 L18 18" stroke="#f59e0b" stroke-width="2" fill="none"/></svg>
+    </div>
+
+    <!-- ===================== STAGE 3: TEMPLATE MATCH ===================== -->
+    <div class="stage">
+        <div class="stage-header">
+            <div class="stage-num" style="background:#6366f1;">3</div>
+            <div class="stage-title">Template Matching</div>
+        </div>
+        <div class="row">
+            <div class="node data">
+                <div class="name">Template Catalog</div>
+                <div class="tech">JSON + S3/R2 Screenshots</div>
+                <div class="what">All WP template metadata + pre-rendered screenshots loaded into request</div>
+            </div>
+            <div class="node ai-gemini">
+                <div class="name">Gemini &mdash; Match</div>
+                <div class="tech">1M+ token context</div>
+                <div class="what">Brief + ALL template screenshots in one call. Visual-first comparison. Ranks top 3.</div>
+            </div>
+            <div class="node frontend">
+                <div class="name">Template Preview</div>
+                <div class="tech">SolidStart</div>
+                <div class="what">Show top 3 matches. User picks one. Optional domain input.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <svg width="24" height="32"><path d="M12 0 L12 24 L6 18 M12 24 L18 18" stroke="#f59e0b" stroke-width="2" fill="none"/></svg>
+    </div>
+
+    <!-- ===================== STAGE 4: CONTENT GEN ===================== -->
+    <div class="stage">
+        <div class="stage-header">
+            <div class="stage-num" style="background:#a855f7;">4</div>
+            <div class="stage-title">Content Generation</div>
+        </div>
+        <div class="row">
+            <div class="node ai-openai">
+                <div class="name">GPT-4o &mdash; Generate</div>
+                <div class="tech">OpenAI</div>
+                <div class="what">Brief + template content_slots &rarr; headlines, copy, CTAs, section content for every page</div>
+            </div>
+            <div class="node gateway">
+                <div class="name">Job Queue</div>
+                <div class="tech">BullMQ + Redis</div>
+                <div class="what">Enqueue async site creation job. Return job ID for progress tracking.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <svg width="24" height="32"><path d="M12 0 L12 24 L6 18 M12 24 L18 18" stroke="#f59e0b" stroke-width="2" fill="none"/></svg>
+    </div>
+
+    <!-- ===================== STAGE 5: PROVISION ===================== -->
+    <div class="stage">
+        <div class="stage-header">
+            <div class="stage-num" style="background:#0ea5e9;">5</div>
+            <div class="stage-title">Site Provisioning</div>
+        </div>
+        <div class="row">
+            <div class="node wp">
+                <div class="name">InstaWP</div>
+                <div class="tech">API v2</div>
+                <div class="what">Create WP site from template. Poll until status = active. Get credentials + temp URL.</div>
+            </div>
+            <div class="node wp" style="background:#143a2a; border-color:#16a34a;">
+                <div class="name">WAAS Controller Plugin</div>
+                <div class="tech">/wp-json/waas/v1/*</div>
+                <div class="what">Pre-installed on template. Receives content via plugin endpoints. Creates pages, sections, uploads media.</div>
+            </div>
+            <div class="node data">
+                <div class="name">PostgreSQL</div>
+                <div class="tech">Drizzle ORM</div>
+                <div class="what">Store site record: plugin API key (encrypted), template, onboard data, status.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <svg width="24" height="32"><path d="M12 0 L12 24 L6 18 M12 24 L18 18" stroke="#f59e0b" stroke-width="2" fill="none"/></svg>
+    </div>
+
+    <!-- ===================== STAGE 6: DOMAIN ===================== -->
+    <div class="stage">
+        <div class="stage-header">
+            <div class="stage-num" style="background:#f59e0b;">6</div>
+            <div class="stage-title">Domain + DNS + SSL (Optional)</div>
+        </div>
+        <div class="row">
+            <div class="node domain">
+                <div class="name">Namecheap</div>
+                <div class="tech">XML API</div>
+                <div class="what">Check availability, register domain, set nameservers to Cloudflare</div>
+            </div>
+            <div class="node domain">
+                <div class="name">Cloudflare</div>
+                <div class="tech">REST API v4</div>
+                <div class="what">Create zone, set A records to InstaWP IPs, enable SSL + security + CDN</div>
+            </div>
+            <div class="node wp">
+                <div class="name">InstaWP</div>
+                <div class="tech">Domain Mapping</div>
+                <div class="what">Map custom domain to WP site. Provision SSL via Let's Encrypt.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <svg width="24" height="32"><path d="M12 0 L12 24 L6 18 M12 24 L18 18" stroke="#10b981" stroke-width="2" fill="none"/></svg>
+    </div>
+
+    <!-- ===================== STAGE 7: LIVE ===================== -->
+    <div class="stage">
+        <div class="stage-header">
+            <div class="stage-num" style="background:#10b981;">7</div>
+            <div class="stage-title">Site Live + Chat Editing</div>
+        </div>
+        <div class="row">
+            <div class="node result">
+                <div class="name">Live Website</div>
+                <div class="tech">WordPress</div>
+                <div class="what">Site accessible at custom domain (or temp InstaWP URL). Fully populated with content.</div>
+            </div>
+            <div class="node frontend">
+                <div class="name">Chat Editor UI</div>
+                <div class="tech">SolidStart + WebSocket</div>
+                <div class="what">User types or speaks edit requests. Real-time preview. Edit history + undo.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <svg width="24" height="24"><path d="M12 0 L12 18 L7 13 M12 18 L17 13" stroke="#10b981" stroke-width="2" fill="none"/></svg>
+    </div>
+
+    <div class="stage">
+        <div class="row">
+            <div class="node ai-openai">
+                <div class="name">GPT-4o &mdash; Intent</div>
+                <div class="tech">OpenAI</div>
+                <div class="what">"Make button blue" &rarr; structured action JSON targeting plugin endpoints.</div>
+            </div>
+            <div class="node gateway">
+                <div class="name">Action Planner</div>
+                <div class="tech">Backend Gateway</div>
+                <div class="what">Map intent to /waas/v1/* calls. Snapshot via plugin. Confirm with user.</div>
+            </div>
+            <div class="node wp" style="background:#143a2a; border-color:#16a34a;">
+                <div class="name">WAAS Controller Plugin</div>
+                <div class="tech">/wp-json/waas/v1/*</div>
+                <div class="what">Executes edits inside WP: manipulate blocks, theme mods, menus, media. Returns result.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== STAGE 8: ONGOING ===================== -->
+
+    <div class="connector">
+        <svg width="24" height="32"><path d="M12 0 L12 24 L6 18 M12 24 L18 18" stroke="#10b981" stroke-width="2" fill="none"/></svg>
+    </div>
+
+    <div class="stage">
+        <div class="stage-header">
+            <div class="stage-num" style="background:#059669;">&#8635;</div>
+            <div class="stage-title">Ongoing</div>
+        </div>
+        <div class="row">
+            <div class="node frontend">
+                <div class="name">Dashboard</div>
+                <div class="tech">SolidStart</div>
+                <div class="what">All user's sites. Status, domain, quick actions, re-enter chat editor.</div>
+            </div>
+            <div class="node billing">
+                <div class="name">Stripe Billing</div>
+                <div class="tech">Subscriptions</div>
+                <div class="what">Recurring payments, plan upgrades, usage tracking, customer portal.</div>
+            </div>
+            <div class="node data">
+                <div class="name">PostgreSQL + Redis</div>
+                <div class="tech">Persistent State</div>
+                <div class="what">Edit history, site state cache, user sessions, analytics.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Legend -->
+<div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div> Frontend</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div> Backend Gateway</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#6366f1;"></div> Gemini AI</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a855f7;"></div> OpenAI</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6;"></div> Firecrawl</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0ea5e9;"></div> InstaWP</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#16a34a;"></div> WAAS Controller Plugin</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> Domain (Namecheap + Cloudflare)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div> Data Stores</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#818cf8;"></div> Stripe Billing</div>
+</div>
+
+</body>
+</html>

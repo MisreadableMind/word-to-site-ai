@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAAS Platform - C4 Architecture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1117;
+            color: #e1e4e8;
+            padding: 40px;
+        }
+        h1 { text-align: center; font-size: 28px; margin-bottom: 8px; color: #fff; }
+        .subtitle { text-align: center; color: #8b949e; margin-bottom: 40px; font-size: 14px; }
+        .tabs {
+            display: flex; justify-content: center; gap: 8px; margin-bottom: 32px;
+        }
+        .tab {
+            padding: 10px 24px; border-radius: 8px; cursor: pointer;
+            background: #1c1f26; border: 1px solid #30363d; color: #8b949e;
+            font-size: 14px; font-weight: 500; transition: all 0.2s;
+        }
+        .tab:hover { border-color: #58a6ff; color: #c9d1d9; }
+        .tab.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+        .diagram { display: none; }
+        .diagram.active { display: block; }
+        .diagram-container {
+            background: #161920; border: 1px solid #21262d; border-radius: 12px;
+            padding: 40px; max-width: 1200px; margin: 0 auto;
+        }
+
+        /* C4 Diagram Styles */
+        .c4 { position: relative; }
+
+        /* Level 1: Context */
+        .context-diagram {
+            display: flex; flex-direction: column; align-items: center; gap: 32px;
+        }
+        .actors-row, .externals-row {
+            display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+        }
+        .person {
+            width: 140px; text-align: center;
+        }
+        .person-icon {
+            width: 56px; height: 56px; background: #1168bd; border-radius: 50%;
+            margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: #fff;
+        }
+        .person-label { font-size: 13px; font-weight: 600; color: #fff; }
+        .person-desc { font-size: 11px; color: #8b949e; margin-top: 4px; }
+
+        .system-box {
+            background: #1168bd; border-radius: 12px; padding: 24px 40px;
+            text-align: center; min-width: 320px; position: relative;
+        }
+        .system-box.external {
+            background: transparent; border: 2px dashed #6e7681;
+        }
+        .system-box .label { font-size: 16px; font-weight: 700; color: #fff; }
+        .system-box .tech { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+        .system-box .desc { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 8px; }
+        .system-box.external .label { color: #8b949e; }
+        .system-box.external .desc { color: #6e7681; }
+
+        .arrow-down {
+            width: 2px; height: 40px; background: #58a6ff; margin: 0 auto;
+            position: relative;
+        }
+        .arrow-down::after {
+            content: ''; position: absolute; bottom: -6px; left: -5px;
+            border-left: 6px solid transparent; border-right: 6px solid transparent;
+            border-top: 8px solid #58a6ff;
+        }
+        .arrow-label {
+            font-size: 10px; color: #58a6ff; position: absolute;
+            left: 12px; top: 50%; transform: translateY(-50%); white-space: nowrap;
+        }
+
+        /* Level 2: Container */
+        .container-diagram {
+            display: flex; flex-direction: column; gap: 24px;
+        }
+        .container-row {
+            display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;
+        }
+        .container-box {
+            border-radius: 10px; padding: 20px; min-width: 200px; max-width: 260px;
+            text-align: center; flex: 1;
+        }
+        .container-box.frontend { background: #2d5fa0; }
+        .container-box.backend { background: #2d7d4f; }
+        .container-box.data { background: #8b5e3c; }
+        .container-box.external { background: transparent; border: 2px dashed #6e7681; }
+        .container-box .label { font-size: 14px; font-weight: 700; color: #fff; }
+        .container-box .tech { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .container-box .desc { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 8px; }
+        .container-box.external .label { color: #8b949e; }
+        .container-box.external .tech { color: #6e7681; }
+        .container-box.external .desc { color: #6e7681; }
+
+        .section-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.5px; color: #6e7681; text-align: center;
+            margin: 16px 0 8px; padding-bottom: 8px; border-bottom: 1px solid #21262d;
+        }
+
+        .boundary {
+            border: 2px dashed #30363d; border-radius: 12px; padding: 20px;
+            position: relative;
+        }
+        .boundary-label {
+            position: absolute; top: -12px; left: 20px; background: #161920;
+            padding: 2px 12px; font-size: 11px; color: #6e7681;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* Level 3: Component */
+        .component-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .component-box {
+            background: #1c2333; border: 1px solid #30363d; border-radius: 8px;
+            padding: 16px; text-align: left;
+        }
+        .component-box .label {
+            font-size: 13px; font-weight: 700; color: #fff;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .component-box .label .badge {
+            font-size: 9px; padding: 2px 6px; border-radius: 4px;
+            font-weight: 600; text-transform: uppercase;
+        }
+        .badge.openai { background: #412991; color: #c4b5fd; }
+        .badge.gemini { background: #174ea6; color: #8ab4f8; }
+        .badge.firecrawl { background: #7c3aed; color: #ddd6fe; }
+        .badge.wp { background: #21759b; color: #b3ddf2; }
+        .badge.stripe { background: #635bff; color: #d4d2ff; }
+        .badge.namecheap { background: #de5833; color: #fcd5cc; }
+        .badge.cloudflare { background: #f38020; color: #fde0c3; }
+        .badge.instawp { background: #0ea5e9; color: #bae6fd; }
+        .component-box .desc {
+            font-size: 11px; color: #8b949e; margin-top: 6px; line-height: 1.5;
+        }
+        .component-box .api-calls {
+            font-size: 10px; color: #58a6ff; margin-top: 8px;
+            font-family: monospace; background: #0d1117; padding: 6px 8px;
+            border-radius: 4px;
+        }
+
+        /* Flow diagrams */
+        .flow {
+            display: flex; align-items: stretch; gap: 0; flex-wrap: nowrap;
+            overflow-x: auto; padding: 20px 0;
+        }
+        .flow-step {
+            min-width: 160px; max-width: 200px; flex-shrink: 0;
+            background: #1c2333; border: 1px solid #30363d; border-radius: 10px;
+            padding: 16px; text-align: center; position: relative;
+        }
+        .flow-step .step-num {
+            width: 24px; height: 24px; border-radius: 50%; background: #1f6feb;
+            color: #fff; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 8px;
+        }
+        .flow-step .label { font-size: 12px; font-weight: 600; color: #fff; }
+        .flow-step .desc { font-size: 10px; color: #8b949e; margin-top: 6px; }
+        .flow-step .provider {
+            font-size: 10px; margin-top: 8px; padding: 3px 8px;
+            border-radius: 4px; display: inline-block; font-weight: 600;
+        }
+        .flow-arrow {
+            display: flex; align-items: center; flex-shrink: 0; padding: 0 4px;
+            color: #58a6ff; font-size: 20px;
+        }
+
+        .legend {
+            display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+            margin-top: 24px; padding-top: 16px; border-top: 1px solid #21262d;
+        }
+        .legend-item {
+            display: flex; align-items: center; gap: 6px; font-size: 11px; color: #8b949e;
+        }
+        .legend-color {
+            width: 12px; height: 12px; border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WordToSite Platform</h1>
+    <p class="subtitle">C4 Architecture Diagrams &mdash; v0.1 Draft</p>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showDiagram('context')">L1: Context</div>
+        <div class="tab" onclick="showDiagram('container')">L2: Containers</div>
+        <div class="tab" onclick="showDiagram('component')">L3: Components</div>
+        <div class="tab" onclick="showDiagram('flow-copy')">Flow A: Copy Site</div>
+        <div class="tab" onclick="showDiagram('flow-voice')">Flow B: Voice</div>
+        <div class="tab" onclick="showDiagram('flow-chat')">Flow C: Chat Edit</div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- LEVEL 1: SYSTEM CONTEXT                                       -->
+    <!-- ============================================================ -->
+    <div id="context" class="diagram active">
+        <div class="diagram-container">
+            <div class="section-label">Level 1 &mdash; System Context Diagram</div>
+            <div class="context-diagram">
+                <!-- Actors -->
+                <div class="actors-row">
+                    <div class="person">
+                        <div class="person-icon">&#128100;</div>
+                        <div class="person-label">End User</div>
+                        <div class="person-desc">Business owner who wants a website</div>
+                    </div>
+                    <div class="person">
+                        <div class="person-icon" style="background:#6e40c9;">&#128119;</div>
+                        <div class="person-label">Admin</div>
+                        <div class="person-desc">Platform operator, manages templates & billing</div>
+                    </div>
+                </div>
+
+                <!-- Arrow down -->
+                <div class="arrow-down" style="height:50px;">
+                    <span class="arrow-label">Uses (HTTPS / WSS)</span>
+                </div>
+
+                <!-- Core System -->
+                <div class="system-box">
+                    <div class="label">WAAS Platform</div>
+                    <div class="tech">[Software System]</div>
+                    <div class="desc">Automates WordPress website creation via voice or URL cloning,<br>and enables chat-based editing of live sites.</div>
+                </div>
+
+                <!-- Arrow down -->
+                <div class="arrow-down" style="height:50px;">
+                    <span class="arrow-label">Orchestrates via APIs</span>
+                </div>
+
+                <!-- External Systems -->
+                <div class="externals-row">
+                    <div class="system-box external">
+                        <div class="label">Firecrawl</div>
+                        <div class="desc">Crawls URLs, returns markdown + screenshots</div>
+                    </div>
+                    <div class="system-box external">
+                        <div class="label">Google Gemini</div>
+                        <div class="desc">Visual analysis, template matching (1M ctx)</div>
+                    </div>
+                    <div class="system-box external">
+                        <div class="label">OpenAI</div>
+                        <div class="desc">GPT-4o, Whisper STT, TTS</div>
+                    </div>
+                    <div class="system-box external">
+                        <div class="label">InstaWP</div>
+                        <div class="desc">WordPress site provisioning</div>
+                    </div>
+                    <div class="system-box external">
+                        <div class="label">WordPress REST</div>
+                        <div class="desc">Content editing on live sites</div>
+                    </div>
+                    <div class="system-box external">
+                        <div class="label">Namecheap</div>
+                        <div class="desc">Domain registration</div>
+                    </div>
+                    <div class="system-box external">
+                        <div class="label">Cloudflare</div>
+                        <div class="desc">DNS, CDN, SSL, security</div>
+                    </div>
+                    <div class="system-box external">
+                        <div class="label">Stripe</div>
+                        <div class="desc">Payments & subscriptions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- LEVEL 2: CONTAINER DIAGRAM                                    -->
+    <!-- ============================================================ -->
+    <div id="container" class="diagram">
+        <div class="diagram-container">
+            <div class="section-label">Level 2 &mdash; Container Diagram</div>
+            <div class="container-diagram">
+
+                <!-- Frontend -->
+                <div class="boundary">
+                    <div class="boundary-label">Frontend</div>
+                    <div class="container-row">
+                        <div class="container-box frontend">
+                            <div class="label">SPA / SSR App</div>
+                            <div class="tech">[SolidStart + TypeScript]</div>
+                            <div class="desc">Onboarding wizard, dashboard, chat editor, voice capture. SSR for marketing pages.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align:center;color:#58a6ff;font-size:18px;padding:8px;">&#8595; HTTPS / WSS &#8595;</div>
+
+                <!-- Backend -->
+                <div class="boundary">
+                    <div class="boundary-label">Backend Gateway</div>
+                    <div class="container-row">
+                        <div class="container-box backend">
+                            <div class="label">API Server</div>
+                            <div class="tech">[Fastify + TypeScript]</div>
+                            <div class="desc">REST endpoints, JWT auth, request validation, rate limiting.</div>
+                        </div>
+                        <div class="container-box backend">
+                            <div class="label">WebSocket Hub</div>
+                            <div class="tech">[ws / Fastify-websocket]</div>
+                            <div class="desc">Real-time channels for voice streaming and chat editing.</div>
+                        </div>
+                        <div class="container-box backend">
+                            <div class="label">Job Workers</div>
+                            <div class="tech">[BullMQ + Redis]</div>
+                            <div class="desc">Async site creation, crawl analysis, domain provisioning.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align:center;color:#58a6ff;font-size:18px;padding:8px;">&#8595; Service calls &#8595;</div>
+
+                <!-- Services -->
+                <div class="boundary">
+                    <div class="boundary-label">Internal Services</div>
+                    <div class="container-row">
+                        <div class="container-box backend" style="background:#2c5282;">
+                            <div class="label">AI Service</div>
+                            <div class="tech">[OpenAI + Gemini SDKs]</div>
+                            <div class="desc">Multi-provider AI: Gemini for vision, OpenAI for language + voice.</div>
+                        </div>
+                        <div class="container-box backend" style="background:#553c9a;">
+                            <div class="label">Crawler Service</div>
+                            <div class="tech">[Firecrawl API]</div>
+                            <div class="desc">Crawl target URLs, return clean markdown + screenshots.</div>
+                        </div>
+                        <div class="container-box backend" style="background:#285e61;">
+                            <div class="label">Site Builder</div>
+                            <div class="tech">[InstaWP + WAAS Plugin]</div>
+                            <div class="desc">Template matching, site provisioning, content population via plugin endpoints.</div>
+                        </div>
+                        <div class="container-box backend" style="background:#744210;">
+                            <div class="label">Domain Service</div>
+                            <div class="tech">[Namecheap + Cloudflare]</div>
+                            <div class="desc">Domain registration, DNS config, SSL provisioning.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align:center;color:#58a6ff;font-size:18px;padding:8px;">&#8595; /wp-json/waas/v1/* &#8595;</div>
+
+                <!-- WP Plugin -->
+                <div class="boundary" style="border-color:#16a34a;">
+                    <div class="boundary-label" style="color:#16a34a;">WordPress Sites (each provisioned site)</div>
+                    <div class="container-row">
+                        <div class="container-box backend" style="background:#143a2a;border-color:#16a34a;">
+                            <div class="label">WAAS Controller Plugin</div>
+                            <div class="tech">[Custom WP Plugin / PHP]</div>
+                            <div class="desc">Pre-installed on every site. Exposes /waas/v1/* REST endpoints. Manipulates blocks, theme, menus, media directly inside WP.</div>
+                        </div>
+                        <div class="container-box backend" style="background:#1a2a3e;border-color:#0ea5e9;">
+                            <div class="label">WordPress Core</div>
+                            <div class="tech">[WP 6.x + Gutenberg]</div>
+                            <div class="desc">The actual WordPress instance. Plugin calls WP PHP functions to perform changes.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align:center;color:#58a6ff;font-size:18px;padding:8px;">&#8595;</div>
+
+                <!-- Data Stores -->
+                <div class="boundary">
+                    <div class="boundary-label">Data Stores</div>
+                    <div class="container-row">
+                        <div class="container-box data">
+                            <div class="label">PostgreSQL</div>
+                            <div class="tech">[Drizzle ORM]</div>
+                            <div class="desc">Users, sites, domains, edits, onboarding sessions, subscriptions.</div>
+                        </div>
+                        <div class="container-box data">
+                            <div class="label">Redis</div>
+                            <div class="tech">[Cache + Queue]</div>
+                            <div class="desc">Session cache, crawl cache, BullMQ job queue, rate limit counters.</div>
+                        </div>
+                        <div class="container-box data" style="background:#5b4a3c;">
+                            <div class="label">Object Storage</div>
+                            <div class="tech">[S3 / Cloudflare R2]</div>
+                            <div class="desc">Template screenshots, crawl screenshots, user uploads.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-color" style="background:#2d5fa0;"></div> Frontend</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#2d7d4f;"></div> Backend / Services</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#8b5e3c;"></div> Data Stores</div>
+                    <div class="legend-item"><div class="legend-color" style="background:transparent;border:2px dashed #6e7681;"></div> System Boundary</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- LEVEL 3: COMPONENT DIAGRAM (Backend Gateway)                  -->
+    <!-- ============================================================ -->
+    <div id="component" class="diagram">
+        <div class="diagram-container">
+            <div class="section-label">Level 3 &mdash; Component Diagram (Backend Gateway)</div>
+
+            <div style="margin-bottom:20px;">
+                <div class="boundary" style="margin-bottom:24px;">
+                    <div class="boundary-label">AI Service</div>
+                    <div class="component-grid">
+                        <div class="component-box">
+                            <div class="label">Gemini Vision Analyzer <span class="badge gemini">Gemini</span></div>
+                            <div class="desc">Receives Firecrawl screenshot + markdown. Extracts industry, layout structure, color palette, content blocks as structured JSON.</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">Gemini Template Matcher <span class="badge gemini">Gemini</span></div>
+                            <div class="desc">Receives source site analysis + ALL template screenshots in one multimodal call. Scores visual similarity, ranks top 3.</div>
+                            <div class="api-calls">Input: ~50 images + analysis JSON<br>Context: 1M+ tokens</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">GPT Content Generator <span class="badge openai">OpenAI</span></div>
+                            <div class="desc">Takes the matched template's content_slots + user brief. Generates copy for every section: headlines, paragraphs, CTAs.</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">GPT Chat Interpreter <span class="badge openai">OpenAI</span></div>
+                            <div class="desc">Parses natural language edit requests into structured action JSON. Maintains conversation context per editing session.</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">Whisper STT <span class="badge openai">OpenAI</span></div>
+                            <div class="desc">Transcribes voice audio chunks from WebSocket stream. Supports streaming for real-time feedback.</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">TTS Engine <span class="badge openai">OpenAI</span></div>
+                            <div class="desc">Converts AI question text to speech audio. Streamed back to client for voice mode Q&A.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="boundary" style="margin-bottom:24px;">
+                    <div class="boundary-label">Crawler Service</div>
+                    <div class="component-grid">
+                        <div class="component-box">
+                            <div class="label">Firecrawl Client <span class="badge firecrawl">Firecrawl</span></div>
+                            <div class="desc">Wraps Firecrawl API. Calls /scrape for single pages, /crawl for multi-page. Returns markdown, metadata, screenshots.</div>
+                            <div class="api-calls">POST api.firecrawl.dev/v1/scrape<br>POST api.firecrawl.dev/v1/crawl</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">Crawl Cache</div>
+                            <div class="desc">Redis-backed cache. Same URL within 1 hour returns cached results. Prevents duplicate API spend.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="boundary" style="margin-bottom:24px;">
+                    <div class="boundary-label">Site Builder Service</div>
+                    <div class="component-grid">
+                        <div class="component-box">
+                            <div class="label">Template Catalog</div>
+                            <div class="desc">In-memory catalog of all WP templates with metadata (industries, sections, content_slots) + screenshot URLs. Loaded at startup.</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">InstaWP Provisioner <span class="badge instawp">InstaWP</span></div>
+                            <div class="desc">Creates WP site from template via InstaWP API. Polls until ready. Maps custom domain. Returns site credentials.</div>
+                            <div class="api-calls">POST app.instawp.io/api/v2/sites</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">Plugin Content Pusher <span class="badge" style="background:#143a2a;color:#4ade80;">WAAS Plugin</span></div>
+                            <div class="desc">Pushes AI-generated content to site via WAAS Controller Plugin endpoints. Creates pages, sections, uploads media.</div>
+                            <div class="api-calls">POST {site}/wp-json/waas/v1/pages<br>PATCH {site}/wp-json/waas/v1/sections/:id<br>POST {site}/wp-json/waas/v1/media</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="boundary" style="margin-bottom:24px;">
+                    <div class="boundary-label">WP Editor Service (Chat)</div>
+                    <div class="component-grid">
+                        <div class="component-box">
+                            <div class="label">Action Planner</div>
+                            <div class="desc">Receives parsed edit intent from GPT. Validates against site's current state. Maps to WAAS Plugin endpoint calls.</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">Plugin Executor <span class="badge" style="background:#143a2a;color:#4ade80;">WAAS Plugin</span></div>
+                            <div class="desc">Calls WAAS Controller Plugin endpoints on the live site. Snapshots before edits. Reports progress. Supports rollback.</div>
+                            <div class="api-calls">PATCH {site}/wp-json/waas/v1/sections/:id<br>POST {site}/wp-json/waas/v1/snapshot<br>POST {site}/wp-json/waas/v1/snapshot/restore</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">Site State Cache</div>
+                            <div class="desc">Fetched via GET /waas/v1/site-map. Cached structure of pages, sections, fields. Refreshed on each edit.</div>
+                            <div class="api-calls">GET {site}/wp-json/waas/v1/site-map</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="boundary" style="margin-bottom:24px;">
+                    <div class="boundary-label">Domain Service</div>
+                    <div class="component-grid">
+                        <div class="component-box">
+                            <div class="label">Namecheap Client <span class="badge namecheap">Namecheap</span></div>
+                            <div class="desc">Domain availability check, registration, nameserver configuration. XML API with whitelisted IP auth.</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">Cloudflare Client <span class="badge cloudflare">Cloudflare</span></div>
+                            <div class="desc">Zone creation, A record setup, security config (HTTPS, DDoS), performance (Brotli, HTTP/3).</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="boundary">
+                    <div class="boundary-label">Billing Service</div>
+                    <div class="component-grid">
+                        <div class="component-box">
+                            <div class="label">Stripe Client <span class="badge stripe">Stripe</span></div>
+                            <div class="desc">Checkout sessions, subscription management, webhook handler, customer portal links.</div>
+                        </div>
+                        <div class="component-box">
+                            <div class="label">Usage Meter</div>
+                            <div class="desc">Tracks AI token usage (both providers), sites created, domains registered. Enforces plan limits.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- FLOW A: COPY WEBSITE                                          -->
+    <!-- ============================================================ -->
+    <div id="flow-copy" class="diagram">
+        <div class="diagram-container">
+            <div class="section-label">Flow A &mdash; Copy My Website by URL</div>
+            <div class="flow">
+                <div class="flow-step">
+                    <div class="step-num">1</div>
+                    <div class="label">User Pastes URL</div>
+                    <div class="desc">User enters their existing website URL in the onboarding form</div>
+                    <div class="provider" style="background:#2d5fa0;">Frontend</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">2</div>
+                    <div class="label">Firecrawl Crawls</div>
+                    <div class="desc">Scrape URL: get markdown, metadata, screenshot, images, nav</div>
+                    <div class="provider" style="background:#7c3aed;">Firecrawl API</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">3</div>
+                    <div class="label">Gemini Analyzes</div>
+                    <div class="desc">Vision model receives screenshot + markdown. Extracts: industry, sections, colors, brand tone</div>
+                    <div class="provider" style="background:#174ea6;">Gemini</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">4</div>
+                    <div class="label">Gemini Matches Template</div>
+                    <div class="desc">Receives ALL template screenshots + analysis. Picks best visual match. Ranks top 3.</div>
+                    <div class="provider" style="background:#174ea6;">Gemini (1M ctx)</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">5</div>
+                    <div class="label">User Confirms</div>
+                    <div class="desc">Preview top 3 templates. User picks one. Optionally chooses domain.</div>
+                    <div class="provider" style="background:#2d5fa0;">Frontend</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">6</div>
+                    <div class="label">GPT Generates Content</div>
+                    <div class="desc">Maps source content to template slots. Generates headlines, copy, CTAs.</div>
+                    <div class="provider" style="background:#412991;">OpenAI GPT-4o</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">7</div>
+                    <div class="label">InstaWP Creates Site</div>
+                    <div class="desc">Provision WP site from selected template. Wait for ready status.</div>
+                    <div class="provider" style="background:#0ea5e9;">InstaWP</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">8</div>
+                    <div class="label">Push Content to WP</div>
+                    <div class="desc">Create/update pages, upload media, set menus via WP REST API.</div>
+                    <div class="provider" style="background:#21759b;">WP REST API</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">9</div>
+                    <div class="label">Domain + DNS</div>
+                    <div class="desc">Register domain (Namecheap), configure DNS + SSL (Cloudflare). Optional.</div>
+                    <div class="provider" style="background:#744210;">Domain Svc</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step" style="border-color:#2ea043;">
+                    <div class="step-num" style="background:#2ea043;">&#10003;</div>
+                    <div class="label">Site Live</div>
+                    <div class="desc">User gets preview link. Enters chat editor to refine. Publishes when ready.</div>
+                    <div class="provider" style="background:#2ea043;">Done</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- FLOW B: VOICE MODE                                            -->
+    <!-- ============================================================ -->
+    <div id="flow-voice" class="diagram">
+        <div class="diagram-container">
+            <div class="section-label">Flow B &mdash; Voice Mode (Guided Interview)</div>
+            <div class="flow">
+                <div class="flow-step">
+                    <div class="step-num">1</div>
+                    <div class="label">Start Voice Session</div>
+                    <div class="desc">User clicks "Create by voice". Mic permission granted. WebSocket opens.</div>
+                    <div class="provider" style="background:#2d5fa0;">Frontend</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">2</div>
+                    <div class="label">AI Asks Question</div>
+                    <div class="desc">GPT-4o generates first question. TTS converts to audio. Played to user.</div>
+                    <div class="provider" style="background:#412991;">OpenAI GPT + TTS</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">3</div>
+                    <div class="label">User Speaks</div>
+                    <div class="desc">Audio chunks streamed via WebSocket to backend.</div>
+                    <div class="provider" style="background:#2d5fa0;">MediaRecorder</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">4</div>
+                    <div class="label">Whisper Transcribes</div>
+                    <div class="desc">Audio &rarr; text. Appended to conversation context.</div>
+                    <div class="provider" style="background:#412991;">OpenAI Whisper</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">5</div>
+                    <div class="label">Repeat 5-8x</div>
+                    <div class="desc">GPT decides next question based on accumulated context. Loop until brief is complete.</div>
+                    <div class="provider" style="background:#412991;">OpenAI GPT-4o</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">6</div>
+                    <div class="label">Brief Complete</div>
+                    <div class="desc">Structured JSON brief: industry, audience, pages, brand, style prefs.</div>
+                    <div class="provider" style="background:#2d7d4f;">Backend</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">7</div>
+                    <div class="label">Gemini Matches Template</div>
+                    <div class="desc">Brief + all template screenshots sent to Gemini. Visual + contextual match.</div>
+                    <div class="provider" style="background:#174ea6;">Gemini</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">8</div>
+                    <div class="label">Build Site</div>
+                    <div class="desc">Same as Flow A steps 5-9: confirm, generate content, provision, push, DNS.</div>
+                    <div class="provider" style="background:#2d7d4f;">Pipeline</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step" style="border-color:#2ea043;">
+                    <div class="step-num" style="background:#2ea043;">&#10003;</div>
+                    <div class="label">Site Live</div>
+                    <div class="desc">Preview &rarr; chat editor &rarr; publish.</div>
+                    <div class="provider" style="background:#2ea043;">Done</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- FLOW C: CHAT EDITING                                          -->
+    <!-- ============================================================ -->
+    <div id="flow-chat" class="diagram">
+        <div class="diagram-container">
+            <div class="section-label">Flow C &mdash; Chat-Based Website Editing</div>
+            <div class="flow">
+                <div class="flow-step">
+                    <div class="step-num">1</div>
+                    <div class="label">User Sends Message</div>
+                    <div class="desc">"Change the hero headline to 'We Build Dreams'" via chat or voice.</div>
+                    <div class="provider" style="background:#2d5fa0;">Chat UI / Voice</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">2</div>
+                    <div class="label">GPT Interprets</div>
+                    <div class="desc">Parses intent. Receives site's current content map. Outputs structured action JSON.</div>
+                    <div class="provider" style="background:#412991;">OpenAI GPT-4o</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">3</div>
+                    <div class="label">Action Plan</div>
+                    <div class="desc">Validate actions against allow-list. Show user what will change. Await confirmation.</div>
+                    <div class="provider" style="background:#2d7d4f;">Action Planner</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">4</div>
+                    <div class="label">User Confirms</div>
+                    <div class="desc">User approves the planned changes. Or modifies the request.</div>
+                    <div class="provider" style="background:#2d5fa0;">Frontend</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">5</div>
+                    <div class="label">Snapshot State</div>
+                    <div class="desc">Save current page state for potential rollback.</div>
+                    <div class="provider" style="background:#8b5e3c;">DB + Cache</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">
+                    <div class="step-num">6</div>
+                    <div class="label">Execute via WP API</div>
+                    <div class="desc">Execute each action sequentially. Stream progress back via WebSocket.</div>
+                    <div class="provider" style="background:#21759b;">WP REST API</div>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step" style="border-color:#2ea043;">
+                    <div class="step-num" style="background:#2ea043;">&#10003;</div>
+                    <div class="label">Confirm + Preview</div>
+                    <div class="desc">Changes applied. Confirmation message + live preview link sent to chat.</div>
+                    <div class="provider" style="background:#2ea043;">Done</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDiagram(id) {
+            document.querySelectorAll('.diagram').forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

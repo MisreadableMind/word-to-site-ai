@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WordToSite — System Architecture</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a26;
+    --surface-3: #222233;
+    --border: #2a2a3d;
+    --text: #e0e0f0;
+    --text-dim: #8888aa;
+    --accent: #6c5ce7;
+    --accent-glow: #6c5ce740;
+    --green: #00b894;
+    --yellow: #fdcb6e;
+    --red: #e17055;
+    --blue: #0984e3;
+    --pink: #fd79a8;
+    --teal: #00cec9;
+    --radius: 12px;
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* Top bar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.5px; color: var(--accent); }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-dim); }
+  .breadcrumb span { cursor: pointer; transition: color var(--transition); }
+  .breadcrumb span:hover { color: var(--text); }
+  .breadcrumb .sep { opacity: 0.3; }
+  .breadcrumb .current { color: var(--text); font-weight: 500; }
+  .nav-controls { display: flex; align-items: center; gap: 12px; }
+  .nav-btn {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px;
+    transition: all var(--transition);
+  }
+  .nav-btn:hover { background: var(--surface-3); color: var(--text); border-color: var(--accent); }
+  .slide-counter { font-size: 13px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+  /* Progress bar */
+  .progress-bar {
+    position: fixed; top: 56px; left: 0; right: 0; height: 3px;
+    background: var(--surface-2); z-index: 99;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--teal));
+    transition: width 0.4s ease; width: 0%;
+  }
+
+  /* TOC sidebar */
+  .toc-toggle {
+    position: fixed; top: 72px; left: 12px; z-index: 90;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    transition: all var(--transition);
+  }
+  .toc-toggle:hover { background: var(--surface-3); color: var(--text); }
+  .toc {
+    position: fixed; top: 59px; left: 0; bottom: 0; width: 280px;
+    background: var(--surface); border-right: 1px solid var(--border);
+    z-index: 80; transform: translateX(-100%); transition: transform var(--transition);
+    padding: 56px 16px 24px; overflow-y: auto;
+  }
+  .toc.open { transform: translateX(0); }
+  .toc h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); margin: 0 0 12px 8px; }
+  .toc-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    font-size: 13px; color: var(--text-dim); transition: all var(--transition);
+  }
+  .toc-item:hover { background: var(--surface-2); color: var(--text); }
+  .toc-item.active { background: var(--accent-glow); color: var(--accent); font-weight: 500; }
+  .toc-num { font-size: 11px; font-weight: 600; min-width: 22px; text-align: center;
+    background: var(--surface-3); border-radius: 4px; padding: 2px 0; }
+  .toc-item.active .toc-num { background: var(--accent); color: white; }
+
+  /* Slides container */
+  .slides-container {
+    position: fixed; top: 59px; bottom: 0; left: 0; right: 0;
+    overflow: hidden;
+  }
+  .slide {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    padding: 48px 64px; overflow-y: auto;
+    opacity: 0; transform: translateX(60px);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1; transform: translateX(0); pointer-events: auto;
+  }
+  .slide.exit-left {
+    opacity: 0; transform: translateX(-60px);
+  }
+
+  /* Slide content styles */
+  .slide-title {
+    font-size: 32px; font-weight: 700; letter-spacing: -1px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .slide-subtitle { font-size: 16px; color: var(--text-dim); margin-bottom: 40px; }
+
+  /* Title slide */
+  .title-slide { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+  .title-slide .slide-title { font-size: 48px; margin-bottom: 16px; }
+  .title-slide .slide-subtitle { font-size: 20px; margin-bottom: 32px; max-width: 600px; }
+  .title-meta { display: flex; gap: 24px; font-size: 13px; color: var(--text-dim); }
+  .title-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* Status badges */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .badge-built { background: #00b89422; color: var(--green); border: 1px solid #00b89444; }
+  .badge-partial { background: #fdcb6e22; color: var(--yellow); border: 1px solid #fdcb6e44; }
+  .badge-planned { background: #0984e322; color: var(--blue); border: 1px solid #0984e344; }
+  .badge-gap { background: #e1705522; color: var(--red); border: 1px solid #e1705544; }
+
+  /* Two-world diagram */
+  .two-worlds {
+    display: grid; grid-template-columns: 1fr 80px 1fr;
+    gap: 0; align-items: start; margin-top: 24px;
+  }
+  .world-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px; position: relative;
+  }
+  .world-box h3 {
+    font-size: 18px; font-weight: 700; margin-bottom: 4px;
+  }
+  .world-box .world-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; }
+  .world-box ul { list-style: none; }
+  .world-box li {
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 14px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .world-box li:last-child { border-bottom: none; }
+  .world-connector {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 8px; padding-top: 80px;
+  }
+  .world-connector .arrow { font-size: 24px; color: var(--accent); }
+  .world-connector .label { font-size: 10px; color: var(--text-dim); text-align: center;
+    writing-mode: vertical-lr; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* Feature domain cards */
+  .domain-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px; margin-top: 24px;
+  }
+  .domain-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    transition: all var(--transition);
+  }
+  .domain-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .domain-card h4 { font-size: 16px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+  .domain-card .icon { font-size: 20px; }
+  .domain-card p { font-size: 13px; color: var(--text-dim); margin-bottom: 14px; line-height: 1.5; }
+  .domain-card .lives-in {
+    font-size: 12px; padding: 6px 12px; border-radius: 8px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    display: inline-block;
+  }
+  .domain-card .lives-in.platform { border-color: #6c5ce744; color: var(--accent); }
+  .domain-card .lives-in.client { border-color: #00cec944; color: var(--teal); }
+  .domain-card .lives-in.both { border-color: #fdcb6e44; color: var(--yellow); }
+
+  /* Flow diagram */
+  .flow-steps {
+    display: flex; align-items: center; gap: 0;
+    margin: 24px 0; flex-wrap: wrap; justify-content: center;
+  }
+  .flow-step {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px;
+    text-align: center; min-width: 140px;
+  }
+  .flow-step .step-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 6px; }
+  .flow-step .step-name { font-size: 14px; font-weight: 600; }
+  .flow-step .step-where { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .flow-arrow { font-size: 20px; color: var(--accent); padding: 0 6px; }
+
+  /* Hub spoke diagram */
+  .hub-spoke {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 24px; margin: 24px 0;
+  }
+  .hub {
+    background: linear-gradient(135deg, var(--accent), #0984e3);
+    border-radius: var(--radius); padding: 24px 48px;
+    text-align: center; font-weight: 700; font-size: 18px;
+  }
+  .spokes {
+    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+  }
+  .spoke {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px;
+    text-align: center; min-width: 140px; position: relative;
+  }
+  .spoke::before {
+    content: ''; position: absolute; top: -12px; left: 50%;
+    width: 1px; height: 12px; background: var(--accent);
+  }
+  .spoke .spoke-name { font-size: 13px; font-weight: 600; }
+  .spoke .spoke-detail { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* Gaps table */
+  .gaps-list { margin-top: 24px; }
+  .gap-row {
+    display: grid; grid-template-columns: 200px 1fr 120px;
+    gap: 16px; padding: 14px 16px;
+    border-bottom: 1px solid var(--border); align-items: center;
+  }
+  .gap-row:first-child {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-dim); font-weight: 600; border-bottom: 2px solid var(--border);
+  }
+  .gap-name { font-weight: 600; font-size: 14px; }
+  .gap-desc { font-size: 13px; color: var(--text-dim); }
+  .gap-where { font-size: 12px; }
+
+  /* Keyboard hint */
+  .kbd-hint {
+    position: fixed; bottom: 16px; right: 24px;
+    font-size: 12px; color: var(--text-dim);
+    display: flex; align-items: center; gap: 8px;
+  }
+  kbd {
+    background: var(--surface-2); border: 1px solid var(--border);
+    padding: 2px 8px; border-radius: 4px; font-size: 11px;
+    font-family: inherit;
+  }
+
+  /* Section headers inside slides */
+  .section-header {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--accent); margin-bottom: 8px; font-weight: 600;
+  }
+
+  /* Contract box */
+  .contract-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 24px; margin-top: 16px;
+  }
+  .contract-box h4 { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+  .contract-box p { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+  .contract-box code {
+    background: var(--surface-3); padding: 2px 6px; border-radius: 4px;
+    font-size: 12px; color: var(--teal);
+  }
+
+  /* Auth row */
+  .auth-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 16px; margin-top: 24px;
+  }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .auth-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .auth-card .auth-detail { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+  /* Legend */
+  .legend {
+    display: flex; gap: 20px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">WordToSite</div>
+    <div class="breadcrumb">
+      <span onclick="goTo(0)">Architecture</span>
+      <span class="sep">/</span>
+      <span class="current" id="breadcrumb-title">Overview</span>
+    </div>
+  </div>
+  <div class="nav-controls">
+    <button class="nav-btn" onclick="prev()">&larr; Prev</button>
+    <span class="slide-counter" id="counter">1 / 9</span>
+    <button class="nav-btn" onclick="next()">Next &rarr;</button>
+  </div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<!-- TOC toggle -->
+<button class="toc-toggle" id="tocBtn" onclick="toggleToc()">&#9776;</button>
+
+<!-- TOC sidebar -->
+<div class="toc" id="toc">
+  <h3>Contents</h3>
+  <div id="toc-items"></div>
+</div>
+
+<!-- Slides -->
+<div class="slides-container">
+
+  <!-- SLIDE 1: Title -->
+  <div class="slide title-slide active" data-title="Overview">
+    <div class="slide-title">WordToSite System Architecture</div>
+    <div class="slide-subtitle">High-level map of the platform: what lives where, how the pieces connect, and what's still to build.</div>
+    <div class="title-meta">
+      <span><span class="badge badge-built">Built</span> In production</span>
+      <span><span class="badge badge-partial">Partial</span> Started, incomplete</span>
+      <span><span class="badge badge-planned">Planned</span> In roadmap</span>
+      <span><span class="badge badge-gap">Gap</span> Critical missing piece</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: Two Worlds -->
+  <div class="slide" data-title="Two Worlds">
+    <div class="section-header">Macro View</div>
+    <div class="slide-title">Two Worlds</div>
+    <div class="slide-subtitle">Everything in WordToSite lives in one of two places: the central platform or the deployed client sites.</div>
+
+    <div class="two-worlds">
+      <!-- Platform -->
+      <div class="world-box" style="border-color: #6c5ce744;">
+        <h3 style="color: var(--accent);">Platform (Central Server)</h3>
+        <div class="world-sub">Node.js + Express &mdash; one instance serves all users</div>
+        <ul>
+          <li>WaaS Wizard (onboarding) <span class="badge badge-built">Built</span></li>
+          <li>AI orchestration (GPT-5.2-mini, Gemini 3, Claude Sonnet 4.6) <span class="badge badge-built">Built</span></li>
+          <li>Voice transcription (Whisper + WS) <span class="badge badge-built">Built</span></li>
+          <li>Website scraping (Firecrawl) <span class="badge badge-built">Built</span></li>
+          <li>Deployment pipeline (InstaWP) <span class="badge badge-built">Built</span></li>
+          <li>Domain + DNS + SSL (Namecheap + CF) <span class="badge badge-built">Built</span></li>
+          <li>Light Editor (chat-based editing) <span class="badge badge-partial">Partial</span></li>
+          <li>User auth + sessions <span class="badge badge-partial">Partial</span></li>
+          <li>Dashboard (multi-site mgmt) <span class="badge badge-planned">Planned</span></li>
+          <li>Billing (Stripe) <span class="badge badge-gap">Gap</span></li>
+          <li>AEO monitoring engine <span class="badge badge-gap">Gap</span></li>
+          <li>Telegram / WhatsApp gateway <span class="badge badge-planned">Planned</span></li>
+        </ul>
+      </div>
+
+      <!-- Connector -->
+      <div class="world-connector">
+        <div class="arrow">&harr;</div>
+        <div class="label">WP REST API + Plugins</div>
+      </div>
+
+      <!-- Client Site -->
+      <div class="world-box" style="border-color: #00cec944;">
+        <h3 style="color: var(--teal);">Client WordPress Site</h3>
+        <div class="world-sub">InstaWP-hosted WP &mdash; one per customer</div>
+        <ul>
+          <li>WordPress core + theme <span class="badge badge-built">Built</span></li>
+          <li>Template + skin (Flavor, Flavor, etc.) <span class="badge badge-built">Built</span></li>
+          <li>WAAS Controller plugin <span class="badge badge-partial">Partial</span></li>
+          <li>AI Content on pages <span class="badge badge-built">Built</span></li>
+          <li>Schema.org / JSON-LD <span class="badge badge-gap">Gap</span></li>
+          <li>AI Traffic Optimizer plugin <span class="badge badge-planned">Planned</span></li>
+          <li>AI Proxy plugin <span class="badge badge-planned">Planned</span></li>
+          <li>llms.txt (AI discoverability) <span class="badge badge-planned">Planned</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Feature Domains -->
+  <div class="slide" data-title="Feature Domains">
+    <div class="section-header">System Map</div>
+    <div class="slide-title">Feature Domains</div>
+    <div class="slide-subtitle">Each capability maps to the platform, client site, or both.</div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="lives-in platform" style="padding:2px 8px;border-radius:4px;font-size:11px;">Platform</span> Runs on central server</div>
+      <div class="legend-item"><span class="lives-in client" style="padding:2px 8px;border-radius:4px;font-size:11px;">Client</span> Runs on WP site</div>
+      <div class="legend-item"><span class="lives-in both" style="padding:2px 8px;border-radius:4px;font-size:11px;">Both</span> Spans both worlds</div>
+    </div>
+
+    <div class="domain-grid">
+      <div class="domain-card">
+        <h4><span class="icon">&#128640;</span> Site Creation (Wizard)</h4>
+        <p>Two flows: migration (scrape URL + AI analysis) and voice interview (Whisper + structured Q&A). Outputs Deployment + Content contexts.</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#9881;</span> Deployment Pipeline</h4>
+        <p>Creates InstaWP instance, pushes Wizard Payload to WAAS Controller, applies theme + content + branding. SSE progress stream.</p>
+        <span class="lives-in both">Platform &rarr; Client</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#9998;</span> Content Editing (Light Editor)</h4>
+        <p>Chat + voice interface. AI converts natural language to Action Blocks (update_page, create_page, update_settings) executed via WP REST API.</p>
+        <span class="lives-in both">Platform &rarr; Client</span>
+        <span class="badge badge-partial" style="margin-left:8px;">Partial</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#127760;</span> Domain &amp; DNS</h4>
+        <p>Register domain (Namecheap), create Cloudflare zone, set A records, configure SSL + DDoS protection. Fully automated pipeline.</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#128200;</span> AEO / GEO Monitoring</h4>
+        <p>Track visibility in AI answer engines (ChatGPT, Perplexity, Google AI). Surface optimization recommendations to site owners.</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-gap" style="margin-left:8px;">Gap</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#128268;</span> Hub-and-Spoke Plugins</h4>
+        <p>Platform is the hub. Each client site gets spoke plugins: WAAS Controller, AI Traffic Optimizer, AI Proxy. Communicate back to platform.</p>
+        <span class="lives-in both">Platform &harr; Client</span>
+        <span class="badge badge-partial" style="margin-left:8px;">Partial</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#128176;</span> Auth &amp; Billing</h4>
+        <p>User sessions (bcrypt + pg). Stripe subscription tiers. Three auth systems: user auth, AI Proxy keys (wts_), Plugin API keys (ato_).</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-gap" style="margin-left:8px;">Gap (Billing)</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#128172;</span> Messaging Bots</h4>
+        <p>Telegram and WhatsApp bot gateway. Reuses platform services (AI, editor, wizard) through messaging API. Replaces native mobile app.</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-planned" style="margin-left:8px;">Planned</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: Site Creation Flow -->
+  <div class="slide" data-title="Creation Flow">
+    <div class="section-header">End-to-End</div>
+    <div class="slide-title">Site Creation Flow</div>
+    <div class="slide-subtitle">From user arrival to deployed site &mdash; showing where each step executes.</div>
+
+    <div style="margin-bottom: 32px;">
+      <h4 style="font-size:14px; color:var(--accent); margin-bottom:16px;">Flow A &mdash; Migration (existing site)</h4>
+      <div class="flow-steps">
+        <div class="flow-step"><div class="step-label">Step 1</div><div class="step-name">Paste URL</div><div class="step-where">Platform</div></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step"><div class="step-label">Step 2</div><div class="step-name">Scrape + Analyze</div><div class="step-where">Platform (Firecrawl + Gemini 3)</div></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step"><div class="step-label">Step 3</div><div class="step-name">Match Template</div><div class="step-where">Platform (Gemini 3)</div></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step"><div class="step-label">Step 4</div><div class="step-name">Generate Contexts</div><div class="step-where">Platform (GPT-5.2-mini)</div></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step"><div class="step-label">Step 5</div><div class="step-name">Deploy to WP</div><div class="step-where">Platform &rarr; Client</div></div>
+      </div>
+    </div>
+
+    <div>
+      <h4 style="font-size:14px; color:var(--teal); margin-bottom:16px;">Flow B &mdash; Voice Interview (new site)</h4>
+      <div class="flow-steps">
+        <div class="flow-step"><div class="step-label">Step 1</div><div class="step-name">Voice/Text Q&A</div><div class="step-where">Platform (Whisper + WS)</div></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step"><div class="step-label">Step 2</div><div class="step-name">Build Brief</div><div class="step-where">Platform (GPT-5.2-mini)</div></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step"><div class="step-label">Step 3</div><div class="step-name">Match Template</div><div class="step-where">Platform (Gemini 3)</div></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step"><div class="step-label">Step 4</div><div class="step-name">Generate Contexts</div><div class="step-where">Platform (GPT-5.2-mini)</div></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step"><div class="step-label">Step 5</div><div class="step-name">Deploy to WP</div><div class="step-where">Platform &rarr; Client</div></div>
+      </div>
+    </div>
+
+    <div class="contract-box" style="margin-top:32px;">
+      <h4>Schemas as Contracts</h4>
+      <p>Onboarding and deployment are decoupled by two JSON schemas. The Wizard produces <code>DeploymentContext</code> (template, plugins, branding) and <code>ContentContext</code> (business info, pages, SEO). These merge into the <code>WizardPayload</code> sent to the client site's WAAS Controller.</p>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Hub and Spoke -->
+  <div class="slide" data-title="Hub & Spoke">
+    <div class="section-header">Connectivity Model</div>
+    <div class="slide-title">Hub-and-Spoke Architecture</div>
+    <div class="slide-subtitle">The platform is the central hub. Every deployed WordPress site is a spoke connected via plugins.</div>
+
+    <div class="hub-spoke">
+      <div class="hub">WordToSite Platform<br><span style="font-size:13px;font-weight:400;opacity:0.8;">AI Orchestration &bull; User Dashboard &bull; Monitoring</span></div>
+      <div style="font-size:13px; color:var(--text-dim); text-align:center;">WP REST API + Plugin API (ato_ keys) + AI Proxy (wts_ keys)</div>
+      <div class="spokes">
+        <div class="spoke">
+          <div class="spoke-name">Client Site A</div>
+          <div class="spoke-detail">WAAS Controller<br>AI Traffic Optimizer<br>AI Proxy</div>
+        </div>
+        <div class="spoke">
+          <div class="spoke-name">Client Site B</div>
+          <div class="spoke-detail">WAAS Controller<br>AI Traffic Optimizer<br>AI Proxy</div>
+        </div>
+        <div class="spoke">
+          <div class="spoke-name">Client Site C</div>
+          <div class="spoke-detail">WAAS Controller<br>AI Traffic Optimizer<br>AI Proxy</div>
+        </div>
+        <div class="spoke">
+          <div class="spoke-name">Client Site ...</div>
+          <div class="spoke-detail">Same plugin stack<br>on every site</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-top:24px;">
+      <div class="contract-box">
+        <h4>WAAS Controller</h4>
+        <p>Receives Wizard Payload at deploy time. Exposes <code>/health</code> and <code>/site-map</code> endpoints. Required for Light Editor.</p>
+        <div style="margin-top:8px;"><span class="badge badge-partial">Partial</span></div>
+      </div>
+      <div class="contract-box">
+        <h4>AI Traffic Optimizer</h4>
+        <p>Monitors AI crawlers visiting the site. Optimizes Schema.org markup and <code>llms.txt</code> for GEO/AEO visibility.</p>
+        <div style="margin-top:8px;"><span class="badge badge-planned">Planned</span></div>
+      </div>
+      <div class="contract-box">
+        <h4>AI Proxy</h4>
+        <p>Routes AI API calls through the platform using <code>wts_</code> keys. Enables the site to use AI without exposing API keys.</p>
+        <div style="margin-top:8px;"><span class="badge badge-planned">Planned</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: AI Model Map -->
+  <div class="slide" data-title="AI Models">
+    <div class="section-header">Intelligence Layer</div>
+    <div class="slide-title">AI Model Map</div>
+    <div class="slide-subtitle">Which AI model does what, and why we chose it.</div>
+
+    <div class="domain-grid">
+      <div class="domain-card" style="border-left:3px solid var(--green);">
+        <h4>GPT-5.2-mini (OpenAI)</h4>
+        <p>Primary workhorse. Content generation, interview processing, chat responses, Action Block creation, blog posts, excerpts.</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card" style="border-left:3px solid var(--teal);">
+        <h4>Gemini 3 Flash (Google)</h4>
+        <p>Website analysis and template matching. Large context window for processing entire scraped sites at once.</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card" style="border-left:3px solid var(--blue);">
+        <h4>Claude Sonnet 4.6 (Anthropic)</h4>
+        <p>Reasoning, content analysis, structured data generation. Available via proxy service.</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card" style="border-left:3px solid var(--yellow);">
+        <h4>Whisper (OpenAI)</h4>
+        <p>Speech-to-text only. Voice transcription during interviews and Light Editor voice commands. WebSocket streaming.</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card" style="border-left:3px solid var(--pink);">
+        <h4>TTS (OpenAI tts-1)</h4>
+        <p>Text-to-speech. Converts AI responses to audio. Voices: alloy, echo, fable, onyx, nova, shimmer.</p>
+        <span class="lives-in platform">Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: External Services -->
+  <div class="slide" data-title="External Services">
+    <div class="section-header">Integrations</div>
+    <div class="slide-title">External Services</div>
+    <div class="slide-subtitle">Third-party APIs the platform depends on and how they connect.</div>
+
+    <div class="domain-grid">
+      <div class="domain-card">
+        <h4><span class="icon">&#9729;</span> InstaWP</h4>
+        <p>WordPress hosting. Creates instances from templates, provides domain mapping, SSL certificates, magic login URLs, site polling.</p>
+        <span class="lives-in platform">Called from Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#128274;</span> Cloudflare</h4>
+        <p>DNS zones, A/CNAME records, SSL/TLS, DDoS protection, WAF, CDN caching, Brotli compression.</p>
+        <span class="lives-in platform">Called from Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#127760;</span> Namecheap</h4>
+        <p>Domain registration, nameserver management. Sandbox available for testing.</p>
+        <span class="lives-in platform">Called from Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#128293;</span> Firecrawl</h4>
+        <p>Website scraping for Flow A (migration). Extracts HTML, markdown, metadata, screenshots. Native fetch fallback.</p>
+        <span class="lives-in platform">Called from Platform</span>
+        <span class="badge badge-built" style="margin-left:8px;">Built</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#128179;</span> Stripe</h4>
+        <p>Subscription billing. Monthly/annual plans, usage metering, customer portal.</p>
+        <span class="lives-in platform">Called from Platform</span>
+        <span class="badge badge-gap" style="margin-left:8px;">Gap</span>
+      </div>
+      <div class="domain-card">
+        <h4><span class="icon">&#128172;</span> Telegram / WhatsApp</h4>
+        <p>Bot APIs for messaging-based site creation and management. Replaces Phase 4 native mobile app.</p>
+        <span class="lives-in platform">Called from Platform</span>
+        <span class="badge badge-planned" style="margin-left:8px;">Planned</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Auth Model -->
+  <div class="slide" data-title="Auth Systems">
+    <div class="section-header">Security Layer</div>
+    <div class="slide-title">Authentication Systems</div>
+    <div class="slide-subtitle">Three separate auth mechanisms serving different purposes.</div>
+
+    <div class="auth-grid">
+      <div class="auth-card" style="border-top: 3px solid var(--accent);">
+        <h4>User Auth</h4>
+        <div class="auth-detail">
+          <strong>Purpose:</strong> Platform login<br>
+          <strong>Method:</strong> bcrypt + sessions + PostgreSQL<br>
+          <strong>Scope:</strong> Dashboard, Wizard, Editor<br>
+          <strong>Status:</strong> <span class="badge badge-partial">Partial</span><br>
+          <strong>Planned:</strong> JWT + OAuth (Google, GitHub)
+        </div>
+      </div>
+      <div class="auth-card" style="border-top: 3px solid var(--teal);">
+        <h4>AI Proxy Keys (wts_)</h4>
+        <div class="auth-detail">
+          <strong>Purpose:</strong> Client site &rarr; Platform AI calls<br>
+          <strong>Method:</strong> Per-site API key prefixed <code style="color:var(--teal);">wts_</code><br>
+          <strong>Scope:</strong> AI Proxy plugin on WP site<br>
+          <strong>Status:</strong> <span class="badge badge-planned">Planned</span><br>
+          <strong>Why:</strong> Sites use AI without exposed keys
+        </div>
+      </div>
+      <div class="auth-card" style="border-top: 3px solid var(--yellow);">
+        <h4>Plugin API Keys (ato_)</h4>
+        <div class="auth-detail">
+          <strong>Purpose:</strong> Client site &rarr; Platform management API<br>
+          <strong>Method:</strong> Per-site API key prefixed <code style="color:var(--yellow);">ato_</code><br>
+          <strong>Scope:</strong> AI Traffic Optimizer plugin<br>
+          <strong>Status:</strong> <span class="badge badge-planned">Planned</span><br>
+          <strong>Why:</strong> Plugins report back to hub
+        </div>
+      </div>
+    </div>
+
+    <div class="contract-box" style="margin-top:32px;">
+      <h4>Dev Mode Bypass</h4>
+      <p>When <code>NODE_ENV=development</code>, basic auth is skipped entirely. This affects only User Auth &mdash; the AI Proxy and Plugin API keys will always be validated regardless of environment.</p>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Gaps & Roadmap -->
+  <div class="slide" data-title="Gaps & Next">
+    <div class="section-header">Roadmap</div>
+    <div class="slide-title">Critical Gaps &amp; Next Steps</div>
+    <div class="slide-subtitle">What must be built before the platform is production-ready.</div>
+
+    <div class="gaps-list">
+      <div class="gap-row">
+        <div>Domain</div>
+        <div>Description</div>
+        <div>Lives In</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name"><span class="badge badge-gap">Gap</span> Stripe Billing</div>
+        <div class="gap-desc">No payment integration. Need subscription tiers, usage metering, customer portal, webhook handlers.</div>
+        <div class="gap-where">Platform</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name"><span class="badge badge-gap">Gap</span> AEO Engine</div>
+        <div class="gap-desc">No tracking of AI answer engine visibility. Need crawl scheduler, citation detection, ranking metrics.</div>
+        <div class="gap-where">Platform</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name"><span class="badge badge-gap">Gap</span> Schema.org / JSON-LD</div>
+        <div class="gap-desc">Client sites lack structured data markup. Critical for both traditional SEO and GEO visibility.</div>
+        <div class="gap-where">Client</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name"><span class="badge badge-partial">Partial</span> WAAS Controller</div>
+        <div class="gap-desc">Basic health + site-map endpoints exist. Needs full payload receiver, content push, plugin management.</div>
+        <div class="gap-where">Client</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name"><span class="badge badge-partial">Partial</span> Light Editor</div>
+        <div class="gap-desc">Chat works for basic edits. Needs: image handling, menu editing, plugin management, theme settings, undo.</div>
+        <div class="gap-where">Platform &rarr; Client</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name"><span class="badge badge-planned">Planned</span> Dashboard</div>
+        <div class="gap-desc">Multi-site management view. Site list, status monitoring, analytics, domain management, billing overview.</div>
+        <div class="gap-where">Platform</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name"><span class="badge badge-planned">Planned</span> Messaging Bots</div>
+        <div class="gap-desc">Telegram + WhatsApp gateway. Reuse wizard + editor + AI services. Replaces native mobile app (Phase 4).</div>
+        <div class="gap-where">Platform</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name"><span class="badge badge-planned">Planned</span> llms.txt</div>
+        <div class="gap-desc">AI discoverability file on each client site. Auto-generated from site content for GEO optimization.</div>
+        <div class="gap-where">Client</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Keyboard hint -->
+<div class="kbd-hint">
+  <kbd>&larr;</kbd> <kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp; <kbd>T</kbd> table of contents
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  const breadcrumb = document.getElementById('breadcrumb-title');
+  const tocEl = document.getElementById('toc');
+  const tocItems = document.getElementById('toc-items');
+  let current = 0;
+
+  // Build TOC
+  slides.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'toc-item' + (i === 0 ? ' active' : '');
+    item.innerHTML = `<span class="toc-num">${i + 1}</span><span>${s.dataset.title}</span>`;
+    item.onclick = () => { goTo(i); closeToc(); };
+    tocItems.appendChild(item);
+  });
+
+  function update() {
+    slides.forEach((s, i) => {
+      s.classList.remove('active', 'exit-left');
+      if (i === current) s.classList.add('active');
+      else if (i < current) s.classList.add('exit-left');
+    });
+    counter.textContent = `${current + 1} / ${slides.length}`;
+    progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+    breadcrumb.textContent = slides[current].dataset.title;
+    tocItems.querySelectorAll('.toc-item').forEach((t, i) => {
+      t.classList.toggle('active', i === current);
+    });
+  }
+
+  function next() { if (current < slides.length - 1) { current++; update(); } }
+  function prev() { if (current > 0) { current--; update(); } }
+  function goTo(i) { current = i; update(); }
+  function toggleToc() { tocEl.classList.toggle('open'); }
+  function closeToc() { tocEl.classList.remove('open'); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+    if (e.key === 't' || e.key === 'T') toggleToc();
+    if (e.key === 'Escape') closeToc();
+  });
+
+  update();
+</script>
+
+</body>
+</html>

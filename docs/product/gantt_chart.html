@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAAS Project Gantt Chart</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #00d4aa, #667eea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .stat-badge strong {
+            color: #00d4aa;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            color: #8892b0;
+        }
+
+        .control-group select {
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .control-group select:focus {
+            outline: none;
+            border-color: #00d4aa;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #8892b0;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .legend-color.phase-1 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .legend-color.phase-2 { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .legend-color.phase-3 { background: linear-gradient(135deg, #00d4aa, #00b894); }
+        .legend-color.phase-4 { background: linear-gradient(135deg, #ff9a56, #ff6b6b); }
+
+        /* Gantt Container */
+        .gantt-wrapper {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .gantt-container {
+            display: flex;
+            overflow-x: auto;
+        }
+
+        /* Left Panel - Task Names */
+        .gantt-left {
+            min-width: 350px;
+            max-width: 350px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .gantt-left-header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .task-row {
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            height: 36px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+        }
+
+        .task-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .task-row.phase-header {
+            background: rgba(255, 255, 255, 0.08);
+            height: 44px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .task-row.workstream-header {
+            background: rgba(255, 255, 255, 0.03);
+            padding-left: 25px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: #ccd6f6;
+        }
+
+        .task-row.task-item {
+            padding-left: 40px;
+            font-size: 0.8rem;
+            color: #8892b0;
+        }
+
+        .task-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-estimate {
+            font-size: 0.75rem;
+            color: #8892b0;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 10px;
+        }
+
+        .phase-toggle {
+            margin-right: 10px;
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+        }
+
+        .phase-header.collapsed .phase-toggle {
+            transform: rotate(-90deg);
+        }
+
+        /* Right Panel - Timeline */
+        .gantt-right {
+            flex: 1;
+            min-width: 800px;
+        }
+
+        .timeline-header {
+            height: 60px;
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .timeline-month {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .month-label {
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .week-labels {
+            display: flex;
+            height: 30px;
+        }
+
+        .week-label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #8892b0;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .week-label:last-child {
+            border-right: none;
+        }
+
+        .timeline-body {
+            position: relative;
+        }
+
+        .timeline-row {
+            height: 36px;
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        .timeline-row.phase-header {
+            height: 44px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .timeline-row.workstream-header {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .week-cell {
+            flex: 1;
+            border-right: 1px solid rgba(255, 255, 255, 0.03);
+            min-width: 40px;
+        }
+
+        .week-cell.month-start {
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Gantt Bars */
+        .gantt-bar {
+            position: absolute;
+            height: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .gantt-bar:hover {
+            transform: translateY(-50%) scale(1.02);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 20;
+        }
+
+        .gantt-bar.phase-1 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .gantt-bar.phase-2 { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .gantt-bar.phase-3 { background: linear-gradient(135deg, #00d4aa, #00b894); }
+        .gantt-bar.phase-4 { background: linear-gradient(135deg, #ff9a56, #ff6b6b); }
+
+        .gantt-bar.priority-critical { box-shadow: 0 0 0 2px rgba(245, 87, 108, 0.5); }
+
+        /* Phase Summary Bars */
+        .phase-bar {
+            height: 28px;
+            opacity: 0.6;
+        }
+
+        .workstream-bar {
+            height: 18px;
+            opacity: 0.4;
+        }
+
+        /* Today Marker */
+        .today-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #f5576c;
+            z-index: 5;
+        }
+
+        .today-marker::before {
+            content: 'Today';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            color: #f5576c;
+            white-space: nowrap;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            display: none;
+            position: fixed;
+            background: #2a2a4a;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            max-width: 300px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .tooltip.visible {
+            display: block;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            color: #8892b0;
+        }
+
+        .tooltip-row span:last-child {
+            color: #ccd6f6;
+            font-weight: 500;
+        }
+
+        /* Summary Panel */
+        .summary-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .summary-card-title {
+            font-size: 0.8rem;
+            color: #8892b0;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .summary-card-value.phase-1 { color: #f093fb; }
+        .summary-card-value.phase-2 { color: #667eea; }
+        .summary-card-value.phase-3 { color: #00d4aa; }
+        .summary-card-value.phase-4 { color: #ff9a56; }
+
+        .summary-card-sub {
+            font-size: 0.8rem;
+            color: #8892b0;
+            margin-top: 5px;
+        }
+
+        /* Milestones */
+        .milestone-marker {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background: #f5576c;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            z-index: 15;
+            cursor: pointer;
+        }
+
+        .milestone-marker::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 1200px) {
+            .gantt-left {
+                min-width: 280px;
+                max-width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .gantt-left {
+                min-width: 200px;
+                max-width: 200px;
+            }
+
+            .task-row.task-item {
+                padding-left: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WAAS Project Gantt Chart</h1>
+            <div class="header-info">
+                <span class="stat-badge"><strong>2</strong> developers</span>
+                <span class="stat-badge"><strong id="totalDays">0</strong> days total</span>
+                <span class="stat-badge"><strong id="totalTasks">0</strong> tasks</span>
+                <span class="stat-badge">Start: <strong id="startDateDisplay">Feb 1, 2026</strong></span>
+                <span class="stat-badge">End: <strong id="endDate">-</strong></span>
+            </div>
+        </header>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label>View:</label>
+                <select id="viewMode" onchange="renderGantt()">
+                    <option value="tasks">All Tasks</option>
+                    <option value="workstreams">Workstreams Only</option>
+                    <option value="phases">Phases Only</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Filter Phase:</label>
+                <select id="phaseFilter" onchange="renderGantt()">
+                    <option value="all">All Phases</option>
+                    <option value="1">Phase 1</option>
+                    <option value="2">Phase 2</option>
+                    <option value="3">Phase 3</option>
+                    <option value="4">Phase 4</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Filter Tier:</label>
+                <select id="tierFilter" onchange="renderGantt()">
+                    <option value="all">All Tiers</option>
+                    <option value="starter">Starter</option>
+                    <option value="pro">Pro</option>
+                    <option value="business">Business</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" onclick="expandAll()">Expand All</button>
+            <button class="btn btn-secondary" onclick="collapseAll()">Collapse All</button>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color phase-1"></div>
+                <span>Phase 1: Launch + Voice</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color phase-2"></div>
+                <span>Phase 2: Content + Insights</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color phase-3"></div>
+                <span>Phase 3: Active AEO</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color phase-4"></div>
+                <span>Phase 4: Mobile App</span>
+            </div>
+            <div class="legend-item" style="margin-left: auto; background: rgba(255,154,86,0.1); padding: 5px 12px; border-radius: 8px;">
+                <span style="color: #ff9a56;">Max 2 workstreams in parallel (2 devs)</span>
+            </div>
+        </div>
+
+        <!-- Gantt Chart -->
+        <div class="gantt-wrapper">
+            <div class="gantt-container">
+                <div class="gantt-left">
+                    <div class="gantt-left-header">Task / Workstream</div>
+                    <div id="taskList"></div>
+                </div>
+                <div class="gantt-right">
+                    <div class="timeline-header" id="timelineHeader"></div>
+                    <div class="timeline-body" id="timelineBody"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary-panel" id="summaryPanel"></div>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // WBS Data from JSON
+        const wbsData = {
+  "project": "WAAS Platform",
+  "exportDate": "2026-01-22T11:43:34.079Z",
+  "phases": [
+    {
+      "id": 1,
+      "name": "Launch + Voice + AEO Monitor",
+      "timeline": "Month 1-2",
+      "workstreams": [
+        {
+          "id": "1.1",
+          "name": "Website Creation",
+          "priority": "critical",
+          "tasks": [
+            { "id": "1.1.1", "name": "Landing Page (React + ShaDCN)", "estimate": 2, "tier": "all", "selected": true },
+            { "id": "1.1.2", "name": "URL cloning/scraping engine", "estimate": 3, "tier": "all", "selected": true },
+            { "id": "1.1.3", "name": "AI agent (chat interface)", "estimate": 4, "tier": "all", "selected": true },
+            { "id": "1.1.4", "name": "Voice interface on Landing", "estimate": 2, "tier": "all", "selected": true },
+            { "id": "1.1.5", "name": "Template matching + migration", "estimate": 3, "tier": "all", "selected": true },
+            { "id": "1.1.6", "name": "AEO site generator + Schema", "estimate": 4, "tier": "all", "selected": true }
+          ]
+        },
+        {
+          "id": "1.2",
+          "name": "Domain & Hosting",
+          "priority": "critical",
+          "tasks": [
+            { "id": "1.2.1", "name": "InstaWP integration", "estimate": 3, "tier": "all", "selected": true },
+            { "id": "1.2.2", "name": "Domain registration + DNS", "estimate": 3, "tier": "all", "selected": true },
+            { "id": "1.2.3", "name": "SSL auto-config + transfer", "estimate": 2, "tier": "all", "selected": true }
+          ]
+        },
+        {
+          "id": "1.3",
+          "name": "Payments & Legal",
+          "priority": "high",
+          "tasks": [
+            { "id": "1.3.1", "name": "Company Setup (Delaware)", "estimate": 5, "tier": "all", "selected": true },
+            { "id": "1.3.2", "name": "Bank Account (Mercury)", "estimate": 2, "tier": "all", "selected": true },
+            { "id": "1.3.3", "name": "Stripe + subscriptions", "estimate": 3, "tier": "all", "selected": true }
+          ]
+        },
+        {
+          "id": "1.4",
+          "name": "AEO Monitor (Starter)",
+          "priority": "high",
+          "tasks": [
+            { "id": "1.4.1", "name": "ChatGPT API tracking", "estimate": 3, "tier": "starter", "selected": true },
+            { "id": "1.4.2", "name": "llms.txt + visibility score", "estimate": 2, "tier": "starter", "selected": true },
+            { "id": "1.4.3", "name": "Email reports + query tracking", "estimate": 3, "tier": "starter", "selected": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Content Control + AEO Insights",
+      "timeline": "Month 3",
+      "workstreams": [
+        {
+          "id": "2.1",
+          "name": "Content Management",
+          "priority": "high",
+          "tasks": [
+            { "id": "2.1.1", "name": "Text editing (chat/dashboard)", "estimate": 4, "tier": "pro", "selected": true },
+            { "id": "2.1.2", "name": "Image management", "estimate": 3, "tier": "pro", "selected": true },
+            { "id": "2.1.3", "name": "Page/section management", "estimate": 3, "tier": "pro", "selected": true },
+            { "id": "2.1.4", "name": "Plugin manager UI", "estimate": 3, "tier": "pro", "selected": true }
+          ]
+        },
+        {
+          "id": "2.2",
+          "name": "Visual Dashboard",
+          "priority": "medium",
+          "tasks": [
+            { "id": "2.2.1", "name": "Dashboard UI/UX design", "estimate": 3, "tier": "pro", "selected": true },
+            { "id": "2.2.2", "name": "Dashboard implementation", "estimate": 5, "tier": "pro", "selected": true }
+          ]
+        },
+        {
+          "id": "2.3",
+          "name": "AEO Insights (Pro)",
+          "priority": "critical",
+          "tasks": [
+            { "id": "2.3.1", "name": "Claude API tracking", "estimate": 3, "tier": "pro", "selected": true },
+            { "id": "2.3.2", "name": "Gemini API tracking", "estimate": 3, "tier": "pro", "selected": true },
+            { "id": "2.3.3", "name": "Weekly reports + recommendations", "estimate": 4, "tier": "pro", "selected": true },
+            { "id": "2.3.6", "name": "Query tracking system", "estimate": 3, "tier": "pro", "selected": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Active AEO",
+      "timeline": "Month 4-5",
+      "workstreams": [
+        {
+          "id": "3.1",
+          "name": "Advanced Model Tracking",
+          "priority": "high",
+          "tasks": [
+            { "id": "3.1.1", "name": "GPT-4 tracking", "estimate": 2, "tier": "business", "selected": true },
+            { "id": "3.1.2", "name": "Claude Opus tracking", "estimate": 2, "tier": "business", "selected": true },
+            { "id": "3.1.3", "name": "Gemini Ultra tracking", "estimate": 2, "tier": "business", "selected": true },
+            { "id": "3.1.4", "name": "Perplexity tracking", "estimate": 2, "tier": "business", "selected": true }
+          ]
+        },
+        {
+          "id": "3.2",
+          "name": "AI Auto-Actions",
+          "priority": "critical",
+          "tasks": [
+            { "id": "3.2.1", "name": "Auto-content optimization", "estimate": 6, "tier": "business", "selected": true },
+            { "id": "3.2.2", "name": "AEO article generator", "estimate": 5, "tier": "business", "selected": true },
+            { "id": "3.2.3", "name": "Auto-publish workflow", "estimate": 3, "tier": "business", "selected": true },
+            { "id": "3.2.4", "name": "Advanced schema auto-gen", "estimate": 4, "tier": "business", "selected": true }
+          ]
+        },
+        {
+          "id": "3.3",
+          "name": "Competitive Intelligence",
+          "priority": "medium",
+          "tasks": [
+            { "id": "3.3.1", "name": "Competitor tracking system", "estimate": 5, "tier": "business", "selected": true },
+            { "id": "3.3.2", "name": "Real-time alerts", "estimate": 3, "tier": "business", "selected": true },
+            { "id": "3.3.3", "name": "Advanced analytics dashboard", "estimate": 4, "tier": "business", "selected": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Native Mobile App",
+      "timeline": "Month 6-7",
+      "workstreams": [
+        {
+          "id": "4.1",
+          "name": "Mobile App Core",
+          "priority": "high",
+          "tasks": [
+            { "id": "4.1.1", "name": "React Native setup", "estimate": 2, "tier": "all", "selected": true },
+            { "id": "4.1.2", "name": "iOS app development", "estimate": 8, "tier": "all", "selected": true },
+            { "id": "4.1.3", "name": "Android app development", "estimate": 6, "tier": "all", "selected": true },
+            { "id": "4.1.4", "name": "App Store submission", "estimate": 2, "tier": "all", "selected": true }
+          ]
+        },
+        {
+          "id": "4.2",
+          "name": "Voice & Quick Commands",
+          "priority": "critical",
+          "tasks": [
+            { "id": "4.2.1", "name": "Voice recognition integration", "estimate": 4, "tier": "all", "selected": true },
+            { "id": "4.2.2", "name": "Context-aware commands", "estimate": 5, "tier": "all", "selected": true },
+            { "id": "4.2.3", "name": "Quick actions UI", "estimate": 3, "tier": "all", "selected": true }
+          ]
+        },
+        {
+          "id": "4.3",
+          "name": "Mobile Features",
+          "priority": "medium",
+          "tasks": [
+            { "id": "4.3.1", "name": "Push notifications", "estimate": 3, "tier": "all", "selected": true },
+            { "id": "4.3.2", "name": "Camera to website upload", "estimate": 3, "tier": "all", "selected": true },
+            { "id": "4.3.3", "name": "Mobile stats dashboard", "estimate": 4, "tier": "all", "selected": true }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+        // Configuration
+        const config = {
+            startDate: new Date('2026-02-01'),
+            daysPerWeek: 5, // Working days
+            weekWidth: 40,
+            months: 10, // Extended for realistic timeline
+            maxParallel: 2 // Max 2 developers
+        };
+
+        let collapsedPhases = new Set();
+        let collapsedWorkstreams = new Set();
+
+        // Calculate schedule with max 2 parallel tracks
+        function calculateSchedule() {
+            let currentDay = 0;
+
+            wbsData.phases.forEach(phase => {
+                phase.startDay = currentDay;
+
+                // Schedule workstreams with max 2 parallel
+                const workstreams = phase.workstreams;
+                let track1End = currentDay;
+                let track2End = currentDay;
+
+                workstreams.forEach((ws, wsIndex) => {
+                    // Assign to the track that finishes first
+                    let wsStartDay;
+                    if (track1End <= track2End) {
+                        wsStartDay = track1End;
+                    } else {
+                        wsStartDay = track2End;
+                    }
+
+                    ws.startDay = wsStartDay;
+                    let wsEndDay = wsStartDay;
+
+                    // Tasks within workstream are sequential
+                    ws.tasks.forEach(task => {
+                        task.startDay = wsEndDay;
+                        task.endDay = wsEndDay + task.estimate;
+                        wsEndDay = task.endDay;
+                    });
+
+                    ws.endDay = wsEndDay;
+
+                    // Update the track that was used
+                    if (track1End <= track2End) {
+                        track1End = wsEndDay;
+                    } else {
+                        track2End = wsEndDay;
+                    }
+                });
+
+                phase.endDay = Math.max(track1End, track2End);
+                currentDay = phase.endDay;
+            });
+        }
+
+        // Render timeline header
+        function renderTimelineHeader() {
+            const header = document.getElementById('timelineHeader');
+            header.innerHTML = '';
+
+            const months = ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
+            const weeksPerMonth = [4, 4, 5, 4, 4, 5, 4, 4, 5, 4];
+
+            months.forEach((month, i) => {
+                if (i >= config.months) return;
+
+                const monthDiv = document.createElement('div');
+                monthDiv.className = 'timeline-month';
+                monthDiv.style.width = `${weeksPerMonth[i] * config.weekWidth}px`;
+
+                monthDiv.innerHTML = `
+                    <div class="month-label">${month} 2026</div>
+                    <div class="week-labels">
+                        ${Array(weeksPerMonth[i]).fill(0).map((_, w) => `
+                            <div class="week-label">W${w + 1}</div>
+                        `).join('')}
+                    </div>
+                `;
+
+                header.appendChild(monthDiv);
+            });
+        }
+
+        // Render Gantt
+        function renderGantt() {
+            calculateSchedule();
+            renderTimelineHeader();
+
+            const viewMode = document.getElementById('viewMode').value;
+            const phaseFilter = document.getElementById('phaseFilter').value;
+            const tierFilter = document.getElementById('tierFilter').value;
+
+            const taskList = document.getElementById('taskList');
+            const timelineBody = document.getElementById('timelineBody');
+            taskList.innerHTML = '';
+            timelineBody.innerHTML = '';
+
+            const totalWeeks = 43; // ~10 months
+            let totalDays = 0;
+            let totalTasks = 0;
+            let projectEndDay = 0;
+
+            wbsData.phases.forEach(phase => {
+                if (phaseFilter !== 'all' && phase.id !== parseInt(phaseFilter)) return;
+
+                // Phase header
+                const phaseRow = createTaskRow(phase, 'phase');
+                taskList.appendChild(phaseRow);
+
+                const phaseTimeline = createTimelineRow(phase, 'phase', totalWeeks);
+                timelineBody.appendChild(phaseTimeline);
+
+                if (!collapsedPhases.has(phase.id) && viewMode !== 'phases') {
+                    phase.workstreams.forEach(ws => {
+                        // Workstream header
+                        const wsRow = createTaskRow(ws, 'workstream', phase.id);
+                        taskList.appendChild(wsRow);
+
+                        const wsTimeline = createTimelineRow(ws, 'workstream', totalWeeks, phase.id);
+                        timelineBody.appendChild(wsTimeline);
+
+                        if (!collapsedWorkstreams.has(ws.id) && viewMode === 'tasks') {
+                            ws.tasks.forEach(task => {
+                                if (tierFilter !== 'all' && task.tier !== tierFilter && task.tier !== 'all') return;
+
+                                const taskRow = createTaskRow(task, 'task', phase.id);
+                                taskList.appendChild(taskRow);
+
+                                const taskTimeline = createTimelineRow(task, 'task', totalWeeks, phase.id);
+                                timelineBody.appendChild(taskTimeline);
+
+                                totalDays += task.estimate;
+                                totalTasks++;
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Calculate project end day
+            wbsData.phases.forEach(phase => {
+                if (phase.endDay > projectEndDay) projectEndDay = phase.endDay;
+            });
+
+            document.getElementById('totalDays').textContent = totalDays;
+            document.getElementById('totalTasks').textContent = totalTasks;
+
+            // Calculate end date (assuming 5 working days per week)
+            const startDate = new Date('2026-02-01');
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            // Convert working days to calendar days (add weekends)
+            const fullWeeks = Math.floor(projectEndDay / 5);
+            const remainingDays = projectEndDay % 5;
+            const calendarDays = (fullWeeks * 7) + remainingDays;
+
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + calendarDays);
+
+            // Update both start and end dates
+            document.getElementById('startDateDisplay').textContent = `${monthNames[startDate.getMonth()]} ${startDate.getDate()}, ${startDate.getFullYear()}`;
+            document.getElementById('endDate').textContent = `${monthNames[endDate.getMonth()]} ${endDate.getDate()}, ${endDate.getFullYear()}`;
+
+            renderSummary();
+        }
+
+        function createTaskRow(item, type, phaseId) {
+            const row = document.createElement('div');
+            row.className = `task-row ${type}-header`;
+            if (type === 'task') row.className = 'task-row task-item';
+
+            if (type === 'phase' && collapsedPhases.has(item.id)) {
+                row.classList.add('collapsed');
+            }
+
+            let content = '';
+            if (type === 'phase') {
+                content = `
+                    <span class="phase-toggle">▼</span>
+                    <span class="task-name">Phase ${item.id}: ${item.name}</span>
+                    <span class="task-estimate">${item.endDay - item.startDay}d</span>
+                `;
+                row.onclick = () => togglePhase(item.id);
+            } else if (type === 'workstream') {
+                content = `
+                    <span class="task-name">${item.id} ${item.name}</span>
+                    <span class="task-estimate">${item.endDay - item.startDay}d</span>
+                `;
+            } else {
+                content = `
+                    <span class="task-name">${item.name}</span>
+                    <span class="task-estimate">${item.estimate}d</span>
+                `;
+            }
+
+            row.innerHTML = content;
+            return row;
+        }
+
+        function createTimelineRow(item, type, totalWeeks, phaseId) {
+            const row = document.createElement('div');
+            row.className = `timeline-row ${type}-header`;
+            if (type === 'task') row.className = 'timeline-row';
+
+            // Create week cells
+            for (let w = 0; w < totalWeeks; w++) {
+                const cell = document.createElement('div');
+                cell.className = 'week-cell';
+                if (w % 4 === 0) cell.classList.add('month-start');
+                row.appendChild(cell);
+            }
+
+            // Add Gantt bar
+            const bar = document.createElement('div');
+            bar.className = `gantt-bar phase-${phaseId || item.id}`;
+
+            if (type === 'phase') {
+                bar.classList.add('phase-bar');
+                bar.style.left = `${(item.startDay / 5) * config.weekWidth}px`;
+                bar.style.width = `${((item.endDay - item.startDay) / 5) * config.weekWidth}px`;
+            } else if (type === 'workstream') {
+                bar.classList.add('workstream-bar');
+                bar.style.left = `${(item.startDay / 5) * config.weekWidth}px`;
+                bar.style.width = `${((item.endDay - item.startDay) / 5) * config.weekWidth}px`;
+            } else {
+                bar.style.left = `${(item.startDay / 5) * config.weekWidth}px`;
+                bar.style.width = `${(item.estimate / 5) * config.weekWidth}px`;
+                bar.textContent = item.estimate + 'd';
+
+                bar.onmouseenter = (e) => showTooltip(e, item, phaseId);
+                bar.onmouseleave = hideTooltip;
+            }
+
+            row.appendChild(bar);
+            return row;
+        }
+
+        function togglePhase(phaseId) {
+            if (collapsedPhases.has(phaseId)) {
+                collapsedPhases.delete(phaseId);
+            } else {
+                collapsedPhases.add(phaseId);
+            }
+            renderGantt();
+        }
+
+        function expandAll() {
+            collapsedPhases.clear();
+            collapsedWorkstreams.clear();
+            renderGantt();
+        }
+
+        function collapseAll() {
+            wbsData.phases.forEach(p => collapsedPhases.add(p.id));
+            renderGantt();
+        }
+
+        function showTooltip(e, task, phaseId) {
+            const tooltip = document.getElementById('tooltip');
+            const phase = wbsData.phases.find(p => p.id === phaseId);
+
+            tooltip.innerHTML = `
+                <div class="tooltip-title">${task.name}</div>
+                <div class="tooltip-row"><span>ID:</span><span>${task.id}</span></div>
+                <div class="tooltip-row"><span>Duration:</span><span>${task.estimate} days</span></div>
+                <div class="tooltip-row"><span>Tier:</span><span>${task.tier}</span></div>
+                <div class="tooltip-row"><span>Phase:</span><span>${phase ? phase.name : ''}</span></div>
+                <div class="tooltip-row"><span>Start Day:</span><span>${task.startDay}</span></div>
+            `;
+
+            tooltip.style.left = `${e.pageX + 15}px`;
+            tooltip.style.top = `${e.pageY + 15}px`;
+            tooltip.classList.add('visible');
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').classList.remove('visible');
+        }
+
+        function renderSummary() {
+            const panel = document.getElementById('summaryPanel');
+            panel.innerHTML = '';
+
+            wbsData.phases.forEach(phase => {
+                let phaseDays = 0;
+                let phaseTasks = 0;
+
+                phase.workstreams.forEach(ws => {
+                    ws.tasks.forEach(task => {
+                        phaseDays += task.estimate;
+                        phaseTasks++;
+                    });
+                });
+
+                // Calculate calendar duration (with parallelism)
+                const calendarDays = phase.endDay - phase.startDay;
+                const calendarWeeks = Math.ceil(calendarDays / 5);
+
+                panel.innerHTML += `
+                    <div class="summary-card">
+                        <div class="summary-card-title">Phase ${phase.id}</div>
+                        <div class="summary-card-value phase-${phase.id}">${calendarWeeks} weeks</div>
+                        <div class="summary-card-sub">${phaseTasks} tasks • ${phaseDays} effort-days</div>
+                        <div class="summary-card-sub" style="margin-top:5px; font-size:0.75rem;">Day ${phase.startDay} → Day ${phase.endDay}</div>
+                    </div>
+                `;
+            });
+
+            // Add total summary
+            const lastPhase = wbsData.phases[wbsData.phases.length - 1];
+            const totalCalendarWeeks = Math.ceil(lastPhase.endDay / 5);
+            let totalEffortDays = 0;
+            wbsData.phases.forEach(p => {
+                p.workstreams.forEach(ws => {
+                    ws.tasks.forEach(t => totalEffortDays += t.estimate);
+                });
+            });
+
+            panel.innerHTML += `
+                <div class="summary-card" style="background: rgba(0, 212, 170, 0.1); border-color: rgba(0, 212, 170, 0.3);">
+                    <div class="summary-card-title">Total Timeline</div>
+                    <div class="summary-card-value" style="color: #00d4aa;">${totalCalendarWeeks} weeks</div>
+                    <div class="summary-card-sub">${totalEffortDays} effort-days with 2 devs</div>
+                    <div class="summary-card-sub" style="margin-top:5px; font-size:0.75rem;">~${Math.ceil(totalCalendarWeeks / 4.3)} months</div>
+                </div>
+            `;
+        }
+
+        // Initialize
+        renderGantt();
+    </script>
+</body>
+</html>
