@@ -936,6 +936,18 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
         password: site.wp_password,
       });
 
+      // Switch skin if a non-default template was selected
+      const skinSlug = deploymentContext.template?.slug;
+      if (skinSlug && skinSlug !== 'default') {
+        try {
+          await wp.switchSkin(skinSlug);
+          result.steps.push({ step: 'skin_switched', success: true, skin: skinSlug });
+        } catch (error) {
+          console.warn('Failed to switch skin:', error.message);
+          result.steps.push({ step: 'skin_switched', success: false, error: error.message });
+        }
+      }
+
       // Apply deployment context
       if (deploymentContext) {
         try {
@@ -1160,6 +1172,23 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
           username: site.wp_username,
           password: site.wp_password,
         });
+
+        // Switch skin if a non-default template was selected
+        const skinSlug = deploymentContext.template?.slug;
+        if (skinSlug && skinSlug !== 'default') {
+          sendProgress('switching_skin', { message: `Switching skin to "${skinSlug}"...` });
+          try {
+            await wp.switchSkin(skinSlug, {
+              onProgress: (progress) => {
+                sendProgress('switching_skin', { message: progress.message, ...progress });
+              },
+            });
+            result.steps.push({ step: 'skin_switched', success: true, skin: skinSlug });
+          } catch (error) {
+            console.warn('Failed to switch skin:', error.message);
+            result.steps.push({ step: 'skin_switched', success: false, error: error.message });
+          }
+        }
 
         // Apply deployment context
         sendProgress('applying_deployment', { message: 'Applying site configuration...' });

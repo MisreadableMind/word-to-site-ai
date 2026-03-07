@@ -21,7 +21,9 @@ class WordPressService {
    * @returns {string} Basic auth header value
    */
   get authHeader() {
-    const credentials = Buffer.from(`${this.auth.username}:${this.auth.password}`).toString('base64');
+    // Strip spaces from password — WP Application Passwords contain spaces for readability
+    const password = this.auth.password.replace(/ /g, '');
+    const credentials = Buffer.from(`${this.auth.username}:${password}`).toString('base64');
     return `Basic ${credentials}`;
   }
 
@@ -385,6 +387,68 @@ class WordPressService {
         permalink_structure: structure,
       }),
     });
+  }
+  // ==========================================
+  // Skin Switching (WaaS Wizard)
+  // ==========================================
+
+  /**
+   * Switch the site's skin via the trx-waas-wizard REST endpoint
+   * @param {string} skinSlug - Skin slug (e.g., "car-repair", "cleaning")
+   * @param {Object} [options]
+   * @param {Function} [options.onProgress] - Callback for progress updates
+   * @param {number} [options.maxAttempts] - Max poll attempts (default: 50)
+   * @param {number} [options.pollInterval] - Poll interval in ms (default: 2000)
+   * @returns {Promise<Object>} Final switch-skin result
+   */
+  async switchSkin(skinSlug, options = {}) {
+    const { onProgress, maxAttempts = 50, pollInterval = 2000 } = options;
+
+    console.log(`Switching skin to "${skinSlug}" on ${this.siteUrl}`);
+    onProgress?.({ phase: 'starting', message: `Switching skin to "${skinSlug}"...` });
+
+    // POST to initiate skin switch
+    const postResult = await this.requestRaw('trx-waas-wizard/v1/switch-skin', {
+      method: 'POST',
+      body: JSON.stringify({ skin: skinSlug }),
+    });
+
+    if (!postResult.status) {
+      throw new Error(`switch-skin POST returned no status: ${JSON.stringify(postResult)}`);
+    }
+
+    console.log(`switch-skin POST status: ${postResult.status}`);
+    onProgress?.({ phase: 'switching', message: 'Skin switch initiated, waiting for completion...' });
+
+    // Poll GET until rest_api_end or error
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      const pollResult = await this.requestRaw('trx-waas-wizard/v1/switch-skin', {
+        method: 'GET',
+      });
+
+      const status = pollResult.status;
+      console.log(`switch-skin poll ${i + 1}/${maxAttempts}: status=${status}`);
+      onProgress?.({
+        phase: 'polling',
+        message: `Skin switch in progress (${i + 1}/${maxAttempts})...`,
+        attempt: i + 1,
+        status,
+      });
+
+      if (status === 'rest_api_end') {
+        console.log(`Skin switch to "${skinSlug}" completed successfully`);
+        onProgress?.({ phase: 'complete', message: `Skin "${skinSlug}" applied successfully` });
+        return { success: true, skin: skinSlug, pollResult };
+      }
+
+      if (status === 'error') {
+        throw new Error(`Skin switch failed with error status: ${JSON.stringify(pollResult)}`);
+      }
+    }
+
+    throw new Error(`Skin switch timed out after ${maxAttempts} attempts`);
   }
 }
 
