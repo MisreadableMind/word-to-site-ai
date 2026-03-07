@@ -54,10 +54,13 @@ public/
 
 ```bash
 npm install
-npm run dev          # starts on localhost:3000 with nodemon
+docker compose up db -d   # PostgreSQL on localhost:5555
+npm run dev               # starts on localhost:3000 with nodemon
 ```
 
-Basic auth is disabled when `NODE_ENV=development`.
+- **Database:** PostgreSQL via Docker Compose. Connection: `postgresql://wordtosite:wordtosite@localhost:5555/wordtosite` (configured in `src/.env` as `DATABASE_URL`).
+- Migrations in `src/db/migrations/` run automatically on first container start and on app init by each service.
+- Basic auth is disabled when `NODE_ENV=development`.
 
 ## Git Workflow Rules
 
