@@ -422,6 +422,26 @@ class DomainWorkflow {
 
     const results = { applied: true, favicon, template: context.template?.slug };
 
+    // 0. Switch skin if a non-default template was selected
+    const skinSlug = context.template?.slug;
+    if (skinSlug && skinSlug !== 'default') {
+      try {
+        this.emitProgress('switching_skin', {
+          message: `Switching skin to "${skinSlug}"...`,
+        });
+        const skinResult = await wp.switchSkin(skinSlug, {
+          onProgress: (progress) => {
+            this.emitProgress('switching_skin', { message: progress.message, ...progress });
+          },
+        });
+        results.skinSwitched = true;
+        console.log(`  Skin switched: ${skinSlug}`);
+      } catch (error) {
+        console.warn('Failed to switch skin:', error.message);
+        results.skinSwitchError = error.message;
+      }
+    }
+
     // 1. Update site title and tagline from branding
     try {
       const settingsUpdate = {};
