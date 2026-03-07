@@ -9,6 +9,9 @@ export const DEFAULTS = {
   // Default template slug for InstaWP
   TEMPLATE_SLUG: 'flexify',
 
+  // InstaWP WaaS entity template ID (Flexify snapshot)
+  TEMPLATE_ID: 21958,
+
   // Default word count for auto-generated excerpts
   EXCERPT_WORD_COUNT: 30,
 

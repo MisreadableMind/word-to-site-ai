@@ -30,6 +30,10 @@ class InstaWPAPI {
     } catch (error) {
       if (error.response) {
         const errorMessage = error.response.data?.message || error.response.statusText;
+        console.error(`InstaWP API ${method} ${url} failed:`);
+        console.error(`  Status: ${error.response.status}`);
+        console.error(`  Response body:`, JSON.stringify(error.response.data, null, 2));
+        console.error(`  Request body:`, JSON.stringify(data, null, 2));
         throw new Error(`InstaWP API Error: ${error.response.status} - ${errorMessage}`);
       }
       throw error;
@@ -85,17 +89,17 @@ class InstaWPAPI {
   }
 
   async createSiteFromTemplate(templateSlug, options = {}) {
-    console.log(`Creating site: ${options.siteName || 'auto-generated name'}`);
+    const slug = options.snapshotSlug || config.instawp.snapshotSlug;
+    console.log(`Creating site from template "${slug}": ${options.siteName || 'auto-generated name'}`);
 
     const data = {
+      slug,
       site_name: options.siteName || undefined,
-      wp_version: options.wpVersion || '6.8.1',
-      php_version: options.phpVersion || '8.0',
+      is_shared: options.isShared !== undefined ? options.isShared : false,
       is_reserved: options.isReserved !== undefined ? options.isReserved : true,
-      plan_id: options.planId || 2,
     };
 
-    const response = await this.makeRequest('/sites', 'POST', data);
+    const response = await this.makeRequest('/sites/template', 'POST', data);
 
     console.log(`Site created successfully. Site ID: ${response.data.id}`);
     return response.data;

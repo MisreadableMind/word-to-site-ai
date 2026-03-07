@@ -9,6 +9,9 @@ export const config = {
     apiUrlV1: process.env.INSTAWP_API_URL_V1 || 'https://app.instawp.io/api/v1',
     apiKey: process.env.INSTA_WP_API_KEY,
     templateSlug: process.env.TEMPLATE_SLUG || 'flexify',
+    templateId: parseInt(process.env.TEMPLATE_ID) || 21958,
+    snapshotSlug: process.env.SNAPSHOT_SLUG || 'wordtosite-snapshot',
+    teamId: parseInt(process.env.INSTAWP_TEAM_ID) || 132228,
   },
 
   // OpenAI Configuration (GPT-4o, Whisper)
