@@ -30,6 +30,10 @@ class DomainWorkflow {
     this.namecheap = new NamecheapAPI();
     this.cloudflare = new CloudflareAPI();
 
+    // Optional proxy service for auto-registering proxy keys
+    this.proxyService = options.proxyService || null;
+    this.proxyUrl = options.proxyUrl || null;
+
     // Progress callback for real-time updates
     this.onProgress = options.onProgress || (() => {});
   }
@@ -348,6 +352,37 @@ class DomainWorkflow {
           success: false,
           error: error.message,
         });
+      }
+    }
+
+    // Auto-register proxy key (non-blocking)
+    if (this.proxyService && result.site?.wp_url) {
+      try {
+        const wpUrl = result.site.wp_url;
+        const domain = new URL(wpUrl).hostname;
+        const existing = await this.proxyService.getSiteByDomain(domain);
+        if (!existing) {
+          const label = deploymentContext?.branding?.siteTitle || contentContext?.business?.name || domain;
+          const proxySite = await this.proxyService.registerSite(domain, label);
+          console.log(`Proxy key registered for ${domain}: ${proxySite.api_key.slice(0, 8)}...`);
+
+          if (this.proxyUrl) {
+            const pushResp = await fetch(`${wpUrl}/wp-json/wordtosite/v1/set-proxy-config`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ proxyUrl: this.proxyUrl, apiKey: proxySite.api_key }),
+            });
+            if (!pushResp.ok) {
+              console.warn(`Failed to push proxy config to ${domain}`);
+            }
+          }
+          result.steps.push({ step: 'proxy_registered', success: true });
+        } else {
+          result.steps.push({ step: 'proxy_registered', success: true, skipped: true });
+        }
+      } catch (error) {
+        console.warn('Auto proxy registration failed:', error.message);
+        result.steps.push({ step: 'proxy_registered', success: false, error: error.message });
       }
     }
 

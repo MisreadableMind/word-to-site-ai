@@ -36,15 +36,16 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = config.server.port;
 
+// AI Proxy service — instantiated globally so onboarding flows and plugin register can use it
 // Plugin API routes (mounted BEFORE basic auth - uses its own API key auth)
 if (config.pluginApi?.enabled !== false) {
   const pluginService = new PluginAPIService();
   app.use('/api/plugin', express.json(), createPluginRouter(pluginService));
 }
 
-// AI Proxy routes (mounted BEFORE basic auth - uses its own API key auth)
-if (config.proxy?.enabled !== false) {
-  const proxyService = new ProxyService();
+// AI Proxy service — instantiated globally so onboarding flows can auto-register keys
+const proxyService = config.proxy?.enabled !== false ? new ProxyService() : null;
+if (proxyService) {
   app.use('/api/proxy', express.json({ limit: '1mb' }), createProxyRouter(proxyService));
 }
 
@@ -55,7 +56,7 @@ const aiService = new AIService({ openaiApiKey: config.openai?.apiKey, geminiApi
 const editorService = new EditorService({ aiService, siteService });
 if (config.auth?.enabled !== false) {
   app.use('/api/auth', express.json(), createAuthRouter(authService));
-  app.use('/api/sites', express.json(), createSiteRouter(siteService, authService));
+  app.use('/api/sites', express.json(), createSiteRouter(siteService, authService, proxyService));
   app.use('/api/editor/chat', express.json(), createEditorRouter(editorService, authService));
 }
 
@@ -83,6 +84,42 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Multer for multipart file uploads (voice transcription)
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+
+// Helper: auto-register proxy key for a new site and push config to the WP plugin
+async function autoRegisterProxyKey(wpUrl, siteName, req) {
+  if (!proxyService) return;
+
+  try {
+    const domain = new URL(wpUrl).hostname;
+    const existing = await proxyService.getSiteByDomain(domain);
+    if (existing) {
+      console.log(`Proxy key already exists for ${domain}, skipping registration`);
+      return { step: 'proxy_registered', success: true, skipped: true };
+    }
+
+    const site = await proxyService.registerSite(domain, siteName || domain);
+    console.log(`Proxy key registered for ${domain}: ${site.api_key.slice(0, 8)}...`);
+
+    // Push proxy config to WP plugin
+    const proxyUrl = `${req.protocol}://${req.get('host')}/api/proxy`;
+    const pushResponse = await fetch(`${wpUrl}/wp-json/wordtosite/v1/set-proxy-config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proxyUrl, apiKey: site.api_key }),
+    });
+
+    if (!pushResponse.ok) {
+      console.warn(`Failed to push proxy config to ${domain}: ${await pushResponse.text()}`);
+      return { step: 'proxy_registered', success: true, pushed: false };
+    }
+
+    console.log(`Proxy config pushed to ${domain}`);
+    return { step: 'proxy_registered', success: true, pushed: true };
+  } catch (error) {
+    console.warn('Auto proxy registration failed:', error.message);
+    return { step: 'proxy_registered', success: false, error: error.message };
+  }
+}
 
 // Base site service (skins & languages from TRXWaaSWizard plugin)
 const baseSiteService = new BaseSiteService();
@@ -431,8 +468,17 @@ app.get('/api/ssl-status/:siteId', async (req, res) => {
   }
 });
 
+// Admin API key middleware for sensitive endpoints
+function requireAdminKey(req, res, next) {
+  const key = req.headers['x-api-key'] || req.query.key;
+  if (!config.adminApiKey || key !== config.adminApiKey) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  next();
+}
+
 // Updated: Config check with domain workflow and AI status
-app.get('/api/config', async (req, res) => {
+app.get('/api/config', requireAdminKey, async (req, res) => {
   res.json({
     hasApiKey: !!config.instawp.apiKey,
     templateSlug: config.instawp.templateSlug,
@@ -465,7 +511,7 @@ app.get('/api/config', async (req, res) => {
 });
 
 // Updated: Health check with version
-app.get('/api/health', (req, res) => {
+app.get('/api/health', requireAdminKey, (req, res) => {
   res.json({
     status: 'ok',
     service: 'InstaWP Site Creator',
@@ -883,6 +929,8 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
     if (domain) {
       const domainWorkflow = new DomainWorkflow({
         instawpApiKey: effectiveApiKey,
+        proxyService,
+        proxyUrl: proxyService ? `${req.protocol}://${req.get('host')}/api/proxy` : null,
       });
 
       const result = await domainWorkflow.executeWithContexts({
@@ -973,6 +1021,14 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
           result.steps.push({ step: 'deployment_applied', success: false, error: error.message });
         }
       }
+
+      // Auto-register proxy key (non-blocking)
+      const proxyStep = await autoRegisterProxyKey(
+        site.wp_url,
+        deploymentContext.branding?.siteTitle || contentContext?.business?.name,
+        req,
+      );
+      if (proxyStep) result.steps.push(proxyStep);
 
       // Generate and push content
       if (contentContext) {
@@ -1113,6 +1169,8 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
       // Domain workflow with progress
       const domainWorkflow = new DomainWorkflow({
         instawpApiKey: effectiveApiKey,
+        proxyService,
+        proxyUrl: proxyService ? `${req.protocol}://${req.get('host')}/api/proxy` : null,
         onProgress: (progress) => {
           sendProgress(progress.step, progress);
         },
@@ -1208,6 +1266,14 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
         } catch (error) {
           result.steps.push({ step: 'deployment_applied', success: false, error: error.message });
         }
+
+        // Auto-register proxy key (non-blocking)
+        const proxyStep = await autoRegisterProxyKey(
+          site.wp_url,
+          deploymentContext.branding?.siteTitle || contentContext?.business?.name,
+          req,
+        );
+        if (proxyStep) result.steps.push(proxyStep);
 
         // Generate content
         if (contentContext) {
