@@ -7,10 +7,7 @@ export const DEFAULTS = {
   FAVICON_URL: 'https://flexify.themerex.net/wp-content/uploads/2025/07/cropped-favicon-32x32.jpg',
 
   // Default template slug for InstaWP
-  TEMPLATE_SLUG: 'flexify',
-
-  // InstaWP WaaS entity template ID (Flexify snapshot)
-  TEMPLATE_ID: 21958,
+  TEMPLATE_SLUG: 'wordtosite_template',
 
   // Default word count for auto-generated excerpts
   EXCERPT_WORD_COUNT: 30,
