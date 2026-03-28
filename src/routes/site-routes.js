@@ -5,7 +5,7 @@ import { createUserAuth } from '../middleware/user-auth.js';
  * Create site router
  * Mounted at /api/sites
  */
-export default function createSiteRouter(siteService, authService) {
+export default function createSiteRouter(siteService, authService, proxyService) {
   const router = Router();
   const auth = createUserAuth(authService);
 
@@ -42,6 +42,51 @@ export default function createSiteRouter(siteService, authService) {
       res.status(500).json({
         error: { message: 'Failed to get site', type: 'server_error' },
       });
+    }
+  });
+
+  // Get proxy usage for a site
+  router.get('/:id/usage', async (req, res) => {
+    try {
+      const site = await siteService.getSiteById(req.params.id, req.user.id);
+      if (!site) {
+        return res.status(404).json({ error: { message: 'Site not found', type: 'not_found' } });
+      }
+
+      if (!proxyService) {
+        return res.json({ success: true, usage: null, message: 'Proxy service not enabled' });
+      }
+
+      // Look up the domain in proxy_sites
+      const domain = site.wp_url ? new URL(site.wp_url).hostname : site.domain;
+      if (!domain) {
+        return res.json({ success: true, usage: null, message: 'No domain associated' });
+      }
+
+      const proxySite = await proxyService.getSiteByDomain(domain);
+      if (!proxySite) {
+        return res.json({ success: true, usage: null, message: 'No proxy key registered' });
+      }
+
+      const used = await proxyService.getMonthlyUsage(proxySite.id);
+      const tokenLimit = parseInt(proxySite.monthly_token_limit) || 0;
+      const quota = await proxyService.checkQuota(proxySite.id, tokenLimit);
+
+      res.json({
+        success: true,
+        usage: {
+          domain: proxySite.domain,
+          status: proxySite.status,
+          tokensUsed: used,
+          tokenLimit,
+          remaining: Math.max(0, tokenLimit - used),
+          allowed: quota.allowed,
+          period: new Date().toISOString().slice(0, 7),
+        },
+      });
+    } catch (error) {
+      console.error('Site usage error:', error);
+      res.status(500).json({ error: { message: 'Failed to get usage', type: 'server_error' } });
     }
   });
 

@@ -8,10 +8,7 @@ export const config = {
     apiUrl: process.env.INSTAWP_API_URL || 'https://app.instawp.io/api/v2',
     apiUrlV1: process.env.INSTAWP_API_URL_V1 || 'https://app.instawp.io/api/v1',
     apiKey: process.env.INSTA_WP_API_KEY,
-    templateSlug: process.env.TEMPLATE_SLUG || 'flexify',
-    templateId: parseInt(process.env.TEMPLATE_ID) || 21958,
-    snapshotSlug: process.env.SNAPSHOT_SLUG || 'wordtosite-snapshot',
-    teamId: parseInt(process.env.INSTAWP_TEAM_ID) || 132228,
+    templateSlug: process.env.TEMPLATE_SLUG || 'wordtosite_template',
   },
 
   // OpenAI Configuration (GPT-4o, Whisper)
@@ -68,6 +65,9 @@ export const config = {
       email: process.env.DOMAIN_CONTACT_EMAIL || '',
     },
   },
+
+  // Admin API key for protecting sensitive endpoints (health, config)
+  adminApiKey: process.env.ADMIN_API_KEY || '',
 
   // AI Proxy Configuration (centralized AI access for deployed sites)
   proxy: {

@@ -17,9 +17,7 @@ export default function createProxyRouter(proxyService) {
   function adminAuth(req, res, next) {
     const secret = req.headers['x-proxy-admin-secret'];
     if (!config.proxy?.adminSecret || secret !== config.proxy.adminSecret) {
-      return res.status(401).json({
-        error: { message: 'Invalid or missing admin secret.', type: 'authentication_error' },
-      });
+      return res.status(404).json({ error: 'Not found' });
     }
     next();
   }
@@ -28,7 +26,7 @@ export default function createProxyRouter(proxyService) {
   // PUBLIC
   // ==========================================
 
-  router.get('/ping', (req, res) => {
+  router.get('/ping', adminAuth, (req, res) => {
     res.json({ success: true, service: 'wordtosite-ai-proxy', timestamp: new Date().toISOString() });
   });
 
