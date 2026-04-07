@@ -9,6 +9,7 @@ export const config = {
     apiUrlV1: process.env.INSTAWP_API_URL_V1 || 'https://app.instawp.io/api/v1',
     apiKey: process.env.INSTA_WP_API_KEY,
     templateSlug: process.env.TEMPLATE_SLUG || 'wordtosite_template',
+    snapshotSlug: process.env.SNAPSHOT_SLUG || 'wordtosite_template',
   },
 
   // OpenAI Configuration (GPT-4o, Whisper)
@@ -91,9 +92,9 @@ export const config = {
 
   // Base Site Configuration (TRXWaaSWizard plugin)
   baseSite: {
-    url: process.env.BASE_SITE_URL || 'https://flexify.instawp.dev',
-    username: process.env.BASE_SITE_USERNAME || 'lojowaguse1434',
-    appPassword: process.env.BASE_SITE_APP_PASSWORD || 'Q21m ygZS BmTp TQMG tlGq bOyi',
+    url: process.env.BASE_SITE_URL || 'https://waas-site.at.wordtosite.ai',
+    username: process.env.BASE_SITE_USERNAME || 'hujifapato3251',
+    appPassword: process.env.BASE_SITE_APP_PASSWORD,
   },
 
   // Server Configuration

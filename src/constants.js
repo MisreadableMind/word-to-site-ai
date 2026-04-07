@@ -6,8 +6,8 @@ export const DEFAULTS = {
   // Default favicon URL (Flexify theme favicon)
   FAVICON_URL: 'https://flexify.themerex.net/wp-content/uploads/2025/07/cropped-favicon-32x32.jpg',
 
-  // Default template slug for InstaWP
-  TEMPLATE_SLUG: 'wordtosite_template',
+  // Default skin slug (from TRXWaaSWizard skins catalog)
+  TEMPLATE_SLUG: 'default',
 
   // Default word count for auto-generated excerpts
   EXCERPT_WORD_COUNT: 30,

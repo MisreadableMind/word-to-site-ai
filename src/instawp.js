@@ -89,11 +89,11 @@ class InstaWPAPI {
   }
 
   async createSiteFromTemplate(templateSlug, options = {}) {
-    const slug = options.snapshotSlug || config.instawp.snapshotSlug;
-    console.log(`Creating site from template "${slug}": ${options.siteName || 'auto-generated name'}`);
+    const snapshotSlug = options.snapshotSlug || config.instawp.snapshotSlug;
+    console.log(`Creating site from snapshot "${snapshotSlug}": ${options.siteName || 'auto-generated name'}`);
 
     const data = {
-      slug,
+      snapshot_slug: snapshotSlug,
       site_name: options.siteName || undefined,
       is_shared: options.isShared !== undefined ? options.isShared : false,
       is_reserved: options.isReserved !== undefined ? options.isReserved : true,
