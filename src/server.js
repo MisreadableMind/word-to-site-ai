@@ -984,6 +984,15 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
         password: site.wp_password,
       });
 
+      // Register site with the WaaS Wizard plugin before any wizard operations
+      try {
+        await wp.registerSite(site.wp_username, site.wp_password);
+        result.steps.push({ step: 'site_registered', success: true });
+      } catch (error) {
+        console.warn('Failed to register site:', error.message);
+        result.steps.push({ step: 'site_registered', success: false, error: error.message });
+      }
+
       // Switch skin if a non-default template was selected
       const skinSlug = deploymentContext.template?.slug;
       if (skinSlug && skinSlug !== 'default') {
@@ -1230,6 +1239,16 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
           username: site.wp_username,
           password: site.wp_password,
         });
+
+        // Register site with the WaaS Wizard plugin before any wizard operations
+        sendProgress('registering_site', { message: 'Registering site with wizard...' });
+        try {
+          await wp.registerSite(site.wp_username, site.wp_password);
+          result.steps.push({ step: 'site_registered', success: true });
+        } catch (error) {
+          console.warn('Failed to register site:', error.message);
+          result.steps.push({ step: 'site_registered', success: false, error: error.message });
+        }
 
         // Switch skin if a non-default template was selected
         const skinSlug = deploymentContext.template?.slug;
@@ -1573,8 +1592,10 @@ function normalizeSiteData(raw) {
     || findUrlInObject(raw)
     || '';
 
-  const username = raw.wp_username || raw.username || raw.admin_user || '';
-  const password = raw.wp_password || raw.password || raw.admin_pass || '';
+  const username = raw.wp_username || raw.username || raw.admin_user
+    || raw.site_meta?.wp_username || '';
+  const password = raw.wp_password || raw.password || raw.admin_pass
+    || raw.site_meta?.wp_password || '';
 
   // Build direct auto-login URL that bypasses InstaWP dashboard
   const magicLoginUrl = (url && username && password)
