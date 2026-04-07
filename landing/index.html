@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordToSite | We build sites for the zero-click internet</title>
+    <meta name="description" content="The internet moved to zero-click. AI answers questions before anyone visits your page. We build websites that stay visible in ChatGPT, Perplexity, and Google AI Overviews.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #09090B;
+            --bg-subtle: #0F0F12;
+            --surface: #18181B;
+            --surface-hover: #1F1F23;
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.1);
+            --text: #FAFAFA;
+            --text-secondary: #A1A1AA;
+            --text-muted: #71717A;
+            --accent: #818CF8;
+            --accent-bright: #A5B4FC;
+            --accent-dim: rgba(129,140,248,0.1);
+            --green: #34D399;
+            --green-dim: rgba(52,211,153,0.1);
+            --yellow: #FBBF24;
+            --pink: #F472B6;
+            --pink-dim: rgba(244,114,182,0.1);
+            --orange: #FB923C;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        ::selection { background: rgba(129,140,248,0.3); color: #fff; }
+        a { color: inherit; text-decoration: none; }
+
+        /* ─── GRID BACKGROUND ─── */
+        .grid-bg {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 64px 64px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .grid-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(129,140,248,0.08), transparent);
+        }
+
+        /* ─── NAV ─── */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(9,9,11,0.6);
+            backdrop-filter: blur(16px) saturate(1.5);
+            -webkit-backdrop-filter: blur(16px) saturate(1.5);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: -0.3px;
+        }
+
+        .nav-logo {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #818CF8, #6366F1);
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(129,140,248,0.3);
+        }
+
+        .nav-logo svg { width: 15px; height: 15px; }
+
+        .nav-links { display: flex; align-items: center; gap: 6px; }
+
+        .nav-link {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 150ms;
+        }
+
+        .nav-link:hover { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 150ms;
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-nav:hover { background: #6366F1; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,0.4); }
+
+        /* ─── HERO ─── */
+        .hero {
+            position: relative;
+            z-index: 1;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 180px 32px 100px;
+            text-align: center;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(129,140,248,0.15);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--accent-bright);
+            margin-bottom: 32px;
+            animation: fadeUp 0.6s ease;
+        }
+
+        .hero h1 {
+            font-size: clamp(40px, 6vw, 76px);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.05;
+            margin-bottom: 28px;
+            animation: fadeUp 0.6s ease 0.1s both;
+        }
+
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, #818CF8 0%, #C084FC 50%, #F472B6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            font-size: clamp(16px, 2vw, 20px);
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin: 0 auto 44px;
+            line-height: 1.65;
+            animation: fadeUp 0.6s ease 0.2s both;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            animation: fadeUp 0.6s ease 0.3s both;
+        }
+
+        .btn-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 200ms;
+        }
+
+        .btn-hero-primary { background: #fff; color: #09090B; }
+        .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(255,255,255,0.15); }
+        .btn-hero-primary svg { width: 16px; height: 16px; }
+
+        .btn-hero-secondary { background: rgba(255,255,255,0.06); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-hero-secondary:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+        .hero-hint {
+            font-size: 13px;
+            color: var(--text-muted);
+            animation: fadeUp 0.6s ease 0.4s both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ─── MANIFESTO STRIP ─── */
+        .manifesto {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .manifesto::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, var(--bg) 0%, transparent 10%, transparent 90%, var(--bg) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .manifesto-track {
+            display: flex;
+            gap: 48px;
+            padding: 18px 0;
+            animation: scroll 30s linear infinite;
+            width: max-content;
+        }
+
+        .manifesto-item {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .manifesto-item .mi-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+        }
+
+        .mi-dot.purple { background: var(--accent); }
+        .mi-dot.green { background: var(--green); }
+        .mi-dot.pink { background: var(--pink); }
+        .mi-dot.yellow { background: var(--yellow); }
+        .mi-dot.orange { background: var(--orange); }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* ─── SECTION STYLES ─── */
+        section { position: relative; z-index: 1; }
+
+        .section-container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 120px 32px;
+        }
+
+        .section-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--accent);
+            margin-bottom: 16px;
+            letter-spacing: 0.3px;
+        }
+
+        .section-eyebrow::before {
+            content: '';
+            width: 18px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .section-title {
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 16px;
+        }
+
+        .section-desc {
+            font-size: 17px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 560px;
+        }
+
+        .section-header { margin-bottom: 64px; }
+        .section-header.center { text-align: center; }
+        .section-header.center .section-desc { margin: 0 auto; }
+
+        .border-t { border-top: 1px solid var(--border); }
+
+        /* ─── THE PROBLEM ─── */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .problem-card {
+            padding: 32px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .problem-card.old {
+            opacity: 0.6;
+        }
+
+        .problem-card.new {
+            border-color: rgba(129,140,248,0.2);
+            background: linear-gradient(135deg, rgba(129,140,248,0.05), var(--surface));
+        }
+
+        .problem-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .problem-card.old .problem-label { color: var(--text-muted); }
+        .problem-card.new .problem-label { color: var(--accent-bright); }
+
+        .problem-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .problem-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .problem-list li .icon {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            margin-top: 1px;
+        }
+
+        .problem-card.old .icon { color: var(--text-muted); }
+        .problem-card.new .icon { color: var(--green); }
+
+        /* ─── WHAT WE BUILD ─── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .feature-card {
+            padding: 32px 28px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            transition: all 200ms;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .feature-icon svg { width: 20px; height: 20px; }
+
+        .feature-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        /* ─── HOW IT WORKS ─── */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            max-width: 900px;
+            margin: 0 auto;
+            counter-reset: step;
+        }
+
+        .step {
+            text-align: center;
+            counter-increment: step;
+        }
+
+        .step-num {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(129,140,248,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-family: var(--mono);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-bright);
+        }
+
+        .step h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        /* ─── CTA ─── */
+        .cta-section {
+            text-align: center;
+        }
+
+        .cta-title {
+            font-size: clamp(28px, 4vw, 44px);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .cta-desc {
+            font-size: 17px;
+            color: var(--text-secondary);
+            max-width: 520px;
+            margin: 0 auto 36px;
+            line-height: 1.6;
+        }
+
+        .cta-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .cta-powered {
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .cta-lab {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .cta-dot {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        /* ─── FOOTER ─── */
+        .footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-inner {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .footer-logo {
+            width: 18px; height: 18px;
+            background: linear-gradient(135deg, #818CF8, #6366F1);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo svg { width: 10px; height: 10px; }
+
+        .footer-links { display: flex; gap: 24px; }
+        .footer-link { font-size: 13px; color: var(--text-muted); transition: color 150ms; }
+        .footer-link:hover { color: var(--text-secondary); }
+
+        /* ─── ANIMATIONS ─── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 900px) {
+            .nav-links { display: none; }
+            .section-container { padding: 80px 24px; }
+            .features-grid { grid-template-columns: 1fr 1fr; }
+            .steps { grid-template-columns: 1fr; gap: 40px; }
+            .problem-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            .hero { padding: 130px 20px 60px; }
+            .section-container { padding: 56px 16px; }
+            .section-header { margin-bottom: 40px; }
+            .section-header, .section-header.center { text-align: center; }
+            .section-header .section-desc { margin-left: auto; margin-right: auto; font-size: 15px; }
+            .section-title { font-size: 24px; }
+            .hero-sub { font-size: 15px; margin-bottom: 28px; }
+            .hero-actions { flex-direction: column; }
+            .btn-hero { width: 100%; justify-content: center; }
+            .features-grid { grid-template-columns: 1fr; }
+            .footer-inner { flex-direction: column; gap: 16px; }
+            .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+            .cta-actions { flex-direction: column; }
+            .cta-actions .btn-hero { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav class="nav">
+    <div class="nav-inner">
+        <div class="nav-brand">
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            WordToSite
+        </div>
+        <div class="nav-links">
+            <a class="nav-link" href="#problem">The Problem</a>
+            <a class="nav-link" href="#features">What We Build</a>
+            <a class="nav-link" href="#how">How It Works</a>
+        </div>
+        <a class="btn-nav" href="/app.html">Get Started</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+    <div class="hero-eyebrow">We build sites for the zero-click internet</div>
+
+    <h1>Your site needs to<br><span class="gradient">answer the machine.</span></h1>
+
+    <p class="hero-sub">
+        Google, ChatGPT, and Perplexity now answer questions directly. No click needed. If your website isn't built for AI engines, you're invisible. We fix that.
+    </p>
+
+    <div class="hero-actions">
+        <a class="btn-hero btn-hero-primary" href="/app.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Create your site
+        </a>
+        <a class="btn-hero btn-hero-secondary" href="#how">
+            See how it works
+        </a>
+    </div>
+
+    <p class="hero-hint">No code. No dashboards. Just talk and we build.</p>
+</header>
+
+<!-- MANIFESTO -->
+<div class="manifesto">
+    <div class="manifesto-track">
+        <span class="manifesto-item"><span class="mi-dot purple"></span>AEO-optimized from day one</span>
+        <span class="manifesto-item"><span class="mi-dot green"></span>GEO-ready structured data</span>
+        <span class="manifesto-item"><span class="mi-dot pink"></span>Zero dashboards to learn</span>
+        <span class="manifesto-item"><span class="mi-dot yellow"></span>Voice-first website management</span>
+        <span class="manifesto-item"><span class="mi-dot orange"></span>Migrate or create in 60 seconds</span>
+        <span class="manifesto-item"><span class="mi-dot purple"></span>Cited by ChatGPT, Perplexity, Gemini</span>
+        <span class="manifesto-item"><span class="mi-dot green"></span>AI-generated content at scale</span>
+        <span class="manifesto-item"><span class="mi-dot pink"></span>Schema markup built in</span>
+        <!-- duplicate for seamless loop -->
+        <span class="manifesto-item"><span class="mi-dot purple"></span>AEO-optimized from day one</span>
+        <span class="manifesto-item"><span class="mi-dot green"></span>GEO-ready structured data</span>
+        <span class="manifesto-item"><span class="mi-dot pink"></span>Zero dashboards to learn</span>
+        <span class="manifesto-item"><span class="mi-dot yellow"></span>Voice-first website management</span>
+        <span class="manifesto-item"><span class="mi-dot orange"></span>Migrate or create in 60 seconds</span>
+        <span class="manifesto-item"><span class="mi-dot purple"></span>Cited by ChatGPT, Perplexity, Gemini</span>
+        <span class="manifesto-item"><span class="mi-dot green"></span>AI-generated content at scale</span>
+        <span class="manifesto-item"><span class="mi-dot pink"></span>Schema markup built in</span>
+    </div>
+</div>
+
+<!-- THE PROBLEM -->
+<section id="problem" class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">the problem</div>
+            <h2 class="section-title">The internet went zero-click.<br>Most websites didn't notice.</h2>
+            <p class="section-desc">60% of Google searches now end without a click. AI engines answer directly. If your site isn't structured for machines, humans never see it either.</p>
+        </div>
+
+        <div class="problem-grid fade-in">
+            <div class="problem-card old">
+                <div class="problem-label">The old way</div>
+                <ul class="problem-list">
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Build a site, hope Google indexes it
+                    </li>
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        No structured data for AI engines
+                    </li>
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Learn a CMS, manage plugins, fight updates
+                    </li>
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Invisible to ChatGPT, Perplexity, AI Overviews
+                    </li>
+                </ul>
+            </div>
+            <div class="problem-card new">
+                <div class="problem-label">With WordToSite</div>
+                <ul class="problem-list">
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        AEO + GEO baked into every page
+                    </li>
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        Schema, FAQ, and structured content automatic
+                    </li>
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        Talk to build and manage. No dashboard
+                    </li>
+                    <li>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        Cited by AI engines from day one
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- WHAT WE BUILD -->
+<section id="features" class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">what we build</div>
+            <h2 class="section-title">Websites that AI engines love to cite.</h2>
+            <p class="section-desc">Every site we build is optimized for Answer Engine Optimization and Generative Engine Optimization out of the box.</p>
+        </div>
+
+        <div class="features-grid fade-in">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: var(--accent-dim);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-bright)" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h3>Answer Engine Optimized</h3>
+                <p>Structured so ChatGPT, Perplexity, and Google AI Overviews can extract and cite your content directly.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: var(--green-dim);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <h3>Schema Markup Built In</h3>
+                <p>FAQ, HowTo, Article, LocalBusiness, and Organization schema generated automatically for every page.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: var(--pink-dim);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
+                <h3>AI-Generated Content</h3>
+                <p>Content created by OpenAI, Claude, and Gemini. Optimized for both humans and machines reading your site.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(251,191,36,0.1);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </div>
+                <h3>Voice-First Management</h3>
+                <p>Say what you want changed. No dashboards, no forms. Your site updates from a conversation.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(251,146,60,0.1);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                </div>
+                <h3>One-Click Migration</h3>
+                <p>Paste your old URL. We scrape it, rebuild it AEO-ready, and deploy to your domain. All under 60 seconds.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: var(--accent-dim);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-bright)" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </div>
+                <h3>Instant Deploy</h3>
+                <p>WordPress on managed infrastructure with SSL, CDN, and DNS handled. Production-ready in seconds.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="border-t">
+    <div class="section-container">
+        <div class="section-header center fade-in">
+            <div class="section-eyebrow">how it works</div>
+            <h2 class="section-title">Three steps. Zero friction.</h2>
+            <p class="section-desc">Tell us about your business. We handle the rest.</p>
+        </div>
+
+        <div class="steps fade-in">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Describe your business</h3>
+                <p>Talk or type. Tell us what you do, who you serve, and what makes you different.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>AI builds your site</h3>
+                <p>We generate AEO and GEO-optimized pages with schema markup, FAQ sections, and structured content.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Deploy and get cited</h3>
+                <p>Your site goes live with SSL and DNS. AI engines start citing you in search results and conversations.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="border-t cta-section">
+    <div class="section-container">
+        <div class="fade-in">
+            <h2 class="cta-title">The web moved to zero-click.<br>Your site should keep up.</h2>
+            <p class="cta-desc">Migrate your existing site or create one by talking to it. AEO and GEO-ready from the first deploy.</p>
+
+            <div class="cta-actions">
+                <a class="btn-hero btn-hero-primary" href="/app.html">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    Create your site
+                </a>
+                <a class="btn-hero btn-hero-secondary" href="#problem">
+                    Learn more
+                </a>
+            </div>
+
+            <div class="cta-powered">
+                Powered by AI from
+                <span class="cta-lab">OpenAI</span>
+                <span class="cta-dot"></span>
+                <span class="cta-lab">Anthropic</span>
+                <span class="cta-dot"></span>
+                <span class="cta-lab">Google</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <div class="footer-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            WordToSite
+        </div>
+        <div class="footer-links">
+            <a class="footer-link" href="/app.html">Get started</a>
+            <a class="footer-link" href="/privacy.html">Privacy</a>
+            <a class="footer-link" href="/terms.html">Terms</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                observer.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
