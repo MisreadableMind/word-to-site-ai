@@ -89,15 +89,22 @@ class InstaWPAPI {
   }
 
   async createSiteFromTemplate(templateSlug, options = {}) {
-    const snapshotSlug = options.snapshotSlug || config.instawp.snapshotSlug;
-    console.log(`Creating site from snapshot "${snapshotSlug}": ${options.siteName || 'auto-generated name'}`);
+    const slug = templateSlug || options.templateSlug || config.instawp.templateSlug;
+    const snapshotSlug = options.snapshotSlug;
 
     const data = {
-      snapshot_slug: snapshotSlug,
       site_name: options.siteName || undefined,
       is_shared: options.isShared !== undefined ? options.isShared : false,
       is_reserved: options.isReserved !== undefined ? options.isReserved : true,
     };
+
+    if (snapshotSlug) {
+      data.snapshot_slug = snapshotSlug;
+      console.log(`Creating site from snapshot "${snapshotSlug}": ${options.siteName || 'auto-generated name'}`);
+    } else {
+      data.slug = slug;
+      console.log(`Creating site from template "${slug}": ${options.siteName || 'auto-generated name'}`);
+    }
 
     const response = await this.makeRequest('/sites/template', 'POST', data);
 
