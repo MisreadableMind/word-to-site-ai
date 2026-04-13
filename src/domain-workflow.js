@@ -132,6 +132,7 @@ class DomainWorkflow {
       });
 
       const site = await this.instawp.createSiteFromTemplate(null, {
+        snapshotSlug: config.instawp.snapshotSlug,
         siteName: siteName || domain.replace(/\./g, '-'),
         isReserved: true,
       });

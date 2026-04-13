@@ -17,6 +17,7 @@ class InstaWPSiteCreator {
       // Step 1: Create site
       console.log('\n--- Step 1: Creating InstaWP Site ---');
       const site = await this.instawp.createSiteFromTemplate(null, {
+        snapshotSlug: config.instawp.snapshotSlug,
         isShared: options.isShared !== undefined ? options.isShared : false,
         isReserved: options.isReserved !== undefined ? options.isReserved : true,
         siteName: options.siteName || undefined,
