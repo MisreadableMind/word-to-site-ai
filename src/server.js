@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import multer from 'multer';
 import InstaWPSiteCreator from './index.js';
+import { sanitizeSiteName } from './instawp.js';
 import DomainWorkflow from './domain-workflow.js';
 import NamecheapAPI from './namecheap.js';
 import { config, validateDomainConfig } from './config.js';
@@ -1214,11 +1215,17 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
       res.write(`data: ${JSON.stringify({ step: 'result', data: result })}\n\n`);
     } else {
       // Simple site creation with progress
-      sendProgress('creating_site', { message: 'Creating WordPress site...' });
-
       const siteName = deploymentContext.branding?.siteTitle
         || contentContext?.business?.name
         || undefined;
+      const sanitizedName = sanitizeSiteName(siteName);
+      let siteNameNote = '';
+      if (sanitizedName && sanitizedName !== siteName) {
+        siteNameNote = ` — name sanitized to "${sanitizedName}"`;
+      } else if (sanitizedName) {
+        siteNameNote = ` "${sanitizedName}"`;
+      }
+      sendProgress('creating_site', { message: `Creating WordPress site${siteNameNote}...` });
 
       const creator = new InstaWPSiteCreator(effectiveApiKey);
       const siteResult = await creator.createSite({
