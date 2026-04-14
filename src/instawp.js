@@ -1,6 +1,18 @@
 import axios from 'axios';
 import { config } from './config.js';
 
+export function sanitizeSiteName(name) {
+  if (!name) return undefined;
+  // InstaWP only allows a-z, A-Z, 0-9 and hyphens
+  const sanitized = name
+    .trim()
+    .replace(/\s+/g, '-')          // spaces → hyphens
+    .replace(/[^a-zA-Z0-9-]/g, '') // strip any other invalid chars
+    .replace(/-{2,}/g, '-')        // collapse multiple hyphens
+    .replace(/^-+|-+$/g, '');      // trim leading/trailing hyphens
+  return sanitized || undefined;
+}
+
 class InstaWPAPI {
   constructor(apiKey = null) {
     this.apiUrl = config.instawp.apiUrl;
@@ -91,9 +103,10 @@ class InstaWPAPI {
   async createSiteFromTemplate(templateSlug, options = {}) {
     const slug = templateSlug || options.templateSlug || config.instawp.templateSlug;
     const snapshotSlug = options.snapshotSlug;
+    const siteName = sanitizeSiteName(options.siteName);
 
     const data = {
-      site_name: options.siteName || undefined,
+      site_name: siteName || undefined,
       is_shared: options.isShared !== undefined ? options.isShared : false,
       is_reserved: options.isReserved !== undefined ? options.isReserved : true,
     };
