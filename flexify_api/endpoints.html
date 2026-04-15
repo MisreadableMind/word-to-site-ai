@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThemeREX WaaS Wizard — API Endpoints</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f6fa; color: #2d3748; line-height: 1.7; }
+  a { color: #4a6cf7; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .sidebar { position: fixed; top: 0; left: 0; width: 270px; height: 100vh; background: #1e2235; color: #c8cfe8; overflow-y: auto; padding: 24px 0; z-index: 100; }
+  .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid #2d3454; }
+  .sidebar-logo h1 { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.4; }
+  .sidebar-logo span { font-size: 12px; color: #6b7db3; }
+  .sidebar nav { padding: 12px 0; }
+  .sidebar nav a { display: flex; align-items: center; gap: 8px; padding: 7px 24px; font-size: 13px; color: #c8cfe8; transition: background .15s; }
+  .sidebar nav a:hover { background: #2d3454; color: #fff; text-decoration: none; }
+  .sidebar nav .section-label { padding: 14px 24px 4px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #4a5578; }
+  .method-tag { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: .04em; flex-shrink: 0; }
+  .get  { background: #d1fae5; color: #065f46; }
+  .post { background: #dbeafe; color: #1e40af; }
+
+  .main { margin-left: 270px; padding: 40px 48px; max-width: 1100px; }
+  h2 { font-size: 22px; font-weight: 700; color: #1a202c; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+  h2:first-of-type { margin-top: 0; }
+  h3 { font-size: 16px; font-weight: 600; color: #2d3748; margin: 22px 0 8px; }
+  p { margin-bottom: 10px; font-size: 15px; }
+  ul, ol { margin: 6px 0 10px 20px; font-size: 15px; }
+  li { margin-bottom: 3px; }
+
+  .hero { background: linear-gradient(135deg, #1e2235, #2d3454); color: #fff; border-radius: 12px; padding: 32px 40px; margin-bottom: 40px; }
+  .hero h1 { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+  .hero p { font-size: 15px; opacity: .8; margin: 0; }
+
+  .endpoint-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .endpoint-method { padding: 4px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: .06em; }
+  .endpoint-method.GET  { background: #d1fae5; color: #065f46; }
+  .endpoint-method.POST { background: #dbeafe; color: #1e40af; }
+  .endpoint-url { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 15px; font-weight: 600; color: #1a202c; background: #eef0f8; padding: 4px 12px; border-radius: 6px; }
+
+  .card { background: #fff; border-radius: 10px; padding: 28px 32px; margin-bottom: 28px; box-shadow: 0 1px 4px rgba(0,0,0,.07); border: 1px solid #e8ecf4; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0 16px; }
+  thead tr { background: #4a6cf7; color: #fff; }
+  thead th { padding: 9px 13px; text-align: left; font-weight: 600; }
+  tbody tr { border-bottom: 1px solid #e2e8f0; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f7f8ff; }
+  td { padding: 8px 13px; vertical-align: top; font-size: 14px; }
+  td code { background: rgba(74,108,247,.1); padding: 1px 5px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; color: #4a6cf7; }
+
+  pre { background: #1e2235; color: #c8d6ff; border-radius: 8px; padding: 18px 22px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin: 8px 0 14px; font-family: 'SFMono-Regular', Consolas, monospace; }
+  pre .comment { color: #5a6a9a; }
+  pre .key { color: #93c5fd; }
+  pre .string { color: #86efac; }
+  pre .number { color: #fca5a5; }
+  pre .bool { color: #fcd34d; }
+  code { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; background: #eef0f8; padding: 1px 5px; border-radius: 4px; color: #5a4fcf; }
+
+  .tabs { display: flex; gap: 0; margin: 10px 0 0; border-bottom: 2px solid #e2e8f0; }
+  .tab-label { padding: 7px 18px; font-size: 13px; font-weight: 600; color: #718096; cursor: default; }
+  .tab-label.active { color: #4a6cf7; border-bottom: 2px solid #4a6cf7; margin-bottom: -2px; }
+
+  .info-box  { border-left: 4px solid #4a6cf7; background: #f0f4ff; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: 14px; }
+  .warn-box  { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: 14px; }
+  .async-box { border-left: 4px solid #8b5cf6; background: #f5f3ff; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: 14px; }
+
+  .required { color: #dc2626; font-size: 11px; font-weight: 700; }
+  .optional { color: #059669; font-size: 11px; font-weight: 700; }
+
+  .poll-flow { display: flex; gap: 0; align-items: center; flex-wrap: wrap; margin: 12px 0; font-size: 13px; }
+  .poll-step { background: #4a6cf7; color: #fff; padding: 5px 14px; border-radius: 6px; }
+  .poll-arrow { padding: 0 10px; color: #718096; font-size: 18px; }
+  .poll-loop { background: #8b5cf6; color: #fff; padding: 5px 14px; border-radius: 6px; }
+  .poll-end  { background: #059669; color: #fff; padding: 5px 14px; border-radius: 6px; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>WaaS Wizard</h1>
+    <span>API Endpoints Reference</span>
+  </div>
+  <nav>
+    <div class="section-label">Auth &amp; Site</div>
+    <a href="#register-site"><span class="method-tag post">POST</span> register-site</a>
+    <a href="#switch-skin"><span class="method-tag post">POST</span> switch-skin</a>
+    <a href="#get-skins"><span class="method-tag get">GET</span> get-skins</a>
+    <div class="section-label">Wizard Data</div>
+    <a href="#save-wizard-data"><span class="method-tag post">POST</span> save-wizard-data</a>
+    <a href="#save-all"><span class="method-tag post">POST</span> save-wizard-data/save-all</a>
+    <a href="#languages"><span class="method-tag get">GET</span> save-wizard-data/languages</a>
+    <div class="section-label">Page Widgets</div>
+    <a href="#page-widgets-get"><span class="method-tag get">GET</span> page-widgets</a>
+    <a href="#generate-section"><span class="method-tag post">POST</span> generate-section</a>
+    <a href="#generate-all"><span class="method-tag post">POST</span> generate-all</a>
+    <a href="#generate-images"><span class="method-tag post">POST</span> generate-images</a>
+    <div class="section-label">Internal</div>
+    <a href="#task-runner"><span class="method-tag post">POST</span> task-runner</a>
+    <div class="section-label">Wordtosite Proxy</div>
+    <a href="#set-proxy-config"><span class="method-tag post">POST</span> set-proxy-config</a>
+    <a href="#proxy-usage"><span class="method-tag get">GET</span> set-proxy-config/usage</a>
+    <div class="section-label">Plugin Translation</div>
+    <a href="#translate-plugin"><span class="method-tag post">POST</span> translate-plugin</a>
+    <a href="#translate-plugin-status"><span class="method-tag get">GET</span> translate-plugin/status</a>
+    <div class="section-label">Reference</div>
+    <a href="#status-codes">Status Codes</a>
+    <a href="#polling">Polling Guide</a>
+    <a href="project.html">← Project Docs</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+  <div class="hero">
+    <h1>API Endpoints Reference</h1>
+    <p>Base URL: <code style="background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px;color:#fff">/wp-json/trx-waas-wizard/v1</code></p>
+    <p style="margin-top:8px">Authentication: WordPress Application Passwords — <code style="background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px;color:#fff">Authorization: Basic base64(user:app-password)</code></p>
+  </div>
+
+  <!-- ==================== REGISTER SITE ==================== -->
+  <section id="register-site">
+    <h2>Register Site</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/register-site</span>
+      </div>
+      <p>Registers OpenAI proxy credentials for this site. After registration, AI Helper calls are automatically routed through the WaaS platform proxy instead of using the site owner's own OpenAI token.</p>
+      <div class="info-box">Calling this endpoint with the same credentials is idempotent — if credentials are already stored, the endpoint returns the current status without overwriting.</div>
+
+      <h3>Request Body</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>app_username</code></td><td>string</td><td><span class="required">required</span></td><td>Proxy Basic-auth username</td></tr>
+          <tr><td><code>app_password</code></td><td>string</td><td><span class="required">required</span></td><td>Proxy Basic-auth password</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Request Example</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/register-site \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_username": "waas_proxy_user",
+    "app_password": "waas_proxy_secret"
+  }'</pre>
+
+      <h3>Response</h3>
+      <pre>{
+  "status":         "site_inited",
+  "status_message": ""
+}</pre>
+    </div>
+  </section>
+
+  <!-- ==================== SWITCH SKIN ==================== -->
+  <section id="switch-skin">
+    <h2>Switch Skin</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/switch-skin</span>
+      </div>
+      <p>Triggers an async pipeline: downloads the skin archive, switches the theme skin, installs required plugins via TGMPA, and imports demo data. Poll repeatedly (empty body) to track progress.</p>
+      <div class="async-box"><strong>Async endpoint.</strong> The first call with <code>skin</code> starts the process. Subsequent calls with an empty body (or the same body) return the current status for polling. Pass <code>"force": true</code> to restart after <code>rest_api_end</code> or <code>error</code>.</div>
+
+      <h3>Request Body</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>skin</code></td><td>string</td><td><span class="required">required (start)</span></td><td>Skin slug to switch to (e.g. <code>"kindergarten"</code>)</td></tr>
+          <tr><td><code>force</code></td><td>boolean</td><td><span class="optional">optional</span></td><td>Set <code>true</code> to restart after completion or error</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Start Request Example</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/switch-skin \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{ "skin": "kindergarten" }'</pre>
+
+      <h3>Poll Request Example</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/switch-skin \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{}'</pre>
+
+      <h3>Response</h3>
+      <pre>{
+  "status":  "download_skin",   <span class="comment">// current stage</span>
+  "message": ""                 <span class="comment">// error message when status = "error"</span>
+}</pre>
+
+      <h3>Status Progression</h3>
+      <table>
+        <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>rest_api_start</code></td><td>Request accepted</td></tr>
+          <tr><td><code>need_download_skin</code></td><td>Queued for download</td></tr>
+          <tr><td><code>download_skin</code></td><td>Downloading skin archive</td></tr>
+          <tr><td><code>switch_skin</code></td><td>Applying skin to theme</td></tr>
+          <tr><td><code>install_plugins</code></td><td>Installing required plugins</td></tr>
+          <tr><td><code>import_demo_data</code></td><td>Importing demo content</td></tr>
+          <tr><td><code>rest_api_end</code></td><td>All done ✓ Terminal</td></tr>
+          <tr><td><code>error</code></td><td>Fatal error ✓ Terminal</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==================== GET SKINS ==================== -->
+  <section id="get-skins">
+    <h2>Get Skins</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method GET">GET</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/get-skins</span>
+      </div>
+      <p>Returns the full list of skins available for the active theme, including installation status, plus the currently active skin slug.</p>
+
+      <h3>Request Example</h3>
+      <pre>curl https://example.com/wp-json/trx-waas-wizard/v1/get-skins \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ="</pre>
+
+      <h3>Response</h3>
+      <pre>{
+  "active_skin": "default",
+  "skins": {
+    "default": {
+      "title":     "Default",
+      "version":   "1.7",
+      "installed": "1.7"
+    },
+    "kindergarten": {
+      "title":     "Kindergarten",
+      "version":   "1.2",
+      "installed": ""       <span class="comment">// empty = not installed</span>
+    }
+  }
+}</pre>
+    </div>
+  </section>
+
+  <!-- ==================== SAVE WIZARD DATA ==================== -->
+  <section id="save-wizard-data">
+    <h2>Save Wizard Data — Single Step</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/save-wizard-data</span>
+      </div>
+      <p>Saves and applies data for one wizard step. Supports both <code>application/json</code> and <code>multipart/form-data</code> (Step 1 only, for file uploads).</p>
+
+      <h3>Request Body</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>step</code></td><td>integer (1–3)</td><td>Which step to save</td></tr>
+          <tr><td><code>data</code></td><td>object</td><td>Step-specific fields (see below)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Step 1 — Site Settings</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/save-wizard-data \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "step": 1,
+    "data": {
+      "site_language": "uk_UA",
+      "site_title":    "My Beauty Salon",
+      "site_tagline":  "Professional care",
+      "site_logo":     "https://cdn.example.com/logo.png",
+      "site_favicon":  "https://cdn.example.com/favicon.png"
+    }
+  }'</pre>
+      <p><strong>Step 1 fields:</strong></p>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>site_language</code></td><td>string</td><td>WordPress locale code, e.g. <code>uk_UA</code>. Language pack is auto-downloaded if not installed.</td></tr>
+          <tr><td><code>site_title</code></td><td>string</td><td>Updates <code>blogname</code> option</td></tr>
+          <tr><td><code>site_tagline</code></td><td>string</td><td>Updates <code>blogdescription</code> option</td></tr>
+          <tr><td><code>site_logo</code></td><td>string (URL) or file</td><td>URL is sideloaded to media library. Multipart file takes priority over URL.</td></tr>
+          <tr><td><code>site_favicon</code></td><td>string (URL) or file</td><td>URL is sideloaded. Falls back to default plugin favicon if absent.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Step 2 — User Profile</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/save-wizard-data \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "step": 2,
+    "data": {
+      "username": "admin",
+      "nickname": "John",
+      "email":    "john@example.com",
+      "bio":      "Site administrator and beauty expert."
+    }
+  }'</pre>
+      <p><strong>Step 2 fields:</strong></p>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>username</code></td><td>string</td><td>Stored only — username cannot be changed in WordPress</td></tr>
+          <tr><td><code>nickname</code></td><td>string</td><td>Updates user meta <code>nickname</code></td></tr>
+          <tr><td><code>email</code></td><td>string</td><td>Updates user email via <code>wp_update_user()</code></td></tr>
+          <tr><td><code>bio</code></td><td>string</td><td>Updates user meta <code>description</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Step 3 — Company Info</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/save-wizard-data \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "step": 3,
+    "data": {
+      "name":        "Beauty Studio Pro",
+      "industry":    "Beauty & Wellness",
+      "address":     "123 Main St, Kyiv",
+      "phone":       "+380 44 123 4567",
+      "email":       "info@beautystudio.com",
+      "description": "Premium beauty services since 2010.",
+      "mission":     "To make every client feel beautiful.",
+      "history":     "Founded in 2010...",
+      "values":      "Quality, Care, Excellence",
+      "services": [
+        { "name": "Hair Styling", "description": "...", "features": "..." },
+        { "name": "Nail Art",     "description": "...", "features": "..." }
+      ],
+      "team": [
+        { "name": "Anna",  "position": "Senior Stylist", "bio": "..." },
+        { "name": "Maria", "position": "Nail Technician","bio": "..." }
+      ]
+    }
+  }'</pre>
+
+      <h3>Response</h3>
+      <pre>{
+  "success": true,
+  "step":    3,
+  "message": "Step data saved successfully."
+}</pre>
+    </div>
+  </section>
+
+  <!-- ==================== SAVE ALL ==================== -->
+  <section id="save-all">
+    <h2>Save Wizard Data — All Steps</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/save-wizard-data/save-all</span>
+      </div>
+      <p>Saves all three wizard steps in a single request using a flat body. All fields from steps 1, 2, and 3 are combined — each step handler extracts its own fields from the shared array. All fields are optional; only present fields are processed.</p>
+
+      <h3>Request Body — All Fields (flat)</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Step</th><th>Type</th></tr></thead>
+        <tbody>
+          <tr><td><code>site_language</code></td><td>1</td><td>string</td></tr>
+          <tr><td><code>site_title</code></td><td>1</td><td>string</td></tr>
+          <tr><td><code>site_tagline</code></td><td>1</td><td>string</td></tr>
+          <tr><td><code>site_logo</code></td><td>1</td><td>string (URL) or file</td></tr>
+          <tr><td><code>site_favicon</code></td><td>1</td><td>string (URL) or file</td></tr>
+          <tr><td><code>username</code></td><td>2</td><td>string</td></tr>
+          <tr><td><code>nickname</code></td><td>2</td><td>string</td></tr>
+          <tr><td><code>email</code></td><td>2</td><td>string (user email)</td></tr>
+          <tr><td><code>bio</code></td><td>2</td><td>string</td></tr>
+          <tr><td><code>name</code></td><td>3</td><td>string (company name)</td></tr>
+          <tr><td><code>industry</code></td><td>3</td><td>string</td></tr>
+          <tr><td><code>address</code></td><td>3</td><td>string</td></tr>
+          <tr><td><code>phone</code></td><td>3</td><td>string</td></tr>
+          <tr><td><code>description</code></td><td>3</td><td>string</td></tr>
+          <tr><td><code>mission</code></td><td>3</td><td>string</td></tr>
+          <tr><td><code>history</code></td><td>3</td><td>string</td></tr>
+          <tr><td><code>values</code></td><td>3</td><td>string</td></tr>
+          <tr><td><code>services</code></td><td>3</td><td>array of {name, description, features}</td></tr>
+          <tr><td><code>team</code></td><td>3</td><td>array of {name, position, bio}</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box">Note: <code>email</code> is shared — Step 2 uses it as the <em>user</em> email and Step 3 uses it as the <em>company</em> email. Both will receive the same value from the flat body.</div>
+
+      <h3>Request Example</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/save-wizard-data/save-all \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "site_language": "uk_UA",
+    "site_title":    "Beauty Studio Pro",
+    "site_tagline":  "Professional beauty care",
+    "site_logo":     "https://cdn.example.com/logo.png",
+    "nickname":      "Admin",
+    "email":         "info@beautystudio.com",
+    "name":          "Beauty Studio Pro",
+    "industry":      "Beauty & Wellness",
+    "address":       "123 Main St, Kyiv",
+    "phone":         "+380 44 123 4567",
+    "description":   "Premium beauty services since 2010.",
+    "mission":       "To make every client feel beautiful.",
+    "services": [
+      { "name": "Hair Styling", "description": "Expert cuts and color", "features": "All hair types" }
+    ],
+    "team": [
+      { "name": "Anna", "position": "Senior Stylist", "bio": "10 years experience" }
+    ]
+  }'</pre>
+
+      <h3>Response</h3>
+      <pre>{
+  "success": true,
+  "steps": {
+    "1": true,
+    "2": true,
+    "3": true
+  },
+  "message": "All step data saved successfully."
+}</pre>
+      <p>If one step fails, <code>success</code> will be <code>false</code> and the failing step will have <code>false</code> in the <code>steps</code> map.</p>
+    </div>
+  </section>
+
+  <!-- ==================== LANGUAGES ==================== -->
+  <section id="languages">
+    <h2>Get Languages</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method GET">GET</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/save-wizard-data/languages</span>
+      </div>
+      <p>Returns all WordPress translations available on WordPress.org plus the currently active locale. Use this to populate the language picker in Step 1.</p>
+
+      <h3>Request Example</h3>
+      <pre>curl https://example.com/wp-json/trx-waas-wizard/v1/save-wizard-data/languages \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ="</pre>
+
+      <h3>Response</h3>
+      <pre>{
+  "active_locale": "en_US",
+  "languages": [
+    { "locale": "en_US",  "english_name": "English (United States)", "native_name": "English (United States)" },
+    { "locale": "uk_UA",  "english_name": "Ukrainian",               "native_name": "Українська" },
+    { "locale": "de_DE",  "english_name": "German",                  "native_name": "Deutsch" }
+  ]
+}</pre>
+    </div>
+  </section>
+
+  <!-- ==================== PAGE WIDGETS GET ==================== -->
+  <section id="page-widgets-get">
+    <h2>Get Page Widgets</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method GET">GET</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/page-widgets?page_id=&lt;ID&gt;</span>
+      </div>
+      <p>Returns the ordered list of top-level Elementor sections/widgets for the specified post or page. Used by the wizard to show which sections are available for AI regeneration.</p>
+
+      <h3>Query Parameters</h3>
+      <table>
+        <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>page_id</code></td><td>integer</td><td><span class="required">required</span></td><td>WordPress post/page ID</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Request Example</h3>
+      <pre>curl "https://example.com/wp-json/trx-waas-wizard/v1/page-widgets?page_id=42" \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ="</pre>
+
+      <h3>Response</h3>
+      <pre>[
+  { "id": "abc123", "name": "Hero Section",    "type": "section" },
+  { "id": "def456", "name": "Services Block",  "type": "section" },
+  { "id": "ghi789", "name": "Team Widget",     "type": "widget"  }
+]</pre>
+    </div>
+  </section>
+
+  <!-- ==================== GENERATE SECTION ==================== -->
+  <section id="generate-section">
+    <h2>Generate Section</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/page-widgets/generate-section</span>
+      </div>
+      <p>Triggers AI content regeneration for a single Elementor section. Requires <code>manage_options</code> capability. The call is synchronous — it waits until generation is complete.</p>
+
+      <h3>Request Body</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>page_id</code></td><td>integer</td><td><span class="required">required</span></td><td>WordPress post/page ID</td></tr>
+          <tr><td><code>section_id</code></td><td>string</td><td><span class="required">required</span></td><td>Elementor element ID (from Get Page Widgets)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Request Example</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/page-widgets/generate-section \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "page_id":    42,
+    "section_id": "abc123"
+  }'</pre>
+
+      <h3>Response</h3>
+      <pre>{
+  "success": true,
+  "message": "Section generated successfully."
+}</pre>
+    </div>
+  </section>
+
+  <!-- ==================== GENERATE ALL ==================== -->
+  <section id="generate-all">
+    <h2>Generate All Content</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/page-widgets/generate-all</span>
+      </div>
+      <p>Schedules async AI content generation for <strong>all published posts and pages</strong> in two phases:</p>
+      <ol>
+        <li><strong>Phase 1</strong> — Rename page/post/layout titles via AI (NameTranslator, batched)</li>
+        <li><strong>Phase 2</strong> — Regenerate Elementor section content via AI (PageContentGenerator)</li>
+      </ol>
+      <div class="async-box"><strong>Async endpoint.</strong> First call starts the process. Poll with empty body to track progress. Both <code>generate-all</code> and <code>generate-images</code> share the same status slot — they cannot run simultaneously.</div>
+
+      <h3>Request Body</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>force</code></td><td>boolean</td><td><code>false</code></td><td>Restart after <code>generate_all_end</code>, <code>generate_images_end</code> or <code>error</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Polling Flow</h3>
+      <div class="poll-flow">
+        <span class="poll-step">POST { force: true }</span>
+        <span class="poll-arrow">→</span>
+        <span class="poll-loop">POST {} (poll every 2–5s)</span>
+        <span class="poll-arrow">→</span>
+        <span class="poll-end">status: generate_all_end</span>
+      </div>
+
+      <h3>Start Request Example</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/page-widgets/generate-all \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{ "force": true }'</pre>
+
+      <h3>Poll Request Example</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/page-widgets/generate-all \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{}'</pre>
+
+      <h3>Response Shape</h3>
+      <pre>{
+  "status":    "generate_stage_2_post_42_section_3",
+  "processed": 8,
+  "skipped":   1,
+  "errors":    []
+}</pre>
+
+      <h3>Terminal Response (success)</h3>
+      <pre>{
+  "status":    "generate_all_end",
+  "processed": 12,
+  "skipped":   0,
+  "errors":    []
+}</pre>
+
+      <h3>Terminal Response (error)</h3>
+      <pre>{
+  "status":  "error",
+  "message": "AI Helper is not available. Please check TRX Addons settings."
+}</pre>
+
+      <h3>Status Values</h3>
+      <table>
+        <thead><tr><th>Status</th><th>Phase</th><th>Terminal?</th></tr></thead>
+        <tbody>
+          <tr><td><code>generate_all_start</code></td><td>—</td><td>No</td></tr>
+          <tr><td><code>generate_all_running</code></td><td>—</td><td>No</td></tr>
+          <tr><td><code>rename_stage_1_batch_N</code></td><td>1</td><td>No</td></tr>
+          <tr><td><code>generate_stage_2_post_{ID}_section_N</code></td><td>2</td><td>No</td></tr>
+          <tr><td><code>generate_all_end</code></td><td>—</td><td><strong>Yes</strong></td></tr>
+          <tr><td><code>generate_images_end</code></td><td>—</td><td><strong>Yes</strong></td></tr>
+          <tr><td><code>error</code></td><td>—</td><td><strong>Yes</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==================== GENERATE IMAGES ==================== -->
+  <section id="generate-images">
+    <h2>Generate Images</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/page-widgets/generate-images</span>
+      </div>
+      <p>Schedules async image replacement for <strong>all published posts and pages</strong> using the external image-bank service (<code>https://content-bank.themerex.net</code>). The service URL is fixed and cannot be changed. Runs the parallel image pipeline:</p>
+      <ol>
+        <li>Build image task map (deduplication by URL)</li>
+        <li>Search for matching images</li>
+        <li>Submit AI generation tasks in parallel</li>
+        <li>Poll &amp; import results</li>
+        <li>Apply all Elementor updates in one write per post</li>
+      </ol>
+      <div class="async-box"><strong>Async endpoint.</strong> Shares the status slot with <code>generate-all</code> — run only after <code>generate-all</code> completes or independently. Cannot run simultaneously with <code>generate-all</code>.</div>
+
+      <h3>Request Body</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>force</code></td><td>boolean</td><td><code>false</code></td><td>Restart after terminal state</td></tr>
+          <tr><td><code>image_bank_login</code></td><td>string</td><td><code>""</code></td><td>Basic-auth login for image-bank service</td></tr>
+          <tr><td><code>image_bank_password</code></td><td>string</td><td><code>""</code></td><td>Basic-auth password for image-bank service</td></tr>
+          <tr><td><code>image_score_threshold</code></td><td>number (0–1)</td><td><code>0.85</code></td><td>Min relevance score to accept a search result</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Start Request Example</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/page-widgets/generate-images \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image_bank_login":      "my_login",
+    "image_bank_password":   "my_secret",
+    "image_score_threshold": 0.85
+  }'</pre>
+
+      <h3>Poll Request Example</h3>
+      <pre>curl -X POST https://example.com/wp-json/trx-waas-wizard/v1/page-widgets/generate-images \
+  -H "Authorization: Basic dXNlcjphcHAtcGFzc3dvcmQ=" \
+  -H "Content-Type: application/json" \
+  -d '{}'</pre>
+
+      <h3>Response Shape</h3>
+      <pre>{
+  "status":  "image_stage_3_searching_3_of_15",
+  "message": ""
+}</pre>
+
+      <h3>Terminal Response (success)</h3>
+      <pre>{
+  "status":  "generate_images_end",
+  "message": ""
+}</pre>
+
+      <h3>Status Values</h3>
+      <table>
+        <thead><tr><th>Status</th><th>Meaning</th><th>Terminal?</th></tr></thead>
+        <tbody>
+          <tr><td><code>generate_images_start</code></td><td>Request accepted</td><td>No</td></tr>
+          <tr><td><code>generate_images_running</code></td><td>Cron started</td><td>No</td></tr>
+          <tr><td><code>image_stage_3_collecting</code></td><td>Building task map</td><td>No</td></tr>
+          <tr><td><code>image_stage_3_searching_N_of_M</code></td><td>Searching image N of M</td><td>No</td></tr>
+          <tr><td><code>image_stage_3_submitting</code></td><td>Submitting generate tasks</td><td>No</td></tr>
+          <tr><td><code>image_stage_3_polling</code></td><td>Round-robin polling tasks</td><td>No</td></tr>
+          <tr><td><code>image_stage_3_updating</code></td><td>Applying Elementor updates</td><td>No</td></tr>
+          <tr><td><code>generate_images_end</code></td><td>All images replaced</td><td><strong>Yes</strong></td></tr>
+          <tr><td><code>generate_all_end</code></td><td>Content generation ended (shared slot)</td><td><strong>Yes</strong></td></tr>
+          <tr><td><code>error</code></td><td>Fatal error</td><td><strong>Yes</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==================== TASK RUNNER ==================== -->
+  <section id="task-runner">
+    <h2>Task Runner (Internal)</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/task-runner</span>
+      </div>
+      <p><strong>Internal endpoint.</strong> Called exclusively by <code>TaskQueue::dispatch()</code> via non-blocking <code>wp_remote_post()</code>. Should never be called directly from external clients.</p>
+      <p>Claims the requested task atomically, restores user context, and fires the registered WordPress action hook with <code>$task_id</code> prepended to the stored args.</p>
+
+      <h3>Authentication</h3>
+      <p>Uses a shared secret instead of standard WP user auth. The secret is stored in WP option <code>trx_waas_wizard_task_runner_secret</code> and passed via <code>X-Trx-Task-Secret</code> HTTP header.</p>
+
+      <h3>Request Body</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>task_id</td><td>integer</td><td>ID of the task to execute (from <code>trx_waas_wizard_tasks</code> table)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Response</h3>
+      <pre>{
+  "success": true       // task was claimed and action fired
+}
+
+// or if task was already claimed by another process:
+{
+  "skipped": true
+}</pre>
+
+      <h3>Task Lifecycle</h3>
+      <ol>
+        <li>TaskQueue inserts task with <code>status = 'pending'</code>.</li>
+        <li><code>dispatch()</code> fires a non-blocking POST to this endpoint for each task ID.</li>
+        <li>This endpoint claims the task (<code>UPDATE … WHERE status = 'pending'</code>) — idempotent, safe for duplicate requests.</li>
+        <li><code>do_action($hook, $task_id, ...$original_args)</code> is fired.</li>
+        <li>The action handler calls <code>TaskQueue::complete($task_id)</code> or <code>TaskQueue::fail($task_id, $error)</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ==================== WORDTOSITE PROXY ==================== -->
+  <section id="set-proxy-config">
+    <h2>Wordtosite Proxy — Set Config</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/wordtosite/v1/set-proxy-config</span>
+      </div>
+      <p>Receives the AI proxy credentials pushed by the wordtosite server immediately after site creation. Stores <code>proxyUrl</code> and <code>apiKey</code> as WP options. Always overwrites existing values so the server can rotate credentials.</p>
+      <p><strong>Authentication:</strong> Public — no user session required. Called by the wordtosite server, not a browser.</p>
+      <h3>Request Body</h3>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>proxyUrl</code></td><td>string</td><td>Base URL of the wordtosite AI proxy (e.g. <code>https://wordtosite.com/api/proxy</code>)</td></tr>
+        <tr><td><code>apiKey</code></td><td>string</td><td>Bearer API key for proxy requests (e.g. <code>wts_aBcDe…</code>)</td></tr>
+      </table>
+      <h3>Response</h3>
+      <pre><code>{ "success": true }</code></pre>
+      <h3>WP Options Written</h3>
+      <table>
+        <tr><th>Option</th><th>Content</th></tr>
+        <tr><td><code>trx_waas_wizard_wordtosite_proxy_url</code></td><td>Stored proxy base URL</td></tr>
+        <tr><td><code>trx_waas_wizard_wordtosite_api_key</code></td><td>Stored Bearer API key</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="proxy-usage">
+    <h2>Wordtosite Proxy — Usage</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method GET">GET</span>
+        <span class="endpoint-url">/wp-json/wordtosite/v1/set-proxy-config/usage</span>
+      </div>
+      <p>Returns the current token usage from the wordtosite proxy. Forwards the request to <code>{proxyUrl}/v1/usage</code> and returns the response unmodified.</p>
+      <p><strong>Authentication:</strong> Requires <code>manage_options</code> capability (admin only).</p>
+      <h3>Response (proxied from wordtosite)</h3>
+      <pre><code>{
+  "domain":  "mysite.com",
+  "period":  "2026-03",
+  "usage": {
+    "allowed":   true,
+    "used":      42000,
+    "limit":     100000,
+    "remaining": 58000
+  }
+}</code></pre>
+      <h3>Error Cases</h3>
+      <table>
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td>503</td><td>Proxy not yet configured (options missing)</td></tr>
+        <tr><td>502</td><td>Network error reaching the proxy</td></tr>
+        <tr><td>401 / 429</td><td>Proxy-side auth or quota errors (passed through)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==================== PLUGIN TRANSLATION ==================== -->
+  <section id="translate-plugin">
+    <h2>Plugin Translation — Generate Files</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method POST">POST</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/translate-plugin</span>
+      </div>
+      <p>Reads <code>languages/trx-waas-wizard.pot</code>, translates all strings into the active site locale using TRX Addons AI Helper (batches of 50), and writes the resulting <code>.po</code> and <code>.mo</code> files to the <code>languages/</code> directory.</p>
+      <p>Skips automatically if the site locale is <code>en_US</code> or if both files already exist (use <code>force</code> to override).</p>
+      <p><strong>Authentication:</strong> Requires a logged-in user with <code>edit_posts</code> capability.</p>
+      <div class="warn-box">Large <code>.pot</code> files may take 30–90 s due to batched AI calls. Set an appropriate HTTP timeout on the client side.</div>
+      <h3>Request Body (optional)</h3>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>locale</code></td><td>string</td><td><em>site locale</em></td><td>Target locale to translate into (e.g. <code>uk</code>, <code>fr_FR</code>). Must be a locale recognised by WordPress.org. If omitted, the active site locale is used.</td></tr>
+        <tr><td><code>force</code></td><td>boolean</td><td><code>false</code></td><td>Re-translate and overwrite files even if they already exist</td></tr>
+      </table>
+      <h3>Response — success</h3>
+      <pre><code>{
+  "success": true,
+  "locale": "uk",
+  "translated": 224,
+  "errors": [],
+  "po_file": "languages/trx-waas-wizard-uk.po",
+  "mo_file": "languages/trx-waas-wizard-uk.mo"
+}</code></pre>
+      <h3>Response — skipped</h3>
+      <pre><code>{
+  "success": true,
+  "skipped": true,
+  "reason": "files_exist",   // or "locale_is_en_us"
+  "locale": "uk"
+}</code></pre>
+      <h3>Error Cases</h3>
+      <table>
+        <tr><th>Status</th><th>Code</th><th>Condition</th></tr>
+        <tr><td>400</td><td><code>invalid_locale</code></td><td>Provided <code>locale</code> is not in the WordPress.org translations list</td></tr>
+        <tr><td>503</td><td><code>ai_unavailable</code></td><td>TRX Addons AI Helper not configured or API key missing</td></tr>
+        <tr><td>503</td><td><code>ai_init_failed</code></td><td>AI API object could not be initialised</td></tr>
+        <tr><td>500</td><td><code>pot_missing</code></td><td><code>languages/trx-waas-wizard.pot</code> not found</td></tr>
+        <tr><td>500</td><td><code>pot_parse_failed</code></td><td>.pot file could not be parsed by the POMO library</td></tr>
+        <tr><td>500</td><td><code>pot_empty</code></td><td>No translatable strings found in .pot</td></tr>
+        <tr><td>500</td><td><code>write_permission</code></td><td><code>languages/</code> directory is not writable</td></tr>
+        <tr><td>500</td><td><code>po_write_failed</code></td><td>Failed to write .po file</td></tr>
+        <tr><td>500</td><td><code>mo_write_failed</code></td><td>Failed to write .mo file</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="translate-plugin-status">
+    <h2>Plugin Translation — Status</h2>
+    <div class="card">
+      <div class="endpoint-header">
+        <span class="endpoint-method GET">GET</span>
+        <span class="endpoint-url">/wp-json/trx-waas-wizard/v1/translate-plugin/status</span>
+      </div>
+      <p>Returns the current translation state for the active site locale: whether translation files exist and whether the AI is available.</p>
+      <p><strong>Authentication:</strong> Requires a logged-in user with <code>edit_posts</code> capability.</p>
+      <h3>Response</h3>
+      <pre><code>{
+  "locale": "uk",
+  "needs_translation": true,
+  "po_exists": false,
+  "mo_exists": false,
+  "ai_available": true,
+  "pot_exists": true
+}</code></pre>
+    </div>
+  </section>
+
+  <!-- ==================== STATUS CODES ==================== -->
+  <section id="status-codes">
+    <h2>HTTP Status Codes</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Code</th><th>Meaning</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><code>200</code></td><td>OK</td><td>All successful responses (including polling)</td></tr>
+          <tr><td><code>401</code></td><td>Unauthorized</td><td>User not logged in or invalid credentials</td></tr>
+          <tr><td><code>403</code></td><td>Forbidden</td><td>Insufficient capability (edit_posts or manage_options)</td></tr>
+          <tr><td><code>403</code></td><td>Forbidden</td><td>Request on the read-only demo site</td></tr>
+          <tr><td><code>409</code></td><td>Conflict</td><td>Cannot restart — generation already in progress</td></tr>
+        </tbody>
+      </table>
+      <div class="info-box">Application-level errors (e.g. missing fields, invalid step) return <strong>HTTP 200</strong> with <code>"success": false</code> and a descriptive <code>"message"</code> field.</div>
+    </div>
+  </section>
+
+  <!-- ==================== POLLING GUIDE ==================== -->
+  <section id="polling">
+    <h2>Polling Guide</h2>
+    <div class="card">
+      <p>Async endpoints (<code>switch-skin</code>, <code>generate-all</code>, <code>generate-images</code>) follow the same pattern:</p>
+      <ol>
+        <li><strong>Start:</strong> POST with body parameters → process is scheduled via WP Cron.</li>
+        <li><strong>Poll:</strong> POST with empty body <code>{}</code> every 2–5 seconds → returns current status.</li>
+        <li><strong>Stop:</strong> When <code>status</code> is a terminal value → process is done.</li>
+      </ol>
+
+      <h3>JavaScript Polling Example</h3>
+      <pre>async function pollUntilDone(endpoint, startBody, credentials) {
+  const headers = {
+    'Authorization': 'Basic ' + btoa(credentials),
+    'Content-Type':  'application/json',
+  };
+
+  <span class="comment">// Start</span>
+  await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(startBody) });
+
+  const TERMINAL = ['generate_all_end', 'generate_images_end', 'rest_api_end', 'error'];
+
+  <span class="comment">// Poll</span>
+  while (true) {
+    await new Promise(r => setTimeout(r, 3000));
+
+    const res  = await fetch(endpoint, { method: 'POST', headers, body: '{}' });
+    const data = await res.json();
+
+    console.log('Status:', data.status);
+
+    if (TERMINAL.includes(data.status)) {
+      return data;
+    }
+  }
+}</pre>
+
+      <h3>PHP Polling Example</h3>
+      <pre>function poll_until_done(string $endpoint, string $credentials, int $max = 300): array {
+    $terminal = ['generate_all_end', 'generate_images_end', 'rest_api_end', 'error'];
+    $log      = [];
+
+    for ($i = 0; $i < $max; $i++) {
+        sleep(2);
+
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL            => $endpoint,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => '{}',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Basic ' . $credentials,
+                'Content-Type: application/json',
+            ],
+        ]);
+        $response = json_decode(curl_exec($curl), true);
+        curl_close($curl);
+
+        $log[] = $response;
+
+        if (in_array($response['status'] ?? '', $terminal, true)) {
+            break;
+        }
+    }
+
+    return $log;
+}</pre>
+
+      <h3>Terminal States Reference</h3>
+      <table>
+        <thead><tr><th>Endpoint</th><th>Terminal States</th></tr></thead>
+        <tbody>
+          <tr><td><code>switch-skin</code></td><td><code>rest_api_end</code>, <code>error</code></td></tr>
+          <tr><td><code>generate-all</code></td><td><code>generate_all_end</code>, <code>generate_images_end</code>, <code>error</code></td></tr>
+          <tr><td><code>generate-images</code></td><td><code>generate_images_end</code>, <code>generate_all_end</code>, <code>error</code></td></tr>
+        </tbody>
+      </table>
+      <div class="info-box">Note: <code>generate-all</code> and <code>generate-images</code> share a status slot. The terminal check includes both <code>generate_all_end</code> and <code>generate_images_end</code> to stop polling regardless of which process ran last.</div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
