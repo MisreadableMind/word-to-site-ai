@@ -7,7 +7,8 @@ import InstaWPSiteCreator from './index.js';
 import { sanitizeSiteName } from './instawp.js';
 import DomainWorkflow from './domain-workflow.js';
 import NamecheapAPI from './namecheap.js';
-import { config, validateDomainConfig } from './config.js';
+import { config, validateDomainConfig, toWpLocale } from './config.js';
+import { buildWizardData } from './utils/wizard-data.js';
 import OnboardingWorkflow, { OnboardingSteps } from './onboarding-workflow.js';
 import ExcerptService from './services/excerpt-service.js';
 import EditorService from './services/editor-service.js';
@@ -995,7 +996,7 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
       }
 
       // Switch skin if a non-default template was selected
-      const skinSlug = deploymentContext.template?.slug;
+      const skinSlug = templateSlug || deploymentContext.template?.slug;
       if (skinSlug && skinSlug !== 'default') {
         try {
           await wp.switchSkin(skinSlug);
@@ -1032,6 +1033,16 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
         }
       }
 
+      // Save wizard data to the plugin
+      try {
+        const wizardData = buildWizardData(deploymentContext, contentContext, site);
+        await wp.saveWizardData(wizardData);
+        result.steps.push({ step: 'wizard_data_saved', success: true });
+      } catch (error) {
+        console.warn('Failed to save wizard data:', error.message);
+        result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
+      }
+
       // Auto-register proxy key (non-blocking)
       const proxyStep = await autoRegisterProxyKey(
         site.wp_url,
@@ -1039,6 +1050,42 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
         req,
       );
       if (proxyStep) result.steps.push(proxyStep);
+
+      // Translate plugin (if non-English)
+      const wpLocale = toWpLocale(contentContext?.language?.primary);
+      if (wpLocale && wpLocale !== 'en_US') {
+        try {
+          await wp.translatePlugin(wpLocale);
+          result.steps.push({ step: 'plugin_translated', success: true, locale: wpLocale });
+        } catch (error) {
+          console.warn('Failed to translate plugin:', error.message);
+          result.steps.push({ step: 'plugin_translated', success: false, error: error.message });
+        }
+      }
+
+      // Generate all content (plugin-side AI rewrite)
+      try {
+        await wp.generateAllContent();
+        result.steps.push({ step: 'generate_all_content', success: true });
+      } catch (error) {
+        console.warn('Failed to generate all content:', error.message);
+        result.steps.push({ step: 'generate_all_content', success: false, error: error.message });
+      }
+
+      // Generate images (optional — only if image bank configured)
+      if (config.imageBank.login) {
+        try {
+          await wp.generateImages({
+            login: config.imageBank.login,
+            password: config.imageBank.password,
+            scoreThreshold: config.imageBank.scoreThreshold,
+          });
+          result.steps.push({ step: 'generate_images', success: true });
+        } catch (error) {
+          console.warn('Failed to generate images:', error.message);
+          result.steps.push({ step: 'generate_images', success: false, error: error.message });
+        }
+      }
 
       // Generate and push content
       if (contentContext) {
@@ -1258,7 +1305,7 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
         }
 
         // Switch skin if a non-default template was selected
-        const skinSlug = deploymentContext.template?.slug;
+        const skinSlug = templateSlug || deploymentContext.template?.slug;
         if (skinSlug && skinSlug !== 'default') {
           sendProgress('switching_skin', { message: `Switching skin to "${skinSlug}"...` });
           try {
@@ -1293,6 +1340,17 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
           result.steps.push({ step: 'deployment_applied', success: false, error: error.message });
         }
 
+        // Save wizard data to the plugin
+        sendProgress('saving_wizard_data', { message: 'Saving wizard data...' });
+        try {
+          const wizardData = buildWizardData(deploymentContext, contentContext, site);
+          await wp.saveWizardData(wizardData);
+          result.steps.push({ step: 'wizard_data_saved', success: true });
+        } catch (error) {
+          console.warn('Failed to save wizard data:', error.message);
+          result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
+        }
+
         // Auto-register proxy key (non-blocking)
         const proxyStep = await autoRegisterProxyKey(
           site.wp_url,
@@ -1300,6 +1358,57 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
           req,
         );
         if (proxyStep) result.steps.push(proxyStep);
+
+        // Translate plugin (if non-English)
+        const wpLocale = toWpLocale(contentContext?.language?.primary);
+        if (wpLocale && wpLocale !== 'en_US') {
+          sendProgress('translating_plugin', { message: `Translating to ${wpLocale}...` });
+          try {
+            await wp.translatePlugin(wpLocale, {
+              onProgress: (progress) => {
+                sendProgress('translating_plugin', { message: progress.message, ...progress });
+              },
+            });
+            result.steps.push({ step: 'plugin_translated', success: true, locale: wpLocale });
+          } catch (error) {
+            console.warn('Failed to translate plugin:', error.message);
+            result.steps.push({ step: 'plugin_translated', success: false, error: error.message });
+          }
+        }
+
+        // Generate all content (plugin-side AI rewrite)
+        sendProgress('generating_all_content', { message: 'Generating plugin-side content...' });
+        try {
+          await wp.generateAllContent({
+            onProgress: (progress) => {
+              sendProgress('generating_all_content', { message: progress.message, ...progress });
+            },
+          });
+          result.steps.push({ step: 'generate_all_content', success: true });
+        } catch (error) {
+          console.warn('Failed to generate all content:', error.message);
+          result.steps.push({ step: 'generate_all_content', success: false, error: error.message });
+        }
+
+        // Generate images (optional — only if image bank configured)
+        if (config.imageBank.login) {
+          sendProgress('generating_images', { message: 'Generating images from image bank...' });
+          try {
+            await wp.generateImages({
+              login: config.imageBank.login,
+              password: config.imageBank.password,
+              scoreThreshold: config.imageBank.scoreThreshold,
+            }, {
+              onProgress: (progress) => {
+                sendProgress('generating_images', { message: progress.message, ...progress });
+              },
+            });
+            result.steps.push({ step: 'generate_images', success: true });
+          } catch (error) {
+            console.warn('Failed to generate images:', error.message);
+            result.steps.push({ step: 'generate_images', success: false, error: error.message });
+          }
+        }
 
         // Generate content
         if (contentContext) {
@@ -1600,9 +1709,9 @@ function normalizeSiteData(raw) {
     || '';
 
   const username = raw.wp_username || raw.username || raw.admin_user
-    || raw.site_meta?.wp_username || '';
+    || raw.site_meta?.wp_username || config.instawp.snapshotWpUsername || '';
   const password = raw.wp_password || raw.password || raw.admin_pass
-    || raw.site_meta?.wp_password || '';
+    || raw.site_meta?.wp_password || config.instawp.snapshotWpPassword || '';
 
   // Build direct auto-login URL that bypasses InstaWP dashboard
   const magicLoginUrl = (url && username && password)
