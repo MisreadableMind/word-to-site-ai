@@ -41,6 +41,18 @@ export const ContentContextSchema = {
             address: { type: 'string' },
           },
         },
+        team: {
+          type: 'string',
+          description: 'Free-text description of team members (parsed into structured format for wizard data)',
+        },
+        mission: {
+          type: 'string',
+          description: 'Company mission statement',
+        },
+        history: {
+          type: 'string',
+          description: 'Company history or founding story',
+        },
       },
       required: ['name'],
     },
@@ -138,6 +150,9 @@ export function createContentContext(options = {}) {
         email: options.email || '',
         address: options.address || '',
       },
+      team: options.team || '',
+      mission: options.mission || '',
+      history: options.history || '',
     },
     language: {
       primary: options.language || DEFAULTS.LANGUAGE,

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThemeREX WaaS Wizard — Project Documentation</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f6fa; color: #2d3748; line-height: 1.7; }
+  a { color: #4a6cf7; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: #1e2235; color: #c8cfe8; overflow-y: auto; padding: 24px 0; z-index: 100; }
+  .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid #2d3454; }
+  .sidebar-logo h1 { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.4; }
+  .sidebar-logo span { font-size: 12px; color: #6b7db3; }
+  .sidebar nav { padding: 16px 0; }
+  .sidebar nav a { display: block; padding: 7px 24px; font-size: 13px; color: #c8cfe8; transition: background .15s, color .15s; }
+  .sidebar nav a:hover, .sidebar nav a.active { background: #2d3454; color: #fff; text-decoration: none; }
+  .sidebar nav .section-label { padding: 14px 24px 4px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #4a5578; }
+
+  .main { margin-left: 260px; padding: 40px 48px; max-width: 1100px; }
+  h2 { font-size: 24px; font-weight: 700; color: #1a202c; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+  h2:first-of-type { margin-top: 0; }
+  h3 { font-size: 17px; font-weight: 600; color: #2d3748; margin: 28px 0 10px; }
+  h4 { font-size: 14px; font-weight: 600; color: #4a5568; margin: 20px 0 8px; text-transform: uppercase; letter-spacing: .05em; }
+  p { margin-bottom: 12px; font-size: 15px; }
+  ul, ol { margin: 8px 0 12px 22px; font-size: 15px; }
+  li { margin-bottom: 4px; }
+
+  .hero { background: linear-gradient(135deg, #4a6cf7, #7b3fe4); color: #fff; border-radius: 12px; padding: 36px 40px; margin-bottom: 40px; }
+  .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .hero p { font-size: 16px; opacity: .9; margin: 0; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 6px; }
+  .badge-blue { background: rgba(255,255,255,.2); color: #fff; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0 20px; }
+  thead tr { background: #4a6cf7; color: #fff; }
+  thead th { padding: 10px 14px; text-align: left; font-weight: 600; }
+  tbody tr { border-bottom: 1px solid #e2e8f0; }
+  tbody tr:hover { background: #f7f8ff; }
+  td { padding: 9px 14px; vertical-align: top; }
+  td code, th code { background: rgba(74,108,247,.12); padding: 1px 5px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; color: #4a6cf7; }
+
+  pre { background: #1e2235; color: #c8d6ff; border-radius: 8px; padding: 20px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin: 10px 0 18px; font-family: 'SFMono-Regular', Consolas, monospace; }
+  code { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; background: #eef0f8; padding: 1px 5px; border-radius: 4px; color: #5a4fcf; }
+
+  .card { background: #fff; border-radius: 10px; padding: 24px 28px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.07); border: 1px solid #e8ecf4; }
+  .card h3 { margin-top: 0; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  .info-box { border-left: 4px solid #4a6cf7; background: #f0f4ff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  .warn-box  { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+
+  .status-machine { font-size: 13px; }
+  .status-machine tr td:first-child code { background: #e6f7f0; color: #1a7a4a; }
+
+  .component-list td:first-child code { background: #fdf4ff; color: #7c3aed; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px 20px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>WaaS Wizard</h1>
+    <span>Project Documentation</span>
+  </div>
+  <nav>
+    <div class="section-label">Overview</div>
+    <a href="#overview">Overview</a>
+    <a href="#goals">Goals &amp; Scope</a>
+    <a href="#dependencies">Dependencies</a>
+    <div class="section-label">Architecture</div>
+    <a href="#architecture">Architecture</a>
+    <a href="#components">Components</a>
+    <a href="#data-storage">Data Storage</a>
+    <a href="#rest-api">REST API</a>
+    <div class="section-label">Features</div>
+    <a href="#wizard">Admin Wizard</a>
+    <a href="#ai-generation">AI Generation</a>
+    <a href="#image-pipeline">Image Pipeline</a>
+    <a href="#task-queue">Task Queue</a>
+    <div class="section-label">Reference</div>
+    <a href="#constants">Constants &amp; Options</a>
+    <a href="#conventions">Coding Conventions</a>
+    <a href="#progress">Progress</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+  <div class="hero">
+    <h1>ThemeREX WaaS Wizard</h1>
+    <p>WordPress plugin providing a guided setup wizard for WaaS sites with AI-powered content generation and remote platform integration.</p>
+    <br>
+    <span class="badge badge-blue">v1.0.0</span>
+    <span class="badge badge-blue">WordPress Plugin</span>
+    <span class="badge badge-blue">PHP / PSR-4</span>
+    <span class="badge badge-blue">REST API</span>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <h2>Overview</h2>
+    <p>ThemeREX WaaS Wizard is a WordPress plugin that automates the initial configuration of new WaaS (Website-as-a-Service) customer sites. It provides a 4-step guided admin wizard, AI-powered content and image generation, and a REST API for remote pushes from the WaaS platform.</p>
+    <div class="info-box">
+      The plugin self-deactivates automatically if required dependencies (TRX Addons and a ThemeREX theme with <code>theme_pro_key</code>) are not present.
+    </div>
+  </section>
+
+  <!-- GOALS -->
+  <section id="goals">
+    <h2>Goals &amp; Scope</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>In Scope</h3>
+        <ul>
+          <li>4-step admin wizard UI with form handling</li>
+          <li>AI content generation for pages and blog posts</li>
+          <li>Remote configuration pushes from WaaS platform via REST</li>
+          <li>Theme/skin switching and demo data import</li>
+          <li>Image replacement via external image-bank service</li>
+          <li>OpenAI proxy registration for token-less AI access</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Out of Scope</h3>
+        <ul>
+          <li>Front-end user-facing pages</li>
+          <li>Custom post types for content storage</li>
+          <li>Direct database queries (uses WP options / TRX Addons CPTs)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEPENDENCIES -->
+  <section id="dependencies">
+    <h2>Dependencies</h2>
+    <table>
+      <thead><tr><th>Dependency</th><th>Check</th><th>Consequence if missing</th></tr></thead>
+      <tbody>
+        <tr><td><strong>TRX Addons plugin</strong></td><td><code>defined('TRX_ADDONS_VERSION')</code></td><td>Plugin self-deactivates</td></tr>
+        <tr><td><strong>ThemeREX theme</strong></td><td><code>defined('theme_pro_key')</code></td><td>Plugin self-deactivates</td></tr>
+        <tr><td>TRX Addons AI Helper</td><td>Enabled in TRX Addons options</td><td>AI generation not available</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <h2>Architecture</h2>
+    <div class="card">
+      <h3>Entry Point &amp; Bootstrap</h3>
+      <pre>trx_waas_wizard.php
+  └─ Plugin::instance()  (core/plugin.php)  — Singleton
+       ├─ Autoloader      (core/autoloader.php)  — PSR-4, namespace TrxWaasWizard
+       └─ All components instantiated in __construct()</pre>
+      <p>All classes live under the <code>TrxWaasWizard</code> namespace and are autoloaded via PSR-4 conventions.</p>
+    </div>
+    <div class="card">
+      <h3>REST API Architecture</h3>
+      <pre>Api\WaasPlatform\Manager
+  ├─ RegisterSite   → POST trx-waas-wizard/v1/register-site
+  ├─ SwitchSkin     → POST trx-waas-wizard/v1/switch-skin
+  ├─ SaveWizardData → POST trx-waas-wizard/v1/save-wizard-data
+  │                   POST trx-waas-wizard/v1/save-wizard-data/save-all
+  │                   GET  trx-waas-wizard/v1/save-wizard-data/languages
+  ├─ GetSkins       → GET  trx-waas-wizard/v1/get-skins
+  └─ PageWidgets    → GET  trx-waas-wizard/v1/page-widgets?page_id=&lt;ID&gt;
+                      POST trx-waas-wizard/v1/page-widgets/generate-section
+                      POST trx-waas-wizard/v1/page-widgets/generate-all
+                      POST trx-waas-wizard/v1/page-widgets/generate-images</pre>
+      <p>All endpoint classes extend <code>Api\WaasPlatform\Base</code>. Sub-routes are declared via the <code>$sub_routes</code> array; the Base class auto-registers them and resolves callback names by convention (<code>rest_api_callback_{route_slug}</code>).</p>
+    </div>
+    <div class="card">
+      <h3>Key Design Patterns</h3>
+      <div class="grid-2">
+        <div>
+          <h4>Single-Option Data Store</h4>
+          <p>All wizard state is persisted in one WP option: <code>trx_waas_wizard_data</code>. <code>WizardDataStorage</code> is the only class that reads/writes it. Never access the option directly.</p>
+        </div>
+        <div>
+          <h4>Async / Cron Pattern</h4>
+          <p>Long-running operations (generate-all, generate-images, switch-skin) are dispatched via <code>wp_schedule_single_event()</code> and polled by the caller through repeated REST requests.</p>
+        </div>
+        <div>
+          <h4>Theme Integration</h4>
+          <p>Never call theme functions directly. Use the <code>Theme</code> component wrapper:</p>
+          <pre>Plugin::instance()->theme->func('function_name');
+Plugin::instance()->theme->define('CONSTANT_NAME');</pre>
+        </div>
+        <div>
+          <h4>Hook Naming</h4>
+          <p>All custom hooks use the <code>trx_waas_wizard/</code> prefix:<br>
+          Actions: <code>trx_waas_wizard/loaded</code><br>
+          Cron: <code>trx_waas_wizard/rest_api/generate_all_content</code></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPONENTS -->
+  <section id="components">
+    <h2>Components</h2>
+    <p>All components are instantiated by <code>Plugin::instance()</code> and accessible via <code>Plugin::$instance-&gt;{property}</code>.</p>
+    <table class="component-list">
+      <thead><tr><th>Property</th><th>Class</th><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>$file</code></td><td>File</td><td>includes/file.php</td><td>File system helpers</td></tr>
+        <tr><td><code>$html</code></td><td>HTML</td><td>includes/html.php</td><td>HTML rendering helpers</td></tr>
+        <tr><td><code>$utils</code></td><td>Utils</td><td>includes/utils.php</td><td>AJAX responses, nonces, utilities</td></tr>
+        <tr><td><code>$db</code></td><td>DB</td><td>includes/db.php</td><td>DB stub (not yet implemented)</td></tr>
+        <tr><td><code>$messages</code></td><td>Messages</td><td>includes/messages.php</td><td>Admin message display</td></tr>
+        <tr><td><code>$options</code></td><td>Options</td><td>includes/options.php</td><td>Plugin options management</td></tr>
+        <tr><td><code>$wizard</code></td><td>Wizard</td><td>includes/wizard.php</td><td>4-step wizard UI and form handling</td></tr>
+        <tr><td><code>$wizard_completion</code></td><td>WizardCompletion</td><td>includes/wizard-completion.php</td><td>Tracks completion, hides wizard menu</td></tr>
+        <tr><td><code>$content_parser</code></td><td>ContentParser</td><td>includes/content-parser.php</td><td>Detects Gutenberg / Elementor / Classic</td></tr>
+        <tr><td><code>$page_content_generator</code></td><td>PageContentGenerator</td><td>includes/page-content-generator.php</td><td>AJAX-driven AI page rewrite</td></tr>
+        <tr><td><code>$name_translator</code></td><td>NameTranslator</td><td>includes/name-translator.php</td><td>AI title translation for pages/posts</td></tr>
+        <tr><td><code>$blog_post_generator</code></td><td>BlogPostGenerator</td><td>includes/blog-post-generator.php</td><td>Creates new AI blog posts</td></tr>
+        <tr><td><code>$theme</code></td><td>Theme</td><td>includes/theme.php</td><td>ThemeREX theme integration wrapper</td></tr>
+        <tr><td><code>$notification</code></td><td>WizardNotification</td><td>includes/wizard-notification.php</td><td>Admin notification UI</td></tr>
+        <tr><td><em>(standalone)</em></td><td>ImageBankClient</td><td>includes/image-bank-client.php</td><td>HTTP client for image-bank REST API</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- DATA STORAGE -->
+  <section id="data-storage">
+    <h2>Data Storage</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>WordPress Options</h3>
+        <table>
+          <thead><tr><th>Option Key</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>trx_waas_wizard_data</code></td><td>Wizard flow state: <code>completed</code>, <code>current_step</code>, <code>content_generation</code></td></tr>
+            <tr><td><code>trx_waas_wizard_company_data</code></td><td>Company info snapshot for wizard reference</td></tr>
+            <tr><td><code>trx_addons_options</code></td><td>TRX Addons options (written by Step 3 company data)</td></tr>
+            <tr><td><code>trx_waas_wizard_register_site</code></td><td>RegisterSite endpoint state</td></tr>
+            <tr><td><code>trx_waas_wizard_switch_skin</code></td><td>SwitchSkin endpoint state</td></tr>
+            <tr><td><code>trx_waas_wizard_page_widgets</code></td><td>PageWidgets endpoint state (generate-all / generate-images status machine); includes <code>group_id</code></td></tr>
+            <tr><td><code>trx_waas_wizard_save_wizard_data</code></td><td>SaveWizardData endpoint state</td></tr>
+            <tr><td><code>trx_waas_wizard_task_runner_secret</code></td><td>Shared secret for internal task-runner HTTP auth (auto-generated on first use)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>PHP Global Storage</h3>
+        <pre>$GLOBALS['TRX_WAAS_WIZARD_STORAGE']['options']
+$GLOBALS['TRX_WAAS_WIZARD_STORAGE']['admin_message']['error']
+$GLOBALS['TRX_WAAS_WIZARD_STORAGE']['admin_message']['success']</pre>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Two-Layer Storage Architecture</h3>
+      <p><strong>Wizard flow state</strong> (step progress, completion flag, generated content lists) is stored in <code>trx_waas_wizard_data</code> and accessed exclusively via <code>WizardDataStorage</code> static methods.</p>
+      <p><strong>Endpoint partition data</strong> (status strings, progress counters, runtime state) is stored in individual dedicated WP options, one per endpoint, managed by <code>EndpointOptionStorage</code> (<code>includes/api/waas-platform/endpoint-option-storage.php</code>). Keys are auto-derived: <code>'trx_waas_wizard_' + name.replace('-','_')</code>. All reads/writes go through <code>Base::get_part_data()</code> / <code>Base::update_part_data()</code>.</p>
+      <pre>// Wizard flow option — trx_waas_wizard_data
+{
+  "current_step": 2,
+  "completed":    false,
+  "content_generation": { "pages": [], "posts_count": 5, ... }
+}
+
+// Per-endpoint options (examples)
+// trx_waas_wizard_register_site
+{ "inited": true, "status": "site_inited", "app_username": "...", "app_password": "..." }
+
+// trx_waas_wizard_page_widgets
+{ "status": "generate_all_end", "processed": 12, "skipped": 0, "errors": [] }
+
+// trx_waas_wizard_save_wizard_data
+{ "inited": true, "last_step": 3, "status": "all_steps_saved" }</pre>
+    </div>
+    <div class="card">
+      <h3>EndpointOptionStorage</h3>
+      <p>Static helper class in <code>TrxWaasWizard\Includes\Api\WaasPlatform\EndpointOptionStorage</code>. Used internally by <code>Base</code> — do not call directly from endpoint subclasses.</p>
+      <table>
+        <thead><tr><th>Method</th><th>Signature</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>get</code></td><td><code>get(string $key): array</code></td><td>Returns stored array or <code>[]</code> if not set</td></tr>
+          <tr><td><code>update</code></td><td><code>update(string $key, array $data): bool</code></td><td>Merges <code>$data</code> into existing value</td></tr>
+          <tr><td><code>delete</code></td><td><code>delete(string $key): bool</code></td><td>Deletes the option entirely</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- REST API -->
+  <section id="rest-api">
+    <h2>REST API</h2>
+    <div class="info-box">
+      <strong>Base URL:</strong> <code>/wp-json/trx-waas-wizard/v1/</code><br>
+      <strong>Authentication:</strong> WordPress Application Passwords (HTTP Basic Auth). All endpoints require the user to be logged in with at least <code>edit_posts</code> capability. Endpoints marked <em>manage_options</em> require the higher capability.<br>
+      <strong>Polling pattern:</strong> Async endpoints accept a body on the first call to start the process, then accept an empty body (or <code>{}</code>) for subsequent polling calls.
+    </div>
+    <table>
+      <thead><tr><th>Method</th><th>Route</th><th>Purpose</th><th>Auth</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST</code></td><td><code>/register-site</code></td><td>Register OpenAI proxy credentials</td><td>edit_posts</td></tr>
+        <tr><td><code>POST</code></td><td><code>/switch-skin</code></td><td>Download &amp; switch theme skin, install plugins, import demo data (async)</td><td>edit_posts</td></tr>
+        <tr><td><code>POST</code></td><td><code>/save-wizard-data</code></td><td>Save single wizard step (1, 2 or 3)</td><td>edit_posts</td></tr>
+        <tr><td><code>POST</code></td><td><code>/save-wizard-data/save-all</code></td><td>Save all wizard steps in one request</td><td>edit_posts</td></tr>
+        <tr><td><code>GET</code></td><td><code>/save-wizard-data/languages</code></td><td>List available WordPress locales</td><td>edit_posts</td></tr>
+        <tr><td><code>GET</code></td><td><code>/get-skins</code></td><td>List available theme skins</td><td>edit_posts</td></tr>
+        <tr><td><code>GET</code></td><td><code>/page-widgets?page_id=&lt;ID&gt;</code></td><td>List top-level Elementor sections for a page</td><td>edit_posts</td></tr>
+        <tr><td><code>POST</code></td><td><code>/page-widgets/generate-section</code></td><td>Regenerate AI content for one section</td><td>manage_options</td></tr>
+        <tr><td><code>POST</code></td><td><code>/page-widgets/generate-all</code></td><td>Async AI content generation for all pages (Phase 1 + 2)</td><td>manage_options</td></tr>
+        <tr><td><code>POST</code></td><td><code>/page-widgets/generate-images</code></td><td>Async image replacement for all pages (Phase 3)</td><td>manage_options</td></tr>
+      </tbody>
+    </table>
+    <p>See <a href="endpoints.html">endpoints.html</a> for full request/response details and examples.</p>
+  </section>
+
+  <!-- WIZARD -->
+  <section id="wizard">
+    <h2>Admin Wizard</h2>
+    <p>The wizard appears as a menu item for admins after plugin activation. It guides through 4 steps and hides itself upon completion.</p>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Step 1 — Site Settings</h3>
+        <ul>
+          <li>Site language (downloads language pack if needed)</li>
+          <li>Site title &amp; tagline</li>
+          <li>Logo (file upload or URL)</li>
+          <li>Favicon (file upload, URL, or default plugin favicon)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Step 2 — User Profile</h3>
+        <ul>
+          <li>Username (stored, not changed)</li>
+          <li>Display nickname</li>
+          <li>Email address</li>
+          <li>Biographical info</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Step 3 — Company Info</h3>
+        <ul>
+          <li>Name, industry, address, phone, email</li>
+          <li>Description, mission, history, values</li>
+          <li>Services list (cloneable: name, description, features)</li>
+          <li>Team members (cloneable: name, position, bio)</li>
+          <li>Saved to <code>trx_addons_options</code> + <code>trx_waas_wizard_company_data</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Step 4 — Content Generation</h3>
+        <ul>
+          <li>Select pages for AI rewrite</li>
+          <li>Set number of blog posts to generate</li>
+          <li>Trigger translation of page/post/layout titles</li>
+          <li>On submit: fires AJAX generation pipeline</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI GENERATION -->
+  <section id="ai-generation">
+    <h2>AI Content Generation</h2>
+    <p>AI generation uses <strong>TRX Addons AI Helper</strong> as the engine (must be enabled in TRX Addons options). Three generators are available:</p>
+    <div class="grid-3">
+      <div class="card">
+        <h3>PageContentGenerator</h3>
+        <p>Rewrites existing Elementor section content in-place using AI. AJAX-driven (Step 4) or triggered via REST <code>generate-section</code> / <code>generate-all</code>.</p>
+      </div>
+      <div class="card">
+        <h3>BlogPostGenerator</h3>
+        <p>Creates new blog posts from scratch using AI. Generates both the title and body. Triggered from Step 4.</p>
+      </div>
+      <div class="card">
+        <h3>NameTranslator</h3>
+        <p>Translates page, post, and layout titles to the configured site language via batched AI calls. Phase 1 of the <code>generate-all</code> pipeline.</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>generate-all Async Status Machine</h3>
+      <p>Status is stored in WP option <code>trx_waas_wizard_page_widgets</code>. Both <code>generate-all</code> and <code>generate-images</code> share this slot — they cannot run simultaneously.</p>
+      <p>Phase 2 dispatches one cron event per page (<code>trx_waas_wizard/rest_api/generate_page_content</code>), allowing pages to be processed in parallel. A <code>pending_pages</code> counter tracks completion; the last page job sets <code>generate_all_end</code>.</p>
+      <table class="status-machine">
+        <thead><tr><th>Status</th><th>Phase</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>generate_all_start</code></td><td>—</td><td>REST callback accepted the request</td></tr>
+          <tr><td><code>generate_all_running</code></td><td>—</td><td>Cron callback started</td></tr>
+          <tr><td><code>rename_stage_1_batch_N</code></td><td>1</td><td>Title rename batch N complete</td></tr>
+          <tr><td><code>generate_all_pages_queued</code></td><td>2</td><td>All per-page tasks inserted into DB queue and dispatched via non-blocking HTTP</td></tr>
+          <tr><td><code>generate_stage_2_post_{ID}_section_N</code></td><td>2</td><td>Section N of post ID being processed (per-page async job)</td></tr>
+          <tr><td><code>generate_all_end</code></td><td>—</td><td>All phases complete ✓ Terminal</td></tr>
+          <tr><td><code>generate_images_start</code></td><td>3</td><td>Image REST callback accepted</td></tr>
+          <tr><td><code>generate_images_running</code></td><td>3</td><td>Image cron callback started</td></tr>
+          <tr><td><code>image_stage_3_collecting</code></td><td>3</td><td>Building image task map</td></tr>
+          <tr><td><code>image_stage_3_searching_N_of_M</code></td><td>3</td><td>Searching image N of M</td></tr>
+          <tr><td><code>image_stage_3_submitting</code></td><td>3</td><td>Submitting all generate tasks</td></tr>
+          <tr><td><code>image_stage_3_polling</code></td><td>3</td><td>Round-robin polling tasks</td></tr>
+          <tr><td><code>image_stage_3_updating</code></td><td>3</td><td>Applying Elementor updates</td></tr>
+          <tr><td><code>generate_images_end</code></td><td>—</td><td>Image replacement complete ✓ Terminal</td></tr>
+          <tr><td><code>error</code></td><td>—</td><td>Fatal error; <code>message</code> field populated ✓ Terminal</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- IMAGE PIPELINE -->
+  <section id="image-pipeline">
+    <h2>Image Pipeline</h2>
+    <p>Phase 3 of content generation replaces images site-wide using the external <strong>content-bank.themerex.net</strong> service. The pipeline is designed for parallelism — all generation tasks are submitted before any polling begins.</p>
+    <div class="card">
+      <h3>ImageBankClient</h3>
+      <p>Class: <code>TrxWaasWizard\Includes\ImageBankClient</code> — File: <code>includes/image-bank-client.php</code></p>
+      <table>
+        <thead><tr><th>Method</th><th>HTTP</th><th>Endpoint</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>search($path, $ctx)</code></td><td>POST</td><td><code>/api/search</code></td><td>multipart/form-data; returns best match or null</td></tr>
+          <tr><td><code>generate($url, $ctx)</code></td><td>POST</td><td><code>/api/generate</code></td><td>JSON body; returns task_id (int) or WP_Error</td></tr>
+          <tr><td><code>check_task($id)</code></td><td>GET</td><td><code>/api/tasks/{id}</code></td><td>Single-shot, no loop — for round-robin use</td></tr>
+          <tr><td><code>poll_task($id)</code></td><td>GET</td><td><code>/api/tasks/{id}</code></td><td>Blocking poll until success/error/timeout</td></tr>
+        </tbody>
+      </table>
+      <p>Base URL is fixed: <code>ImageBankClient::BASE_URL = 'https://content-bank.themerex.net'</code>. All requests use HTTP Basic Auth.</p>
+    </div>
+    <div class="card">
+      <h3>Pipeline Steps</h3>
+      <ol>
+        <li><strong>build_image_task_map()</strong> — Deduplicates images by <code>md5(url)</code>; collects all placements per unique URL.</li>
+        <li><strong>search_images()</strong> — Downloads each unique image temporarily, sends to <code>/api/search</code>; marks entries as <em>found</em> or <em>need_generate</em> based on score threshold.</li>
+        <li><strong>submit_generate_tasks()</strong> — Submits ALL generate tasks upfront (true parallelism on the server side).</li>
+        <li><strong>poll_and_import_images()</strong> — Imports already-found images; round-robin polls generating tasks via <code>check_task()</code>.</li>
+        <li><strong>apply_elementor_updates()</strong> — Loads each post's Elementor data once, applies all replacements, saves once. Clears Elementor cache at the end.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- TASK QUEUE -->
+  <section id="task-queue">
+    <h2>Task Queue</h2>
+    <p>A DB-backed async task queue that replaces the WP pseudo-cron per-page dispatch. Tasks run in true parallel via non-blocking HTTP requests.</p>
+
+    <div class="card">
+      <h3>DB Table — <code>{prefix}trx_waas_wizard_tasks</code></h3>
+      <p>Created on plugin activation via <code>DB::create_table()</code> (uses <code>dbDelta</code>). Dropped on uninstall via <code>DB::drop_table()</code>.</p>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>BIGINT UNSIGNED AUTO_INCREMENT</td><td>Primary key</td></tr>
+          <tr><td>hook</td><td>VARCHAR(255)</td><td>WordPress action hook to fire</td></tr>
+          <tr><td>args</td><td>LONGTEXT</td><td>JSON-encoded original args array</td></tr>
+          <tr><td>group_id</td><td>VARCHAR(255)</td><td>Batch group identifier (e.g. <code>gen_pages_{user}_{time}</code>)</td></tr>
+          <tr><td>status</td><td>VARCHAR(20)</td><td><code>pending</code> / <code>running</code> / <code>done</code> / <code>error</code></td></tr>
+          <tr><td>priority</td><td>SMALLINT</td><td>Lower = higher priority (default 10)</td></tr>
+          <tr><td>scheduled_at</td><td>DATETIME</td><td>When to run</td></tr>
+          <tr><td>started_at</td><td>DATETIME NULL</td><td>Set when claimed</td></tr>
+          <tr><td>completed_at</td><td>DATETIME NULL</td><td>Set when done/error</td></tr>
+          <tr><td>result</td><td>LONGTEXT NULL</td><td>JSON result or error message</td></tr>
+          <tr><td>created_at</td><td>DATETIME</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>TaskQueue Class (<code>includes/task-queue.php</code>)</h3>
+      <p>Namespace: <code>TrxWaasWizard\Includes\TaskQueue</code>. Available as <code>Plugin::instance()->task_queue</code>.</p>
+      <table>
+        <thead><tr><th>Method</th><th>Signature</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>add</code></td><td><code>add(string $hook, array $args, string $group_id, int $priority): int</code></td><td>INSERT pending task; returns task ID</td></tr>
+          <tr><td><code>claim</code></td><td><code>claim(int $task_id): bool</code></td><td>Atomic UPDATE status='running'; true if this process claimed it</td></tr>
+          <tr><td><code>complete</code></td><td><code>complete(int $task_id, $result = null): bool</code></td><td>UPDATE status='done'</td></tr>
+          <tr><td><code>fail</code></td><td><code>fail(int $task_id, string $error): bool</code></td><td>UPDATE status='error'</td></tr>
+          <tr><td><code>get</code></td><td><code>get(int $task_id): ?object</code></td><td>SELECT single task row</td></tr>
+          <tr><td><code>count_pending_in_group</code></td><td><code>count_pending_in_group(string $group_id): int</code></td><td>COUNT WHERE status IN ('pending','running')</td></tr>
+          <tr><td><code>dispatch</code></td><td><code>dispatch(array $task_ids): void</code></td><td>Non-blocking wp_remote_post per task ID</td></tr>
+          <tr><td><code>get_secret</code></td><td><code>get_secret(): string</code></td><td>Lazy-creates shared secret in WP option</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Execution Flow</h3>
+      <pre>schedule_generate_all()
+  1. DB::insert() × N tasks           → status = 'pending'
+  2. update_part_data(group_id, ...)
+  3. TaskQueue::dispatch([task_ids])   → N non-blocking HTTP POSTs
+        ↓
+POST /task-runner  (one per task, parallel)
+  4. TaskQueue::claim(task_id)         → UPDATE WHERE status='pending' (atomic)
+  5. do_action(hook, task_id, ...args)
+        ↓
+  schedule_generate_page(task_id, user_id, post_id, group_id)
+  6. Process Elementor sections
+  7. finish_page_job(task_id, ...)
+        a. TaskQueue::complete(task_id)          → status = 'done'
+        b. count_pending_in_group(group_id) → 0? → generate_all_end</pre>
+      <p>Calling <code>complete()</code> <em>before</em> querying the group count is the key to avoiding a race condition — the current task is excluded from the count when the check runs.</p>
+    </div>
+  </section>
+
+  <!-- CONSTANTS -->
+  <section id="constants">
+    <h2>Constants &amp; Options</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Plugin Constants</h3>
+        <table>
+          <thead><tr><th>Constant</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td><code>TRX_WAAS_WIZARD_VERSION</code></td><td>'1.0.0'</td></tr>
+            <tr><td><code>TRX_WAAS_WIZARD_FILE</code></td><td>Absolute path to trx_waas_wizard.php</td></tr>
+            <tr><td><code>TRX_WAAS_WIZARD_BASE</code></td><td>plugin_basename()</td></tr>
+            <tr><td><code>TRX_WAAS_WIZARD_DIR</code></td><td>plugin_dir_path()</td></tr>
+            <tr><td><code>TRX_WAAS_WIZARD_URL</code></td><td>plugins_url()</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Stack</h3>
+        <table>
+          <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+          <tbody>
+            <tr><td>Language</td><td>PHP (WordPress plugin)</td></tr>
+            <tr><td>Namespace</td><td>TrxWaasWizard (PSR-4)</td></tr>
+            <tr><td>Frontend</td><td>Vanilla JS + SCSS</td></tr>
+            <tr><td>CSS Build</td><td>Koala (koala-config.json)</td></tr>
+            <tr><td>Translations</td><td>GNU gettext (.pot / .po / .mo)</td></tr>
+            <tr><td>REST API</td><td>WP REST API (WP_REST_Controller)</td></tr>
+            <tr><td>AI Engine</td><td>TRX Addons AI Helper (OpenAI proxy)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONVENTIONS -->
+  <section id="conventions">
+    <h2>Coding Conventions</h2>
+    <ul>
+      <li>Follow WordPress Coding Standards (WPCS).</li>
+      <li>Use plugin-defined constants (<code>TRX_WAAS_WIZARD_*</code>) instead of hardcoded paths/URLs.</li>
+      <li>Use the plugin's own helper/utility functions before writing new ones.</li>
+      <li>Nonce verification and capability checks are required for all AJAX/REST handlers.</li>
+      <li>No direct DB queries — use <code>$wpdb</code> with prepared statements or WP API wrappers.</li>
+      <li>Prefix all functions, hooks, and options with <code>trx_waas_wizard_</code>.</li>
+      <li>All code comments must be written in <strong>English</strong>.</li>
+      <li>Never access <code>trx_waas_wizard_data</code> directly — use <code>WizardDataStorage</code>.</li>
+      <li>Never call theme functions directly — use <code>Plugin::instance()-&gt;theme-&gt;func()</code>.</li>
+    </ul>
+  </section>
+
+  <!-- PROGRESS -->
+  <section id="progress">
+    <h2>Progress</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Completed</h3>
+        <ul>
+          <li>PSR-4 autoloader &amp; Singleton Plugin class</li>
+          <li>4-step wizard UI with all step handlers</li>
+          <li>WizardDataStorage single-option store</li>
+          <li>All REST API endpoints (10 routes)</li>
+          <li>PageContentGenerator, BlogPostGenerator, NameTranslator</li>
+          <li>ImageBankClient with parallel image pipeline</li>
+          <li>Admin CSS, JS, SCSS source files</li>
+          <li>Default favicon auto-management</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Known Limitations</h3>
+        <ul>
+          <li>Front-end validation feedback on wizard fields (currently server-side only)</li>
+          <li>Wizard reset UI not available (programmatic only via <code>WizardDataStorage::reset_wizard()</code>)</li>
+          <li><code>DB</code> class is a stub — no custom DB operations implemented</li>
+          <li>Elementor modifier scope not fully explored</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

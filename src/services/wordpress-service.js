@@ -422,6 +422,64 @@ class WordPressService {
   }
 
   // ==========================================
+  // Async Endpoint Polling (WaaS Wizard)
+  // ==========================================
+
+  /**
+   * Poll an async WaaS Wizard endpoint until it reaches a terminal state.
+   * The API spec requires POST (with empty body) for polling, not GET.
+   *
+   * @param {string} endpoint - Wizard REST path (e.g. "trx-waas-wizard/v1/switch-skin")
+   * @param {Object} options
+   * @param {string[]} options.terminalStates - Status values that indicate completion
+   * @param {Function} [options.onProgress] - Progress callback
+   * @param {number} [options.maxAttempts] - Max poll iterations (default: 50)
+   * @param {number} [options.pollInterval] - Base interval in ms (default: 2000)
+   * @param {number} [options.maxInterval] - Max interval in ms for backoff (default: 10000)
+   * @param {string} [options.label] - Human-readable label for logs
+   * @returns {Promise<Object>} Final poll result
+   */
+  async _pollAsyncEndpoint(endpoint, options = {}) {
+    const {
+      terminalStates = ['rest_api_end'],
+      onProgress,
+      maxAttempts = 50,
+      pollInterval = 2000,
+      maxInterval = 10000,
+      label = endpoint,
+    } = options;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const currentInterval = Math.min(pollInterval * Math.pow(1.2, i), maxInterval);
+      await new Promise(resolve => setTimeout(resolve, currentInterval));
+
+      const pollResult = await this.requestRaw(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+
+      const status = pollResult.status;
+      console.log(`${label} poll ${i + 1}/${maxAttempts}: status=${status}`);
+      onProgress?.({
+        phase: 'polling',
+        message: `${label} in progress (${i + 1}/${maxAttempts})...`,
+        attempt: i + 1,
+        status,
+      });
+
+      if (terminalStates.includes(status)) {
+        return pollResult;
+      }
+
+      if (status === 'error') {
+        throw new Error(`${label} failed with error status: ${JSON.stringify(pollResult)}`);
+      }
+    }
+
+    throw new Error(`${label} timed out after ${maxAttempts} attempts`);
+  }
+
+  // ==========================================
   // Skin Switching (WaaS Wizard)
   // ==========================================
 
@@ -440,10 +498,10 @@ class WordPressService {
     console.log(`Switching skin to "${skinSlug}" on ${this.siteUrl}`);
     onProgress?.({ phase: 'starting', message: `Switching skin to "${skinSlug}"...` });
 
-    // POST to initiate skin switch
-    const postResult = await this.requestRaw('trx-waas-wizard/v1/switch-skin', {
+    // POST to initiate skin switch (force: true clears stale error/end states from prior runs)
+    let postResult = await this.requestRaw('trx-waas-wizard/v1/switch-skin', {
       method: 'POST',
-      body: JSON.stringify({ skin: skinSlug }),
+      body: JSON.stringify({ skin: skinSlug, force: true }),
     });
 
     if (!postResult.status) {
@@ -451,37 +509,145 @@ class WordPressService {
     }
 
     console.log(`switch-skin POST status: ${postResult.status}`);
-    onProgress?.({ phase: 'switching', message: 'Skin switch initiated, waiting for completion...' });
 
-    // Poll GET until rest_api_end or error
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-
-      const pollResult = await this.requestRaw('trx-waas-wizard/v1/switch-skin', {
-        method: 'GET',
-      });
-
-      const status = pollResult.status;
-      console.log(`switch-skin poll ${i + 1}/${maxAttempts}: status=${status}`);
-      onProgress?.({
-        phase: 'polling',
-        message: `Skin switch in progress (${i + 1}/${maxAttempts})...`,
-        attempt: i + 1,
-        status,
-      });
-
-      if (status === 'rest_api_end') {
-        console.log(`Skin switch to "${skinSlug}" completed successfully`);
-        onProgress?.({ phase: 'complete', message: `Skin "${skinSlug}" applied successfully` });
-        return { success: true, skin: skinSlug, pollResult };
-      }
-
-      if (status === 'error') {
-        throw new Error(`Skin switch failed with error status: ${JSON.stringify(pollResult)}`);
-      }
+    // If status is already terminal from a stale run, the force flag should have restarted it.
+    // If it's still error, the skin itself is invalid.
+    if (postResult.status === 'rest_api_end') {
+      onProgress?.({ phase: 'complete', message: `Skin "${skinSlug}" applied successfully` });
+      return { success: true, skin: skinSlug, pollResult: postResult };
+    }
+    if (postResult.status === 'error') {
+      throw new Error(`switch-skin failed immediately: ${postResult.message || JSON.stringify(postResult)}`);
     }
 
-    throw new Error(`Skin switch timed out after ${maxAttempts} attempts`);
+    onProgress?.({ phase: 'switching', message: 'Skin switch initiated, waiting for completion...' });
+
+    // Poll with POST (not GET) until rest_api_end
+    const pollResult = await this._pollAsyncEndpoint('trx-waas-wizard/v1/switch-skin', {
+      terminalStates: ['rest_api_end'],
+      onProgress,
+      maxAttempts,
+      pollInterval,
+      label: 'switch-skin',
+    });
+
+    console.log(`Skin switch to "${skinSlug}" completed successfully`);
+    onProgress?.({ phase: 'complete', message: `Skin "${skinSlug}" applied successfully` });
+    return { success: true, skin: skinSlug, pollResult };
+  }
+
+  // ==========================================
+  // Content Generation (WaaS Wizard)
+  // ==========================================
+
+  /**
+   * Trigger the plugin-side "generate all content" pipeline and poll until done.
+   * This rewrites all demo content using AI based on the saved wizard data.
+   *
+   * @param {Object} [options]
+   * @param {Function} [options.onProgress] - Progress callback
+   * @param {number} [options.maxAttempts] - Max poll attempts (default: 200)
+   * @param {number} [options.pollInterval] - Poll interval in ms (default: 5000)
+   * @returns {Promise<Object>} Final result
+   */
+  async generateAllContent(options = {}) {
+    const { onProgress, maxAttempts = 200, pollInterval = 5000 } = options;
+
+    console.log(`Triggering generate-all on ${this.siteUrl}`);
+    onProgress?.({ phase: 'starting', message: 'Starting plugin-side content generation...' });
+
+    // POST to initiate
+    await this.requestRaw('trx-waas-wizard/v1/generate-all', {
+      method: 'POST',
+      body: JSON.stringify({ force: true }),
+    });
+
+    // Poll until terminal state
+    const pollResult = await this._pollAsyncEndpoint('trx-waas-wizard/v1/generate-all', {
+      terminalStates: ['generate_all_end', 'generate_images_end'],
+      onProgress,
+      maxAttempts,
+      pollInterval,
+      maxInterval: 15000,
+      label: 'generate-all',
+    });
+
+    console.log('generate-all completed successfully');
+    onProgress?.({ phase: 'complete', message: 'Plugin-side content generation complete' });
+    return { success: true, pollResult };
+  }
+
+  /**
+   * Trigger plugin-side image generation from an image bank.
+   * Only useful when image bank credentials are configured.
+   *
+   * @param {Object} credentials - Image bank credentials
+   * @param {string} credentials.login - Image bank login
+   * @param {string} credentials.password - Image bank password
+   * @param {number} [credentials.scoreThreshold] - Minimum image match score (default: 0.85)
+   * @param {Object} [options]
+   * @param {Function} [options.onProgress] - Progress callback
+   * @param {number} [options.maxAttempts] - Max poll attempts (default: 200)
+   * @param {number} [options.pollInterval] - Poll interval in ms (default: 5000)
+   * @returns {Promise<Object>} Final result
+   */
+  async generateImages(credentials, options = {}) {
+    const { onProgress, maxAttempts = 200, pollInterval = 5000 } = options;
+
+    console.log(`Triggering generate-images on ${this.siteUrl}`);
+    onProgress?.({ phase: 'starting', message: 'Starting plugin-side image generation...' });
+
+    await this.requestRaw('trx-waas-wizard/v1/generate-images', {
+      method: 'POST',
+      body: JSON.stringify({
+        image_bank_login: credentials.login,
+        image_bank_password: credentials.password,
+        image_score_threshold: credentials.scoreThreshold || 0.85,
+        force: true,
+      }),
+    });
+
+    const pollResult = await this._pollAsyncEndpoint('trx-waas-wizard/v1/generate-images', {
+      terminalStates: ['generate_images_end'],
+      onProgress,
+      maxAttempts,
+      pollInterval,
+      maxInterval: 15000,
+      label: 'generate-images',
+    });
+
+    console.log('generate-images completed successfully');
+    onProgress?.({ phase: 'complete', message: 'Plugin-side image generation complete' });
+    return { success: true, pollResult };
+  }
+
+  // ==========================================
+  // Plugin Translation (WaaS Wizard)
+  // ==========================================
+
+  /**
+   * Translate the plugin/theme strings to the specified locale.
+   * This is a synchronous endpoint that typically takes 30-90 seconds.
+   *
+   * @param {string} locale - WordPress locale code (e.g. "de_DE", "uk")
+   * @param {Object} [options]
+   * @param {Function} [options.onProgress] - Progress callback
+   * @returns {Promise<Object>} Translation result
+   */
+  async translatePlugin(locale, options = {}) {
+    const { onProgress } = options;
+
+    console.log(`Translating plugin to locale "${locale}" on ${this.siteUrl}`);
+    onProgress?.({ phase: 'starting', message: `Translating to ${locale}...` });
+
+    const result = await this.requestRaw('trx-waas-wizard/v1/translate-plugin', {
+      method: 'POST',
+      body: JSON.stringify({ locale }),
+    });
+
+    console.log(`Plugin translation to "${locale}" completed`);
+    onProgress?.({ phase: 'complete', message: `Translation to ${locale} complete` });
+    return result;
   }
 }
 

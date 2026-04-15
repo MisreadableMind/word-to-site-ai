@@ -62,6 +62,15 @@ npm run dev               # starts on localhost:3000 with nodemon
 - Migrations in `src/db/migrations/` run automatically on first container start and on app init by each service.
 - Basic auth is disabled when `NODE_ENV=development`.
 
+## Flexify WaaS Wizard Plugin (ThemeREX)
+
+The WordPress sites created by WordToSite run the **ThemeREX WaaS Wizard** plugin. Its REST API is what this server calls to configure sites after provisioning.
+
+- **Project docs:** `flexify_api/project.html` — architecture, components, data storage, wizard steps, AI generation pipeline, task queue.
+- **API endpoints reference:** `flexify_api/endpoints.html` — full request/response specs for all REST routes under `/wp-json/trx-waas-wizard/v1/`.
+
+Read these files when working on any integration with the WaaS Wizard plugin (skin switching, wizard data, content generation, image pipeline, proxy config, plugin translation).
+
 ## Git Workflow Rules
 
 - **Always create a feature branch** before starting work. Branch naming: `feature/<short-description>` (e.g. `feature/testimonials-section`, `feature/voice-onboarding`).

@@ -10,6 +10,10 @@ export const config = {
     apiKey: process.env.INSTA_WP_API_KEY,
     templateSlug: process.env.TEMPLATE_SLUG || 'wordtosite_template',
     snapshotSlug: process.env.SNAPSHOT_SLUG || 'waas-snapshot',
+    // Default WP credentials baked into the snapshot (InstaWP API returns empty strings)
+    // Must be an Application Password for WP REST API access
+    snapshotWpUsername: process.env.SNAPSHOT_WP_USERNAME || 'hujifapato3251',
+    snapshotWpPassword: process.env.SNAPSHOT_WP_PASSWORD || 'MOPXKzl1cKIHTj3tTgfefbOz',
   },
 
   // OpenAI Configuration (GPT-4o, Whisper)
@@ -97,11 +101,50 @@ export const config = {
     appPassword: process.env.BASE_SITE_APP_PASSWORD,
   },
 
+  // Image Bank Configuration (for plugin-side image generation)
+  imageBank: {
+    login: process.env.IMAGE_BANK_LOGIN || '',
+    password: process.env.IMAGE_BANK_PASSWORD || '',
+    scoreThreshold: parseFloat(process.env.IMAGE_BANK_SCORE_THRESHOLD) || 0.85,
+  },
+
   // Server Configuration
   server: {
     port: parseInt(process.env.PORT) || 3000,
   },
 };
+
+/**
+ * Map ISO 639-1 language codes to WordPress locale codes.
+ * The WaaS Wizard plugin expects WP locale format (e.g. "en_US", "de_DE").
+ */
+const ISO_TO_WP_LOCALE = {
+  en: 'en_US',
+  uk: 'uk',
+  de: 'de_DE',
+  fr: 'fr_FR',
+  es: 'es_ES',
+  it: 'it_IT',
+  pt: 'pt_BR',
+  nl: 'nl_NL',
+  pl: 'pl_PL',
+  ru: 'ru_RU',
+  ja: 'ja',
+  zh: 'zh_CN',
+  ko: 'ko_KR',
+  ar: 'ar',
+};
+
+/**
+ * Convert an ISO 639-1 code to a WordPress locale code.
+ * Falls back to `${code}_${CODE}` when the code is not in the map.
+ * @param {string} isoCode - ISO 639-1 language code (e.g. "en", "uk")
+ * @returns {string} WP locale code (e.g. "en_US", "uk")
+ */
+export function toWpLocale(isoCode) {
+  if (!isoCode) return 'en_US';
+  return ISO_TO_WP_LOCALE[isoCode] || `${isoCode}_${isoCode.toUpperCase()}`;
+}
 
 // Validate required configuration for basic site creation
 export function validateConfig(apiKey = null) {

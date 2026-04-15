@@ -2424,11 +2424,12 @@
             h += `<div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:10px;">`;
 
             if (magicLogin) {
+                const magicLoginFull = window.location.origin + magicLogin;
                 h += `<div style="display:flex;flex-direction:column;gap:4px;">`;
                 h += `<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Magic Login Link</span>`;
                 h += `<div style="display:flex;gap:8px;align-items:center;">`;
-                h += `<input type="text" readonly value="${window.location.origin}${magicLogin}" id="magicLoginInput" style="flex:1;font-size:12px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);">`;
-                h += `<button onclick="copyToClipboard('magicLoginInput')" style="padding:8px 12px;background:var(--accent-dim);color:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;">Copy</button>`;
+                h += `<span style="flex:1;font-size:12px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${magicLoginFull}</span>`;
+                h += `<a href="${magicLoginFull}" target="_blank" rel="noopener" style="padding:8px 12px;background:var(--accent-dim);color:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;text-decoration:none;">Open</a>`;
                 h += `</div></div>`;
             }
 

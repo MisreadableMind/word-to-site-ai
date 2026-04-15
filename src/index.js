@@ -43,11 +43,13 @@ class InstaWPSiteCreator {
       console.log('\n========================================');
       console.log('Site Creation Complete!');
       console.log('========================================\n');
+      const finalUsername = site.wp_username || readySite.wp_username || readySite.username || readySite.admin_user || readySite.site_meta?.wp_username || config.instawp.snapshotWpUsername || '';
+      const finalPassword = site.wp_password || readySite.wp_password || readySite.password || readySite.admin_pass || readySite.site_meta?.wp_password || config.instawp.snapshotWpPassword || '';
       console.log(`Site ID: ${site.id}`);
       console.log(`Site URL: ${readySite.wp_url || readySite.url}`);
       console.log(`WP Admin: ${readySite.wp_admin_url || (readySite.wp_url || readySite.url) + '/wp-admin'}`);
-      console.log(`WP Username: ${site.wp_username}`);
-      console.log(`WP Password: ${site.wp_password}`);
+      console.log(`WP Username: ${finalUsername}`);
+      console.log(`WP Password: ${finalPassword}`);
 
       console.log('\nNext Steps:');
       console.log('1. Visit your site URL to see your new WordPress site');
@@ -55,9 +57,12 @@ class InstaWPSiteCreator {
       console.log('3. You can optionally map a custom domain to your site later\n');
 
       // Build direct auto-login URL that bypasses InstaWP dashboard
+      // Prefer credentials from API responses; fall back to snapshot defaults
       const siteUrl = readySite.wp_url || readySite.url || '';
-      const magicLoginUrl = (siteUrl && site.wp_username && site.wp_password)
-        ? `/api/wp-auto-login?url=${encodeURIComponent(siteUrl)}&u=${encodeURIComponent(site.wp_username)}&p=${encodeURIComponent(site.wp_password)}`
+      const wpUsername = site.wp_username || readySite.wp_username || readySite.username || readySite.admin_user || readySite.site_meta?.wp_username || config.instawp.snapshotWpUsername || '';
+      const wpPassword = site.wp_password || readySite.wp_password || readySite.password || readySite.admin_pass || readySite.site_meta?.wp_password || config.instawp.snapshotWpPassword || '';
+      const magicLoginUrl = (siteUrl && wpUsername && wpPassword)
+        ? `/api/wp-auto-login?url=${encodeURIComponent(siteUrl)}&u=${encodeURIComponent(wpUsername)}&p=${encodeURIComponent(wpPassword)}`
         : '';
 
       return {
@@ -65,8 +70,8 @@ class InstaWPSiteCreator {
         site: {
           ...readySite,
           wp_url: siteUrl,
-          wp_username: site.wp_username,
-          wp_password: site.wp_password,
+          wp_username: wpUsername,
+          wp_password: wpPassword,
           magic_login_url: magicLoginUrl,
         },
       };
