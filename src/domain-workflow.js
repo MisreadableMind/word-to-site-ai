@@ -1,11 +1,12 @@
 import NamecheapAPI from './namecheap.js';
 import CloudflareAPI from './cloudflare.js';
 import InstaWPAPI from './instawp.js';
-import { config, validateDomainConfig } from './config.js';
+import { config, validateDomainConfig, toWpLocale } from './config.js';
 import { DEFAULTS } from './constants.js';
 import EditorService from './services/editor-service.js';
 import AIService from './services/ai-service.js';
 import WordPressService from './services/wordpress-service.js';
+import { buildWizardData } from './utils/wizard-data.js';
 
 // Workflow step identifiers for progress tracking
 export const WorkflowSteps = {
@@ -337,12 +338,15 @@ class DomainWorkflow {
       });
 
       try {
-        await this.applyDeploymentContext(result.site.id, result.site, deploymentContext);
+        await this.applyDeploymentContext(result.site.id, result.site, deploymentContext, {
+          contentContext,
+          skinSlugOverride: params.templateSlug,
+        });
         result.steps.push({
           step: 'deployment_applied',
           success: true,
           data: {
-            template: deploymentContext.template?.slug,
+            template: params.templateSlug || deploymentContext.template?.slug,
             plugins: deploymentContext.plugins?.length || 0,
           },
         });
@@ -441,8 +445,12 @@ class DomainWorkflow {
    * @param {string} siteId - InstaWP site ID
    * @param {string} siteUrl - Site URL
    * @param {Object} context - Deployment context
+   * @param {Object} [options] - Additional options
+   * @param {Object} [options.contentContext] - Content context for wizard data
+   * @param {string} [options.skinSlugOverride] - User-selected skin slug override
    */
-  async applyDeploymentContext(siteId, siteUrl, context) {
+  async applyDeploymentContext(siteId, siteUrl, context, options = {}) {
+    const { contentContext, skinSlugOverride } = options;
     const favicon = context.branding?.faviconUrl || DEFAULTS.FAVICON_URL;
     const site = this.extractSiteCredentials(siteUrl);
 
@@ -456,10 +464,17 @@ class DomainWorkflow {
       password: site.password,
     });
 
+    // Register site with wizard plugin
+    try {
+      await wp.registerSite(site.username, site.password);
+    } catch (error) {
+      console.warn('Failed to register site with wizard:', error.message);
+    }
+
     const results = { applied: true, favicon, template: context.template?.slug };
 
     // 0. Switch skin if a non-default template was selected
-    const skinSlug = context.template?.slug;
+    const skinSlug = skinSlugOverride || context.template?.slug;
     if (skinSlug && skinSlug !== 'default') {
       try {
         this.emitProgress('switching_skin', {
@@ -519,6 +534,79 @@ class DomainWorkflow {
           console.warn(`Failed to install plugin ${plugin.slug}:`, error.message);
           results.plugins.push({ slug: plugin.slug, success: false, error: error.message });
         }
+      }
+    }
+
+    // Save wizard data to the plugin
+    if (contentContext || context.branding) {
+      try {
+        const wizardData = buildWizardData(context, contentContext, site);
+        await wp.saveWizardData(wizardData);
+        results.wizardDataSaved = true;
+        console.log('  Wizard data saved');
+      } catch (error) {
+        console.warn('Failed to save wizard data:', error.message);
+        results.wizardDataError = error.message;
+      }
+    }
+
+    // Translate plugin (if non-English)
+    const wpLocale = toWpLocale(contentContext?.language?.primary);
+    if (wpLocale && wpLocale !== 'en_US') {
+      try {
+        this.emitProgress('translating_plugin', {
+          message: `Translating to ${wpLocale}...`,
+        });
+        await wp.translatePlugin(wpLocale, {
+          onProgress: (progress) => {
+            this.emitProgress('translating_plugin', { message: progress.message, ...progress });
+          },
+        });
+        results.pluginTranslated = true;
+        console.log(`  Plugin translated to ${wpLocale}`);
+      } catch (error) {
+        console.warn('Failed to translate plugin:', error.message);
+        results.translateError = error.message;
+      }
+    }
+
+    // Generate all content (plugin-side AI rewrite)
+    try {
+      this.emitProgress('generating_all_content', {
+        message: 'Generating plugin-side content...',
+      });
+      await wp.generateAllContent({
+        onProgress: (progress) => {
+          this.emitProgress('generating_all_content', { message: progress.message, ...progress });
+        },
+      });
+      results.allContentGenerated = true;
+      console.log('  Plugin-side content generated');
+    } catch (error) {
+      console.warn('Failed to generate all content:', error.message);
+      results.generateAllError = error.message;
+    }
+
+    // Generate images (optional — only if image bank configured)
+    if (config.imageBank.login) {
+      try {
+        this.emitProgress('generating_images', {
+          message: 'Generating images from image bank...',
+        });
+        await wp.generateImages({
+          login: config.imageBank.login,
+          password: config.imageBank.password,
+          scoreThreshold: config.imageBank.scoreThreshold,
+        }, {
+          onProgress: (progress) => {
+            this.emitProgress('generating_images', { message: progress.message, ...progress });
+          },
+        });
+        results.imagesGenerated = true;
+        console.log('  Images generated from image bank');
+      } catch (error) {
+        console.warn('Failed to generate images:', error.message);
+        results.generateImagesError = error.message;
       }
     }
 
