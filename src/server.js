@@ -38,6 +38,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = config.server.port;
 
+// Trust Render's load balancer so req.protocol reflects X-Forwarded-Proto (https)
+app.set('trust proxy', 1);
+
 // AI Proxy service — instantiated globally so onboarding flows and plugin register can use it
 // Plugin API routes (mounted BEFORE basic auth - uses its own API key auth)
 if (config.pluginApi?.enabled !== false) {
