@@ -1,4 +1,5 @@
 import axios from 'axios';
+import pWaitFor, { TimeoutError } from 'p-wait-for';
 import { config } from './config.js';
 
 export function sanitizeSiteName(name) {
@@ -36,6 +37,7 @@ class InstaWPAPI {
         url,
         headers,
         data,
+        timeout: 30000,
       });
 
       return response.data;
@@ -187,69 +189,70 @@ class InstaWPAPI {
     ];
   }
 
-  async waitForSiteReady(siteId, { maxWaitTime = 300000, checkInterval = 10000, onProgress } = {}) {
+  async waitForSiteReady(siteId, { maxWaitTime = 300000, onProgress } = {}) {
     console.log(`Waiting for site ${siteId} to be ready...`);
     const notify = onProgress || (() => {});
+    const isActive = (s) => s === 0 || s === '0' || s === 'active' || s === 'running';
 
-    const startTime = Date.now();
-    let phase = 'provisioning'; // provisioning → booting → ready
-    let probeAttempts = 0;
-    const maxProbeAttempts = 6; // Try probing 6 times (60s) then trust the API status
+    let activeSite = null;
 
-    while (Date.now() - startTime < maxWaitTime) {
-      const site = await this.getSite(siteId);
-
-      // InstaWP API numeric statuses: 0 = active/ready, 4 = provisioning
-      const status = site.status;
-      if (status === 0 || status === '0' || status === 'active' || status === 'running') {
-        if (phase === 'provisioning') {
-          phase = 'booting';
-          notify({ phase, message: 'WordPress is starting up...' });
+    try {
+      await pWaitFor(async () => {
+        let site;
+        try {
+          site = await this.getSite(siteId);
+        } catch (err) {
+          console.warn(`getSite ${siteId} failed (${err.message}); will retry next poll`);
+          return false;
         }
-
-        // Verify the site is actually reachable before returning
-        const siteUrl = site.url || site.wp_url;
-        if (siteUrl) {
-          try {
-            const probe = await fetch(siteUrl, {
-              method: 'HEAD',
-              redirect: 'manual',
-              signal: AbortSignal.timeout(10000),
-            });
-            // Accept 2xx and 3xx (redirects are normal for fresh WP sites)
-            if (probe.status < 400) {
-              console.log(`Site ${siteId} is ready and reachable! (HTTP ${probe.status})`);
-              notify({ phase: 'ready', message: 'Site is live!' });
-              return site;
-            }
-            console.log(`Site ${siteId} ready but returned HTTP ${probe.status}. Waiting...`);
-          } catch {
-            console.log(`Site ${siteId} ready but not yet reachable (attempt ${probeAttempts + 1}/${maxProbeAttempts}). Waiting...`);
-          }
-
-          probeAttempts++;
-          // If API says active but probe keeps failing (DNS/SSL not propagated yet),
-          // trust the API after a reasonable number of retries
-          if (probeAttempts >= maxProbeAttempts) {
-            console.log(`Site ${siteId} API reports active — returning despite probe failures (DNS/SSL may still be propagating).`);
-            notify({ phase: 'ready', message: 'Site is live!' });
-            return site;
-          }
-          notify({ phase: 'booting', message: 'Almost there — waiting for site to respond...' });
-        } else {
-          console.log(`Site ${siteId} is ready! (status: ${status})`);
-          notify({ phase: 'ready', message: 'Site is live!' });
-          return site;
+        if (isActive(site.status)) {
+          activeSite = site;
+          return true;
         }
-      } else {
-        console.log(`Site ${siteId} status: ${status} (waiting for 0/active)...`);
+        console.log(`Site ${siteId} status: ${site.status} (waiting for active)...`);
         notify({ phase: 'provisioning', message: 'Provisioning server and installing WordPress...' });
+        return false;
+      }, { interval: 10000, timeout: maxWaitTime });
+    } catch (err) {
+      if (err instanceof TimeoutError) {
+        throw new Error(`Site ${siteId} did not reach active status within ${maxWaitTime / 1000}s`);
       }
-
-      await new Promise(resolve => setTimeout(resolve, checkInterval));
+      throw err;
     }
 
-    throw new Error(`Site ${siteId} did not become ready within ${maxWaitTime}ms`);
+    const siteUrl = activeSite.url || activeSite.wp_url;
+    if (!siteUrl) {
+      throw new Error(`Site ${siteId} is active but has no URL`);
+    }
+
+    notify({ phase: 'booting', message: 'WordPress is starting up...' });
+
+    try {
+      await pWaitFor(async () => {
+        try {
+          const probe = await fetch(siteUrl, {
+            method: 'HEAD',
+            redirect: 'manual',
+            signal: AbortSignal.timeout(8000),
+          });
+          return probe.status < 400;
+        } catch {
+          return false;
+        }
+      }, { interval: 3000, timeout: maxWaitTime });
+    } catch (err) {
+      if (err instanceof TimeoutError) {
+        throw new Error(
+          `Site ${siteId} active but ${siteUrl} did not become reachable within ${maxWaitTime / 1000}s. ` +
+          `InstaWP DNS/SSL is still propagating — try again in a few minutes.`,
+        );
+      }
+      throw err;
+    }
+
+    console.log(`Site ${siteId} is ready and reachable at ${siteUrl}`);
+    notify({ phase: 'ready', message: 'Site is live!' });
+    return activeSite;
   }
 
   async checkSslStatus(siteId) {

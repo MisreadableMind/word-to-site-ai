@@ -3,6 +3,13 @@
  * Interacts with deployed WordPress sites via WP REST API using basic auth
  */
 
+import pRetry, { AbortError } from 'p-retry';
+
+const TRANSIENT_NETWORK_CODES = new Set(['ENOTFOUND', 'ECONNREFUSED', 'EAI_AGAIN']);
+const isTransientNetworkError = (err) =>
+  TRANSIENT_NETWORK_CODES.has(err?.cause?.code) ||
+  (err?.message === 'fetch failed' && !err?.cause);
+
 class WordPressService {
   /**
    * @param {string} siteUrl - WordPress site URL (e.g., https://example.com)
@@ -38,23 +45,38 @@ class WordPressService {
       ? endpoint
       : `${this.apiBase}${endpoint}`;
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': this.authHeader,
-        'Content-Type': 'application/json',
-        ...options.headers,
+    return pRetry(
+      async () => {
+        let response;
+        try {
+          response = await fetch(url, {
+            ...options,
+            headers: {
+              'Authorization': this.authHeader,
+              'Content-Type': 'application/json',
+              ...options.headers,
+            },
+          });
+        } catch (err) {
+          if (isTransientNetworkError(err)) throw err;
+          throw new AbortError(err);
+        }
+
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          if (response.status === 401 || response.status === 403) {
+            console.error(
+              `[WP REST ${response.status}] ${url} — code="${body.code ?? ''}" message="${body.message ?? ''}" data=${JSON.stringify(body.data ?? {})}`,
+            );
+          }
+          throw new AbortError(
+            new Error(body.message || `WP REST API error: ${response.status} ${response.statusText}`),
+          );
+        }
+        return response.json();
       },
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(
-        error.message || `WP REST API error: ${response.status} ${response.statusText}`
-      );
-    }
-
-    return response.json();
+      { retries: 2, factor: 2, minTimeout: 2000, maxTimeout: 5000 },
+    );
   }
 
   /**

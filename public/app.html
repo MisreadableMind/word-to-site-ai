@@ -2266,6 +2266,13 @@
         const dc = onboardingResult.deploymentContext || {};
         dc.features = ['contact-form', 'ai-blog-posts', 'seo', 'analytics'];
 
+        const resolvedSkinSlug = selectedSkin || onboardingResult.templateMatch?.slug;
+        if (resolvedSkinSlug) {
+            if (!dc.template) dc.template = {};
+            dc.template.slug = resolvedSkinSlug;
+            dc.template.skin = resolvedSkinSlug;
+        }
+
         const domain = document.getElementById('domainInput').value.trim();
         const registerNewDomain = document.getElementById('registerNewDomain').checked;
 

@@ -63,8 +63,8 @@ class EditorService {
     if (site.wp_url && site.wp_username && site.wp_password) {
       try {
         const wp = new WordPressService(site.wp_url, {
-          username: site.wp_username,
-          password: site.wp_password,
+          username: config.instawp.snapshotWpUsername,
+          password: config.instawp.snapshotWpPassword,
         });
         const pages = await wp.getPages();
         systemContent = this.buildSystemPrompt(site, pages);
@@ -169,8 +169,8 @@ class EditorService {
 
     if (actions.length > 0 && site.wp_url && site.wp_username && site.wp_password) {
       const wp = new WordPressService(site.wp_url, {
-        username: site.wp_username,
-        password: site.wp_password,
+        username: config.instawp.snapshotWpUsername,
+        password: config.instawp.snapshotWpPassword,
       });
 
       for (const action of actions) {

@@ -8,6 +8,27 @@ import AIService from './services/ai-service.js';
 import WordPressService from './services/wordpress-service.js';
 import { buildWizardData } from './utils/wizard-data.js';
 
+const CRITICAL_ONBOARDING_STEPS = [
+  'site_registered',
+  'skin_switched',
+  'deployment_applied',
+  'wizard_data_saved',
+  'generate_all_content',
+  'content_generated',
+];
+
+function withAggregateSuccess(result) {
+  const failed = result.steps?.find(
+    (s) => s.success === false && CRITICAL_ONBOARDING_STEPS.includes(s.step),
+  );
+  if (!failed) return result;
+  return {
+    ...result,
+    success: false,
+    error: `${failed.step} failed: ${failed.error}`,
+  };
+}
+
 // Workflow step identifiers for progress tracking
 export const WorkflowSteps = {
   VALIDATING_CONFIG: 'validating_config',
@@ -325,12 +346,6 @@ class DomainWorkflow {
       return result;
     }
 
-    // Store site credentials for deployment methods
-    this._siteCredentials = {
-      username: result.site.wp_username,
-      password: result.site.wp_password,
-    };
-
     // Apply deployment context
     if (deploymentContext) {
       this.emitProgress('applying_deployment', {
@@ -437,7 +452,7 @@ class DomainWorkflow {
       }
     }
 
-    return result;
+    return withAggregateSuccess(result);
   }
 
   /**
@@ -488,7 +503,7 @@ class DomainWorkflow {
         results.skinSwitched = true;
         console.log(`  Skin switched: ${skinSlug}`);
       } catch (error) {
-        console.warn('Failed to switch skin:', error.message);
+        console.error('Failed to switch skin:', error.message);
         results.skinSwitchError = error.message;
       }
     }
@@ -545,7 +560,7 @@ class DomainWorkflow {
         results.wizardDataSaved = true;
         console.log('  Wizard data saved');
       } catch (error) {
-        console.warn('Failed to save wizard data:', error.message);
+        console.error('Failed to save wizard data:', error.message);
         results.wizardDataError = error.message;
       }
     }
@@ -583,11 +598,10 @@ class DomainWorkflow {
       results.allContentGenerated = true;
       console.log('  Plugin-side content generated');
     } catch (error) {
-      console.warn('Failed to generate all content:', error.message);
+      console.error('Failed to generate all content:', error.message);
       results.generateAllError = error.message;
     }
 
-    // Generate images (optional — only if image bank configured)
     if (config.imageBank.login) {
       try {
         this.emitProgress('generating_images', {
@@ -608,6 +622,14 @@ class DomainWorkflow {
         console.warn('Failed to generate images:', error.message);
         results.generateImagesError = error.message;
       }
+    }
+
+    const criticalFailures = [];
+    if (results.skinSwitchError) criticalFailures.push(`skin_switched: ${results.skinSwitchError}`);
+    if (results.wizardDataError) criticalFailures.push(`wizard_data_saved: ${results.wizardDataError}`);
+    if (results.generateAllError) criticalFailures.push(`generate_all_content: ${results.generateAllError}`);
+    if (criticalFailures.length > 0) {
+      throw new Error(criticalFailures.join('; '));
     }
 
     return results;
@@ -810,20 +832,13 @@ class DomainWorkflow {
    * @returns {Object} { url, username, password }
    */
   extractSiteCredentials(siteUrl) {
-    // If it's a full site result object with credentials
-    if (typeof siteUrl === 'object' && siteUrl !== null) {
-      return {
-        url: siteUrl.wp_url || siteUrl.url || siteUrl,
-        username: siteUrl.wp_username || 'admin',
-        password: siteUrl.wp_password || '',
-      };
-    }
-
-    // String URL - credentials must come from the site result stored in this.lastSiteResult
+    const url = (typeof siteUrl === 'object' && siteUrl !== null)
+      ? (siteUrl.wp_url || siteUrl.url || siteUrl)
+      : siteUrl;
     return {
-      url: siteUrl,
-      username: this._siteCredentials?.username || 'admin',
-      password: this._siteCredentials?.password || '',
+      url,
+      username: config.instawp.snapshotWpUsername,
+      password: config.instawp.snapshotWpPassword,
     };
   }
 

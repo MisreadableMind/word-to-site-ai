@@ -35,6 +35,27 @@ import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth.j
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const CRITICAL_ONBOARDING_STEPS = [
+  'site_registered',
+  'skin_switched',
+  'deployment_applied',
+  'wizard_data_saved',
+  'generate_all_content',
+  'content_generated',
+];
+
+function withAggregateSuccess(result) {
+  const failed = result.steps?.find(
+    (s) => s.success === false && CRITICAL_ONBOARDING_STEPS.includes(s.step),
+  );
+  if (!failed) return result;
+  return {
+    ...result,
+    success: false,
+    error: `${failed.step} failed: ${failed.error}`,
+  };
+}
+
 const app = express();
 const PORT = config.server.port;
 
@@ -985,32 +1006,30 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
     // Apply deployment context if we have site credentials
     if (site.wp_url && site.wp_username && site.wp_password) {
       const wp = new WordPressService(site.wp_url, {
-        username: site.wp_username,
-        password: site.wp_password,
+        username: config.instawp.snapshotWpUsername,
+        password: config.instawp.snapshotWpPassword,
       });
 
-      // Register site with the WaaS Wizard plugin before any wizard operations
       try {
-        await wp.registerSite(site.wp_username, site.wp_password);
+        await wp.registerSite(config.instawp.snapshotWpUsername, config.instawp.snapshotWpPassword);
         result.steps.push({ step: 'site_registered', success: true });
       } catch (error) {
-        console.warn('Failed to register site:', error.message);
+        console.error('Failed to register site:', error.message);
         result.steps.push({ step: 'site_registered', success: false, error: error.message });
+        return res.json(withAggregateSuccess(result));
       }
 
-      // Switch skin if a non-default template was selected
       const skinSlug = templateSlug || deploymentContext.template?.slug;
       if (skinSlug && skinSlug !== 'default') {
         try {
           await wp.switchSkin(skinSlug);
           result.steps.push({ step: 'skin_switched', success: true, skin: skinSlug });
         } catch (error) {
-          console.warn('Failed to switch skin:', error.message);
+          console.error('Failed to switch skin:', error.message);
           result.steps.push({ step: 'skin_switched', success: false, error: error.message });
         }
       }
 
-      // Apply deployment context
       if (deploymentContext) {
         try {
           const settingsUpdate = {};
@@ -1020,7 +1039,6 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
             await wp.updateSiteSettings(settingsUpdate);
           }
 
-          // Apply customizer
           const customizerSettings = {};
           if (deploymentContext.branding?.faviconUrl) customizerSettings.faviconUrl = deploymentContext.branding.faviconUrl;
           if (deploymentContext.branding?.logoUrl) customizerSettings.logoUrl = deploymentContext.branding.logoUrl;
@@ -1031,18 +1049,17 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
 
           result.steps.push({ step: 'deployment_applied', success: true });
         } catch (error) {
-          console.warn('Failed to apply deployment context:', error.message);
+          console.error('Failed to apply deployment context:', error.message);
           result.steps.push({ step: 'deployment_applied', success: false, error: error.message });
         }
       }
 
-      // Save wizard data to the plugin
       try {
         const wizardData = buildWizardData(deploymentContext, contentContext, site);
         await wp.saveWizardData(wizardData);
         result.steps.push({ step: 'wizard_data_saved', success: true });
       } catch (error) {
-        console.warn('Failed to save wizard data:', error.message);
+        console.error('Failed to save wizard data:', error.message);
         result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
       }
 
@@ -1066,12 +1083,11 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
         }
       }
 
-      // Generate all content (plugin-side AI rewrite)
       try {
         await wp.generateAllContent();
         result.steps.push({ step: 'generate_all_content', success: true });
       } catch (error) {
-        console.warn('Failed to generate all content:', error.message);
+        console.error('Failed to generate all content:', error.message);
         result.steps.push({ step: 'generate_all_content', success: false, error: error.message });
       }
 
@@ -1137,12 +1153,11 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
 
           result.steps.push({ step: 'content_generated', success: true });
         } catch (error) {
-          console.warn('Failed to generate content:', error.message);
+          console.error('Failed to generate content:', error.message);
           result.steps.push({ step: 'content_generated', success: false, error: error.message });
         }
       }
 
-      // Select editor
       if (editorPreference) {
         try {
           const editorService = new EditorService();
@@ -1172,7 +1187,7 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
       }
     }
 
-    res.json(result);
+    res.json(withAggregateSuccess(result));
   } catch (error) {
     console.error('Error confirming onboarding:', error);
     res.status(500).json({
@@ -1293,21 +1308,23 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
 
       if (site.wp_url && site.wp_username && site.wp_password) {
         const wp = new WordPressService(site.wp_url, {
-          username: site.wp_username,
-          password: site.wp_password,
+          username: config.instawp.snapshotWpUsername,
+          password: config.instawp.snapshotWpPassword,
         });
 
-        // Register site with the WaaS Wizard plugin before any wizard operations
         sendProgress('registering_site', { message: 'Registering site with wizard...' });
         try {
-          await wp.registerSite(site.wp_username, site.wp_password);
+          await wp.registerSite(config.instawp.snapshotWpUsername, config.instawp.snapshotWpPassword);
           result.steps.push({ step: 'site_registered', success: true });
         } catch (error) {
-          console.warn('Failed to register site:', error.message);
+          console.error('Failed to register site:', error.message);
           result.steps.push({ step: 'site_registered', success: false, error: error.message });
+          const finalResult = withAggregateSuccess(result);
+          res.write(`data: ${JSON.stringify({ step: 'result', data: finalResult })}\n\n`);
+          res.end();
+          return;
         }
 
-        // Switch skin if a non-default template was selected
         const skinSlug = templateSlug || deploymentContext.template?.slug;
         if (skinSlug && skinSlug !== 'default') {
           sendProgress('switching_skin', { message: `Switching skin to "${skinSlug}"...` });
@@ -1319,7 +1336,7 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
             });
             result.steps.push({ step: 'skin_switched', success: true, skin: skinSlug });
           } catch (error) {
-            console.warn('Failed to switch skin:', error.message);
+            console.error('Failed to switch skin:', error.message);
             result.steps.push({ step: 'skin_switched', success: false, error: error.message });
           }
         }
@@ -1343,14 +1360,13 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
           result.steps.push({ step: 'deployment_applied', success: false, error: error.message });
         }
 
-        // Save wizard data to the plugin
         sendProgress('saving_wizard_data', { message: 'Saving wizard data...' });
         try {
           const wizardData = buildWizardData(deploymentContext, contentContext, site);
           await wp.saveWizardData(wizardData);
           result.steps.push({ step: 'wizard_data_saved', success: true });
         } catch (error) {
-          console.warn('Failed to save wizard data:', error.message);
+          console.error('Failed to save wizard data:', error.message);
           result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
         }
 
@@ -1379,7 +1395,6 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
           }
         }
 
-        // Generate all content (plugin-side AI rewrite)
         sendProgress('generating_all_content', { message: 'Generating plugin-side content...' });
         try {
           await wp.generateAllContent({
@@ -1389,7 +1404,7 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
           });
           result.steps.push({ step: 'generate_all_content', success: true });
         } catch (error) {
-          console.warn('Failed to generate all content:', error.message);
+          console.error('Failed to generate all content:', error.message);
           result.steps.push({ step: 'generate_all_content', success: false, error: error.message });
         }
 
@@ -1485,8 +1500,9 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
         }
       }
 
+      const finalResult = withAggregateSuccess(result);
       sendProgress('complete', { message: 'Deployment complete!' });
-      res.write(`data: ${JSON.stringify({ step: 'result', data: result })}\n\n`);
+      res.write(`data: ${JSON.stringify({ step: 'result', data: finalResult })}\n\n`);
     }
   } catch (error) {
     res.write(`data: ${JSON.stringify({ step: 'error', error: error.message })}\n\n`);
