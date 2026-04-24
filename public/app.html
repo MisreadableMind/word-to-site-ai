@@ -2534,18 +2534,18 @@
     }
 
     function updateProgressStep(stepId, status = 'active', message) {
-        const steps = document.querySelectorAll('.progress-step');
-        let found = false;
-        steps.forEach(s => {
-            if (s.id === `step-${stepId}`) {
+        const steps = Array.from(document.querySelectorAll('.progress-step'));
+        const targetIndex = steps.findIndex(s => s.id === `step-${stepId}`);
+        if (targetIndex === -1) return;
+
+        steps.forEach((s, i) => {
+            if (i === targetIndex) {
                 s.className = 'progress-step ' + status;
                 s.querySelector('.step-icon').innerHTML = status === 'completed' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>' : status === 'error' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>' : '';
-                // Update the label with live message if provided
                 if (message && status === 'active') {
                     s.querySelector('.step-label').textContent = message;
                 }
-                found = true;
-            } else if (!found && status !== 'error') {
+            } else if (i < targetIndex && status !== 'error') {
                 s.className = 'progress-step completed';
                 s.querySelector('.step-icon').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>';
             }
