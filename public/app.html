@@ -466,13 +466,20 @@
         }
         .btn-generate:hover { background: rgba(108,92,231,0.18); }
         .btn-generate:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
         }
-        .btn-generate.loading {
+        .btn-generate.is-generating {
             pointer-events: none;
+            cursor: wait;
         }
-        .btn-generate.loading svg {
+        .btn-generate.is-generating:disabled {
+            opacity: 1;
+        }
+        .btn-generate .icon-spinner { display: none; }
+        .btn-generate.is-generating .icon-sparkle { display: none; }
+        .btn-generate.is-generating .icon-spinner {
+            display: inline-block;
             animation: spin 0.7s linear infinite;
         }
 
@@ -1390,7 +1397,8 @@
                         </button>
                     </div>
                     <button type="button" class="btn-generate" id="btn-generate-team" onclick="generateStep2Suggestion('team')">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                        <svg class="icon-sparkle" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                        <svg class="icon-spinner" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
                         Generate with AI
                     </button>
                 </div>
@@ -1403,7 +1411,8 @@
                         </button>
                     </div>
                     <button type="button" class="btn-generate" id="btn-generate-advantages" onclick="generateStep2Suggestion('advantages')">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                        <svg class="icon-sparkle" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                        <svg class="icon-spinner" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
                         Generate with AI
                     </button>
                 </div>
@@ -1800,10 +1809,8 @@
             return;
         }
 
-        btn.classList.add('loading');
+        btn.classList.add('is-generating');
         btn.disabled = true;
-        const origText = btn.innerHTML;
-        btn.innerHTML = btn.querySelector('svg').outerHTML + ' Generating...';
 
         try {
             const res = await fetch('/api/onboard/suggest-step2', {
@@ -1818,9 +1825,8 @@
             }
         } catch { /* keep existing text */ }
 
-        btn.classList.remove('loading');
+        btn.classList.remove('is-generating');
         btn.disabled = false;
-        btn.innerHTML = origText;
     }
 
     // --- Step 2 Form Submit ---
