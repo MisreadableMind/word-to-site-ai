@@ -611,9 +611,31 @@
             flex: 1;
         }
 
-        .tagline-box .tagline-text.loading { color: var(--text-muted); font-style: normal; }
+        .tagline-box .tagline-skeleton {
+            display: none;
+            flex: 1;
+            height: 14px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, rgba(108,92,231,0.10) 0%, rgba(108,92,231,0.28) 50%, rgba(108,92,231,0.10) 100%);
+            background-size: 200% 100%;
+            animation: taglineShimmer 1.2s ease-in-out infinite;
+        }
+
+        .tagline-box.is-regenerating .tagline-text { display: none; }
+        .tagline-box.is-regenerating .tagline-skeleton { display: block; }
+        .tagline-box.is-regenerating .regenerate-btn .icon-refresh {
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes taglineShimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
 
         .tagline-box .regenerate-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             font-size: 12px;
             font-weight: 600;
             color: var(--accent);
@@ -626,6 +648,7 @@
         }
 
         .tagline-box .regenerate-btn:hover { background: rgba(108,92,231,0.1); }
+        .tagline-box .regenerate-btn:disabled { cursor: wait; }
 
         /* --- INCLUDED FEATURES (static) --- */
         .included-features { margin-bottom: 24px; }
@@ -1338,9 +1361,13 @@
                     <!-- Tagline auto-generated -->
                     <div class="form-group" id="taglineGroup" style="display:none">
                         <label>Tagline</label>
-                        <div class="tagline-box">
-                            <span class="tagline-text" id="taglineText">Generating...</span>
-                            <button type="button" class="regenerate-btn" onclick="regenerateTagline()">Regenerate</button>
+                        <div class="tagline-box" id="taglineBox">
+                            <span class="tagline-text" id="taglineText"></span>
+                            <div class="tagline-skeleton" aria-hidden="true"></div>
+                            <button type="button" class="regenerate-btn" onclick="regenerateTagline()">
+                                <svg class="icon-refresh" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg>
+                                <span>Regenerate</span>
+                            </button>
                         </div>
                     </div>
                     <div class="form-group">
@@ -1893,11 +1920,13 @@
 
     async function generateTagline(companyName, industry) {
         const group = document.getElementById('taglineGroup');
+        const box = document.getElementById('taglineBox');
         const textEl = document.getElementById('taglineText');
+        const btn = box.querySelector('.regenerate-btn');
 
         group.style.display = '';
-        textEl.textContent = 'Generating tagline...';
-        textEl.className = 'tagline-text loading';
+        box.classList.add('is-regenerating');
+        btn.disabled = true;
 
         try {
             const res = await fetch('/api/onboard/generate-tagline', {
@@ -1909,15 +1938,15 @@
             if (data.success && data.tagline) {
                 generatedTagline = data.tagline;
                 textEl.textContent = `"${data.tagline}"`;
-                textEl.className = 'tagline-text';
             } else {
                 textEl.textContent = 'Could not generate tagline';
-                textEl.className = 'tagline-text loading';
             }
         } catch {
             textEl.textContent = 'Could not generate tagline';
-            textEl.className = 'tagline-text loading';
         }
+
+        box.classList.remove('is-regenerating');
+        btn.disabled = false;
     }
 
     function regenerateTagline() {
