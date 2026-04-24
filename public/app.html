@@ -337,6 +337,7 @@
             display: flex;
             gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .input-with-mic input,
@@ -479,27 +480,54 @@
         .voice-status {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 6px 12px;
-            border-radius: 6px;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
             font-size: 12px;
             font-weight: 600;
-            margin-top: 6px;
-            animation: fadeSlideIn 200ms ease;
+            margin-top: 8px;
+            flex: 1 0 100%;
+            transform-origin: top center;
+            animation: voiceStatusIn 280ms cubic-bezier(0.16, 1, 0.3, 1);
+            transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
         }
 
-        @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes voiceStatusIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scaleY(0.55);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scaleY(1);
+            }
+        }
+
+        .voice-status.is-exiting {
+            animation: voiceStatusOut 220ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            pointer-events: none;
+        }
+
+        @keyframes voiceStatusOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) scaleY(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-10px) scaleY(0.55);
+            }
         }
 
         .voice-status.recording {
-            background: rgba(220,38,38,0.08);
+            background: rgba(220,38,38,0.06);
+            border: 1px solid rgba(220,38,38,0.14);
             color: var(--error);
         }
 
         .voice-status.transcribing {
             background: var(--accent-dim);
+            border: 1px solid rgba(108,92,231,0.18);
             color: var(--accent);
         }
 
@@ -520,10 +548,12 @@
             50% { opacity: 0.3; }
         }
 
-        .voice-status-text { flex: 1; }
+        .voice-status-text { flex: 0 0 auto; }
         .voice-status-timer { font-variant-numeric: tabular-nums; }
 
         .voice-status-hint {
+            margin-left: auto;
+            padding-left: 12px;
             font-weight: 400;
             color: var(--text-muted);
             font-size: 11px;
@@ -1909,8 +1939,16 @@
 
     function removeStatusBar(fieldId) {
         const wrapper = getWrapper(fieldId);
-        const bar = wrapper?.querySelector('.voice-status');
-        if (bar) bar.remove();
+        wrapper?.querySelectorAll('.voice-status').forEach(b => b.remove());
+    }
+
+    function dismissStatusBar(fieldId) {
+        const wrapper = getWrapper(fieldId);
+        if (!wrapper) return;
+        const bar = wrapper.querySelector('.voice-status:not(.is-exiting)');
+        if (!bar) return;
+        bar.classList.add('is-exiting');
+        bar.addEventListener('animationend', () => bar.remove(), { once: true });
     }
 
     function showRecordingStatus(fieldId) {
@@ -1936,21 +1974,29 @@
     }
 
     function showTranscribingStatus(fieldId) {
-        removeStatusBar(fieldId);
         const wrapper = getWrapper(fieldId);
+        if (!wrapper) return;
         wrapper.classList.remove('is-recording');
         wrapper.classList.add('is-transcribing');
-        const bar = document.createElement('div');
-        bar.className = 'voice-status transcribing';
-        bar.innerHTML = `
+        const transcribingHtml = `
             <span class="voice-status-spinner"></span>
             <span class="voice-status-text">Transcribing audio...</span>
         `;
+        const existing = wrapper.querySelector('.voice-status:not(.is-exiting)');
+        if (existing) {
+            existing.classList.remove('recording');
+            existing.classList.add('transcribing');
+            existing.innerHTML = transcribingHtml;
+            return;
+        }
+        const bar = document.createElement('div');
+        bar.className = 'voice-status transcribing';
+        bar.innerHTML = transcribingHtml;
         wrapper.appendChild(bar);
     }
 
     function clearVoiceState(fieldId) {
-        removeStatusBar(fieldId);
+        dismissStatusBar(fieldId);
         const wrapper = getWrapper(fieldId);
         wrapper.classList.remove('is-recording', 'is-transcribing');
         if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
