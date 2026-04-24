@@ -369,12 +369,36 @@ async function loadSites() {
     }
 }
 
+function tryParseUrl(value) {
+    if (typeof value !== 'string' || !value.trim()) {
+      return null;
+    }
+
+    const protocolRegExp = new RegExp(/^https?:\/\//i);
+    const full = protocolRegExp.test(value) ? value.trim() : `https://${value.trim()}`;
+
+    try {
+      return new URL(full);
+    } catch {
+      return null;
+    }
+}
+
+function siteBaseUrl(site) {
+    const wp = tryParseUrl(site.wp_url);
+    const custom = tryParseUrl(site.domain);
+    const customIsSlugOfWp = custom && wp && wp.hostname.startsWith(`${custom.hostname}.`);
+    if (custom && !customIsSlugOfWp) return custom.origin;
+    return wp ? wp.origin : '';
+}
+
 function renderSiteCard(site) {
     const statusClass = site.status === 'active' ? 'badge-active' : site.status === 'deleted' ? 'badge-deleted' : 'badge-provisioning';
     const displayUrl = site.domain || site.wp_url || '';
-    const visitUrl = site.domain ? `https://${site.domain}` : site.wp_url;
+    const baseUrl = siteBaseUrl(site);
+    const visitUrl = baseUrl || null;
     const editorUrl = `/editor.html?site=${site.id}`;
-    const wpAdminUrl = site.wp_url ? `${site.wp_url}/wp-admin` : '#';
+    const wpAdminUrl = baseUrl ? `${baseUrl}/wp-admin` : '#';
     const created = new Date(site.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
     return `
