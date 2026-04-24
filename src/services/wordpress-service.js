@@ -579,13 +579,13 @@ class WordPressService {
     onProgress?.({ phase: 'starting', message: 'Starting plugin-side content generation...' });
 
     // POST to initiate
-    await this.requestRaw('trx-waas-wizard/v1/generate-all', {
+    await this.requestRaw('trx-waas-wizard/v1/page-widgets/generate-all', {
       method: 'POST',
       body: JSON.stringify({ force: true }),
     });
 
     // Poll until terminal state
-    const pollResult = await this._pollAsyncEndpoint('trx-waas-wizard/v1/generate-all', {
+    const pollResult = await this._pollAsyncEndpoint('trx-waas-wizard/v1/page-widgets/generate-all', {
       terminalStates: ['generate_all_end', 'generate_images_end'],
       onProgress,
       maxAttempts,
@@ -619,7 +619,7 @@ class WordPressService {
     console.log(`Triggering generate-images on ${this.siteUrl}`);
     onProgress?.({ phase: 'starting', message: 'Starting plugin-side image generation...' });
 
-    await this.requestRaw('trx-waas-wizard/v1/generate-images', {
+    await this.requestRaw('trx-waas-wizard/v1/page-widgets/generate-images', {
       method: 'POST',
       body: JSON.stringify({
         image_bank_login: credentials.login,
@@ -629,7 +629,7 @@ class WordPressService {
       }),
     });
 
-    const pollResult = await this._pollAsyncEndpoint('trx-waas-wizard/v1/generate-images', {
+    const pollResult = await this._pollAsyncEndpoint('trx-waas-wizard/v1/page-widgets/generate-images', {
       terminalStates: ['generate_images_end'],
       onProgress,
       maxAttempts,
