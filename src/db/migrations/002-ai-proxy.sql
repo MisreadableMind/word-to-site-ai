@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS proxy_sites (
   revoked_at TIMESTAMPTZ
 );
 
+ALTER TABLE proxy_sites ADD COLUMN IF NOT EXISTS wp_url VARCHAR(500);
+
 CREATE INDEX IF NOT EXISTS idx_proxy_sites_api_key ON proxy_sites(api_key);
 CREATE INDEX IF NOT EXISTS idx_proxy_sites_domain ON proxy_sites(domain);
 CREATE INDEX IF NOT EXISTS idx_proxy_sites_status ON proxy_sites(status);

@@ -78,6 +78,7 @@ export const config = {
   proxy: {
     enabled: process.env.ENABLE_AI_PROXY !== 'false',
     adminSecret: process.env.PROXY_ADMIN_SECRET || '',
+    publicBaseUrl: (process.env.PROXY_PUBLIC_BASE_URL || '').replace(/\/+$/, ''),
   },
 
   // Plugin API Configuration (hub-and-spoke)

@@ -111,23 +111,28 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Multer for multipart file uploads (voice transcription)
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
-// Helper: auto-register proxy key for a new site and push config to the WP plugin
+function resolveProxyBaseUrl(req) {
+  const base = config.proxy?.publicBaseUrl
+    || `${req.protocol}://${req.get('host')}`;
+  return `${base}/api/proxy`;
+}
+
 async function autoRegisterProxyKey(wpUrl, siteName, req) {
   if (!proxyService) return;
 
   try {
     const domain = new URL(wpUrl).hostname;
     const existing = await proxyService.getSiteByDomain(domain);
+    const site = existing
+      || await proxyService.registerSite(domain, siteName || domain, wpUrl);
+
     if (existing) {
-      console.log(`Proxy key already exists for ${domain}, skipping registration`);
-      return { step: 'proxy_registered', success: true, skipped: true };
+      console.log(`Proxy key already exists for ${domain}, re-pushing existing key`);
+    } else {
+      console.log(`Proxy key registered for ${domain}: ${site.api_key.slice(0, 8)}...`);
     }
 
-    const site = await proxyService.registerSite(domain, siteName || domain);
-    console.log(`Proxy key registered for ${domain}: ${site.api_key.slice(0, 8)}...`);
-
-    // Push proxy config to WP plugin
-    const proxyUrl = `${req.protocol}://${req.get('host')}/api/proxy`;
+    const proxyUrl = resolveProxyBaseUrl(req);
     const pushResponse = await fetch(`${wpUrl}/wp-json/wordtosite/v1/set-proxy-config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -136,11 +141,11 @@ async function autoRegisterProxyKey(wpUrl, siteName, req) {
 
     if (!pushResponse.ok) {
       console.warn(`Failed to push proxy config to ${domain}: ${await pushResponse.text()}`);
-      return { step: 'proxy_registered', success: true, pushed: false };
+      return { step: 'proxy_registered', success: true, reused: !!existing, pushed: false };
     }
 
     console.log(`Proxy config pushed to ${domain}`);
-    return { step: 'proxy_registered', success: true, pushed: true };
+    return { step: 'proxy_registered', success: true, reused: !!existing, pushed: true };
   } catch (error) {
     console.warn('Auto proxy registration failed:', error.message);
     return { step: 'proxy_registered', success: false, error: error.message };
@@ -956,7 +961,7 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
       const domainWorkflow = new DomainWorkflow({
         instawpApiKey: effectiveApiKey,
         proxyService,
-        proxyUrl: proxyService ? `${req.protocol}://${req.get('host')}/api/proxy` : null,
+        proxyUrl: proxyService ? resolveProxyBaseUrl(req) : null,
       });
 
       const result = await domainWorkflow.executeWithContexts({
@@ -1245,7 +1250,7 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
       const domainWorkflow = new DomainWorkflow({
         instawpApiKey: effectiveApiKey,
         proxyService,
-        proxyUrl: proxyService ? `${req.protocol}://${req.get('host')}/api/proxy` : null,
+        proxyUrl: proxyService ? resolveProxyBaseUrl(req) : null,
         onProgress: (progress) => {
           sendProgress(progress.step, progress);
         },

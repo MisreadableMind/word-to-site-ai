@@ -3,6 +3,7 @@ import pool from '../db.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import OpenAI from 'openai';
 import { config } from '../config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,6 +13,9 @@ export default class ProxyService {
 
   constructor() {
     this.initialized = false;
+    this.openai = config.openai?.apiKey
+      ? new OpenAI({ apiKey: config.openai.apiKey })
+      : null;
   }
 
   async initialize() {
@@ -42,16 +46,16 @@ export default class ProxyService {
     return key;
   }
 
-  async registerSite(domain, label) {
+  async registerSite(domain, label, wpUrl) {
     await this.initialize();
 
     const apiKey = this.generateApiKey();
 
     const result = await pool.query(
-      `INSERT INTO proxy_sites (domain, api_key, label)
-       VALUES ($1, $2, $3)
+      `INSERT INTO proxy_sites (domain, api_key, label, wp_url)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [domain, apiKey, label || domain]
+      [domain, apiKey, label || domain, wpUrl || null]
     );
 
     return result.rows[0];
@@ -209,28 +213,20 @@ export default class ProxyService {
   // ==========================================
 
   async forwardToOpenAI(body) {
-    const apiKey = config.openai?.apiKey;
-    if (!apiKey) throw new Error('OpenAI API key not configured on proxy server');
+    if (!this.openai) throw new Error('OpenAI API key not configured on proxy server');
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      const errMsg = data?.error?.message || `OpenAI API error: ${response.status}`;
-      const err = new Error(errMsg);
-      err.status = response.status;
-      err.openaiError = data;
-      throw err;
+    try {
+      return this.openai.responses.create(body);
+    } catch (error) {
+      if (error instanceof OpenAI.APIError) {
+        const wrapped = new Error(error.error?.message || error.message);
+        wrapped.status = error.status || 502;
+        if (error.error) {
+          wrapped.openaiError = { error: error.error };
+        }
+        throw wrapped;
+      }
+      throw error;
     }
-
-    return data;
   }
 }

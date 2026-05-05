@@ -15,9 +15,16 @@ export default function createProxyRouter(proxyService) {
   // ==========================================
 
   function adminAuth(req, res, next) {
+    if (!config.proxy?.adminSecret) {
+      return res.status(500).json({
+        error: { message: 'Admin endpoint not configured', type: 'server_misconfigured' },
+      });
+    }
     const secret = req.headers['x-proxy-admin-secret'];
-    if (!config.proxy?.adminSecret || secret !== config.proxy.adminSecret) {
-      return res.status(404).json({ error: 'Not found' });
+    if (secret !== config.proxy.adminSecret) {
+      return res.status(401).json({
+        error: { message: 'Invalid or missing admin secret', type: 'authentication_error' },
+      });
     }
     next();
   }
@@ -30,6 +37,12 @@ export default function createProxyRouter(proxyService) {
     res.json({ success: true, service: 'wordtosite-ai-proxy', timestamp: new Date().toISOString() });
   });
 
+  function resolveProxyBaseUrl(req) {
+    const base = config.proxy?.publicBaseUrl
+      || `${req.protocol}://${req.get('host')}`;
+    return `${base}/api/proxy`;
+  }
+
   // ==========================================
   // ADMIN ENDPOINTS
   // ==========================================
@@ -37,13 +50,13 @@ export default function createProxyRouter(proxyService) {
   // Register a new site
   router.post('/admin/register-site', adminAuth, async (req, res) => {
     try {
-      const { domain, label } = req.body;
+      const { domain, label, wp_url: wpUrl } = req.body;
 
       if (!domain) {
         return res.status(400).json({ error: { message: 'domain is required', type: 'validation_error' } });
       }
 
-      const site = await proxyService.registerSite(domain, label);
+      const site = await proxyService.registerSite(domain, label, wpUrl);
 
       res.json({
         success: true,
@@ -52,6 +65,7 @@ export default function createProxyRouter(proxyService) {
           domain: site.domain,
           api_key: site.api_key,
           label: site.label,
+          wp_url: site.wp_url,
           monthly_token_limit: site.monthly_token_limit,
           created_at: site.created_at,
         },
@@ -79,13 +93,13 @@ export default function createProxyRouter(proxyService) {
         return res.status(404).json({ error: { message: 'Site not found', type: 'not_found' } });
       }
 
-      // Attempt to push config to the WP plugin
-      const wpUrl = `https://${domain}/wp-json/wordtosite/v1/set-proxy-config`;
-      const pushResponse = await fetch(wpUrl, {
+      const wpBase = site.wp_url || `https://${site.domain}`;
+      const pushTarget = `${wpBase}/wp-json/wordtosite/v1/set-proxy-config`;
+      const pushResponse = await fetch(pushTarget, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          proxyUrl: `${req.protocol}://${req.get('host')}/api/proxy`,
+          proxyUrl: resolveProxyBaseUrl(req),
           apiKey: site.api_key,
         }),
       });
@@ -94,7 +108,7 @@ export default function createProxyRouter(proxyService) {
         const err = await pushResponse.text();
         return res.status(502).json({
           error: { message: `Failed to push key to ${domain}: ${err}`, type: 'push_failed' },
-          api_key: site.api_key, // Still return key so admin can configure manually
+          api_key: site.api_key,
         });
       }
 

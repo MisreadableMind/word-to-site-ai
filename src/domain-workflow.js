@@ -375,31 +375,34 @@ class DomainWorkflow {
       }
     }
 
-    // Auto-register proxy key (non-blocking)
     if (this.proxyService && result.site?.wp_url) {
       try {
         const wpUrl = result.site.wp_url;
         const domain = new URL(wpUrl).hostname;
         const existing = await this.proxyService.getSiteByDomain(domain);
-        if (!existing) {
-          const label = deploymentContext?.branding?.siteTitle || contentContext?.business?.name || domain;
-          const proxySite = await this.proxyService.registerSite(domain, label);
-          console.log(`Proxy key registered for ${domain}: ${proxySite.api_key.slice(0, 8)}...`);
+        const label = deploymentContext?.branding?.siteTitle || contentContext?.business?.name || domain;
+        const proxySite = existing
+          || await this.proxyService.registerSite(domain, label, wpUrl);
 
-          if (this.proxyUrl) {
-            const pushResp = await fetch(`${wpUrl}/wp-json/wordtosite/v1/set-proxy-config`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ proxyUrl: this.proxyUrl, apiKey: proxySite.api_key }),
-            });
-            if (!pushResp.ok) {
-              console.warn(`Failed to push proxy config to ${domain}`);
-            }
-          }
-          result.steps.push({ step: 'proxy_registered', success: true });
+        if (existing) {
+          console.log(`Proxy key already exists for ${domain}, re-pushing existing key`);
         } else {
-          result.steps.push({ step: 'proxy_registered', success: true, skipped: true });
+          console.log(`Proxy key registered for ${domain}: ${proxySite.api_key.slice(0, 8)}...`);
         }
+
+        let pushed = false;
+        if (this.proxyUrl) {
+          const pushResp = await fetch(`${wpUrl}/wp-json/wordtosite/v1/set-proxy-config`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proxyUrl: this.proxyUrl, apiKey: proxySite.api_key }),
+          });
+          pushed = pushResp.ok;
+          if (!pushed) {
+            console.warn(`Failed to push proxy config to ${domain}`);
+          }
+        }
+        result.steps.push({ step: 'proxy_registered', success: true, reused: !!existing, pushed });
       } catch (error) {
         console.warn('Auto proxy registration failed:', error.message);
         result.steps.push({ step: 'proxy_registered', success: false, error: error.message });
