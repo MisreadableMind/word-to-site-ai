@@ -43,7 +43,12 @@ class InstaWPAPI {
       return response.data;
     } catch (error) {
       if (error.response) {
-        const errorMessage = error.response.data?.message || error.response.statusText;
+        let errorMessage = error.response.data?.message || error.response.statusText;
+        const fieldErrors = error.response.data?.errors;
+        if (fieldErrors && typeof fieldErrors === 'object') {
+          const flat = Object.values(fieldErrors).flat().filter(Boolean);
+          if (flat.length) errorMessage += ` — ${flat.join('; ')}`;
+        }
         console.error(`InstaWP API ${method} ${url} failed:`);
         console.error(`  Status: ${error.response.status}`);
         console.error(`  Response body:`, JSON.stringify(error.response.data, null, 2));

@@ -982,6 +982,7 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
       contentContext,
       domain,
       registerNewDomain,
+      acceptOwnedDomain,
       editorPreference,
       apiKey,
     } = req.body;
@@ -1012,6 +1013,7 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
       const result = await domainWorkflow.executeWithContexts({
         domain,
         registerNewDomain: registerNewDomain || false,
+        acceptOwnedDomain: acceptOwnedDomain === true || acceptOwnedDomain === 'true',
         deploymentContext,
         contentContext,
         editorPreference,
@@ -1258,6 +1260,7 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
     apiKey,
     domain,
     registerNewDomain,
+    acceptOwnedDomain,
     templateSlug,
   } = req.query;
 
@@ -1304,6 +1307,7 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
       const result = await domainWorkflow.executeWithContexts({
         domain,
         registerNewDomain: registerNewDomain === 'true',
+        acceptOwnedDomain: acceptOwnedDomain === 'true',
         deploymentContext,
         contentContext,
       });

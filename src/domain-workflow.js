@@ -7,6 +7,7 @@ import EditorService from './services/editor-service.js';
 import AIService from './services/ai-service.js';
 import WordPressService from './services/wordpress-service.js';
 import { buildWizardData } from './utils/wizard-data.js';
+import pWaitFor from 'p-wait-for';
 
 const CRITICAL_ONBOARDING_STEPS = [
   'site_registered',
@@ -40,6 +41,7 @@ export const WorkflowSteps = {
   CREATING_CLOUDFLARE_ZONE: 'creating_cloudflare_zone',
   SETTING_DNS_RECORDS: 'setting_dns_records',
   UPDATING_NAMESERVERS: 'updating_nameservers',
+  WAITING_FOR_DNS: 'waiting_for_dns',
   CONFIGURING_SECURITY: 'configuring_security',
   COMPLETE: 'complete',
   ERROR: 'error',
@@ -82,6 +84,7 @@ class DomainWorkflow {
     const {
       domain,
       registerNewDomain = false,
+      acceptOwnedDomain = false,
       siteName,
       contacts,
       includeWww = true,
@@ -107,6 +110,7 @@ class DomainWorkflow {
       result.steps.push({ step: 'config_validated', success: true });
 
       // Step 2: Check domain availability (if registering new domain)
+      let alreadyOwned = false;
       if (registerNewDomain) {
         this.emitProgress(WorkflowSteps.CHECKING_DOMAIN, {
           message: `Checking availability of ${domain}...`,
@@ -120,32 +124,62 @@ class DomainWorkflow {
         });
 
         if (!availability.available) {
-          throw new Error(
-            `Domain ${domain} is not available for registration. ` +
-              (availability.premium
-                ? `It's a premium domain priced at $${availability.premiumPrice}`
-                : 'Please try another domain.')
-          );
+          try {
+            await this.namecheap.getDomainInfo(domain);
+            alreadyOwned = true;
+          } catch (e) {
+            alreadyOwned = false;
+          }
+
+          if (!alreadyOwned) {
+            throw new Error(
+              `Domain ${domain} is not available for registration. ` +
+                (availability.premium
+                  ? `It's a premium domain priced at $${availability.premiumPrice}`
+                  : 'Please try another domain.')
+            );
+          }
+
+          if (!acceptOwnedDomain) {
+            console.log(`${domain} is already registered to our Namecheap account; awaiting user confirmation.`);
+            result.needsConfirmation = true;
+            result.alreadyOwnedDomain = domain;
+            result.steps.push({
+              step: 'domain_already_owned',
+              success: true,
+              data: { domain },
+            });
+            return result;
+          }
+
+          console.log(`${domain} is already registered to our Namecheap account; skipping registration step.`);
+          result.steps.push({
+            step: 'domain_already_owned',
+            success: true,
+            data: { domain },
+          });
         }
 
-        // Step 3: Register domain
-        this.emitProgress(WorkflowSteps.REGISTERING_DOMAIN, {
-          message: `Registering domain ${domain}...`,
-        });
+        // Step 3: Register domain (only if we don't already own it)
+        if (!alreadyOwned) {
+          this.emitProgress(WorkflowSteps.REGISTERING_DOMAIN, {
+            message: `Registering domain ${domain}...`,
+          });
 
-        const registrationContacts = contacts || config.domain.defaultContacts;
-        const registration = await this.namecheap.registerDomain(
-          domain,
-          registrationYears,
-          registrationContacts
-        );
+          const registrationContacts = contacts || config.domain.defaultContacts;
+          const registration = await this.namecheap.registerDomain(
+            domain,
+            registrationYears,
+            registrationContacts
+          );
 
-        result.steps.push({
-          step: 'domain_registered',
-          success: true,
-          data: registration,
-        });
-        result.registration = registration;
+          result.steps.push({
+            step: 'domain_registered',
+            success: true,
+            data: registration,
+          });
+          result.registration = registration;
+        }
       }
 
       // Step 4: Create InstaWP site
@@ -175,64 +209,36 @@ class DomainWorkflow {
       result.steps.push({ step: 'site_ready', success: true });
       result.site = { ...site, ...readySite };
 
-      // Step 6: Map domain to InstaWP site
-      this.emitProgress(WorkflowSteps.MAPPING_DOMAIN, {
-        message: `Mapping ${domain} to WordPress site...`,
-      });
+      let zone = null;
 
-      const domainMapping = await this.instawp.mapDomain(site.id, domain, {
-        www: includeWww,
-        routeWww: includeWww,
-      });
-
-      result.steps.push({
-        step: 'domain_mapped',
-        success: true,
-        data: domainMapping,
-      });
-
-      // Extract A record IPs from InstaWP response
-      const aRecordIps = domainMapping.aRecords;
-      if (!aRecordIps || aRecordIps.length === 0) {
-        throw new Error(
-          'Failed to get A record IPs from InstaWP. ' +
-            'The domain was mapped but DNS configuration cannot proceed.'
-        );
-      }
-
-      // Step 7: Create/Get Cloudflare zone
-      this.emitProgress(WorkflowSteps.CREATING_CLOUDFLARE_ZONE, {
-        message: `Setting up Cloudflare zone for ${domain}...`,
-      });
-
-      const zone = await this.cloudflare.getOrCreateZone(domain);
-      result.steps.push({
-        step: 'cloudflare_zone_created',
-        success: true,
-        data: {
-          zoneId: zone.id,
-          nameservers: zone.name_servers,
-        },
-      });
-      result.cloudflare = {
-        zoneId: zone.id,
-        nameservers: zone.name_servers,
-      };
-
-      // Step 8: Set A records in Cloudflare
-      this.emitProgress(WorkflowSteps.SETTING_DNS_RECORDS, {
-        message: 'Configuring DNS A records...',
-      });
-
-      await this.cloudflare.setARecords(zone.id, domain, aRecordIps, includeWww);
-      result.steps.push({
-        step: 'dns_records_set',
-        success: true,
-        data: { ips: aRecordIps },
-      });
-
-      // Step 9: Update nameservers at Namecheap (only if we registered the domain)
       if (registerNewDomain) {
+        this.emitProgress(WorkflowSteps.CREATING_CLOUDFLARE_ZONE, {
+          message: `Setting up Cloudflare zone for ${domain}...`,
+        });
+
+        zone = await this.cloudflare.getOrCreateZone(domain);
+        result.steps.push({
+          step: 'cloudflare_zone_created',
+          success: true,
+          data: { zoneId: zone.id, nameservers: zone.name_servers },
+        });
+        result.cloudflare = { zoneId: zone.id, nameservers: zone.name_servers };
+
+        const cnameTarget = new URL(result.site.wp_url).hostname;
+
+        this.emitProgress(WorkflowSteps.SETTING_DNS_RECORDS, {
+          message: `Pointing DNS at ${cnameTarget}...`,
+        });
+
+        await this.cloudflare.setCnameRecords(zone.id, domain, cnameTarget, includeWww, {
+          proxied: false,
+        });
+        result.steps.push({
+          step: 'dns_records_set',
+          success: true,
+          data: { cname: cnameTarget, www: includeWww },
+        });
+
         this.emitProgress(WorkflowSteps.UPDATING_NAMESERVERS, {
           message: 'Updating nameservers to Cloudflare...',
         });
@@ -243,22 +249,49 @@ class DomainWorkflow {
           success: true,
           data: { nameservers: zone.name_servers },
         });
-      } else {
-        // For existing domains, provide instructions to update nameservers manually
-        result.nameserverInstructions = {
-          message: 'Please update your domain nameservers to:',
-          nameservers: zone.name_servers,
-          note: 'Update these at your domain registrar to complete setup. DNS propagation typically takes 5-15 minutes but can take up to 48 hours.',
-        };
       }
 
-      // Step 10: Configure Cloudflare security settings
-      this.emitProgress(WorkflowSteps.CONFIGURING_SECURITY, {
-        message: 'Configuring Cloudflare security and performance settings...',
+      this.emitProgress(WorkflowSteps.MAPPING_DOMAIN, {
+        message: `Mapping ${domain} to WordPress site...`,
       });
 
-      await this.cloudflare.configureSecurity(zone.id);
-      result.steps.push({ step: 'security_configured', success: true });
+      const mapStart = Date.now();
+      const domainMapping = await pWaitFor(
+        async () => {
+          try {
+            const value = await this.instawp.mapDomain(site.id, domain, {
+              www: includeWww,
+              routeWww: includeWww,
+            });
+            return { value };
+          } catch (err) {
+            if (/DNS not configured|DNS resolves to wrong IP/i.test(err.message || '')) {
+              const elapsed = Math.floor((Date.now() - mapStart) / 1000);
+              this.emitProgress(WorkflowSteps.MAPPING_DOMAIN, {
+                message: `Waiting for DNS to propagate (${elapsed}s elapsed)...`,
+              });
+              return false;
+            }
+            throw err;
+          }
+        },
+        { interval: 60_000, timeout: 5 * 60_000, resolveWith: (x) => x.value }
+      );
+
+      result.steps.push({
+        step: 'domain_mapped',
+        success: true,
+        data: domainMapping,
+      });
+
+      if (zone) {
+        this.emitProgress(WorkflowSteps.CONFIGURING_SECURITY, {
+          message: 'Configuring Cloudflare security and performance settings...',
+        });
+
+        await this.cloudflare.configureSecurity(zone.id);
+        result.steps.push({ step: 'security_configured', success: true });
+      }
 
       // SSL info - it will auto-generate once DNS propagates
       result.ssl = {
@@ -322,6 +355,7 @@ class DomainWorkflow {
     const {
       domain,
       registerNewDomain = false,
+      acceptOwnedDomain = false,
       deploymentContext,
       contentContext,
       editorPreference,
@@ -335,6 +369,7 @@ class DomainWorkflow {
     const result = await this.execute({
       domain,
       registerNewDomain,
+      acceptOwnedDomain,
       siteName: siteName || domain?.replace(/\./g, '-'),
       contacts,
       includeWww,
@@ -877,30 +912,33 @@ class DomainWorkflow {
         order: 5,
       },
       {
-        id: WorkflowSteps.MAPPING_DOMAIN,
-        label: 'Mapping domain to site',
-        order: 6,
-      },
-      {
         id: WorkflowSteps.CREATING_CLOUDFLARE_ZONE,
         label: 'Creating Cloudflare zone',
-        order: 7,
+        order: 6,
+        conditional: 'registerNewDomain',
       },
       {
         id: WorkflowSteps.SETTING_DNS_RECORDS,
         label: 'Setting DNS records',
-        order: 8,
+        order: 7,
+        conditional: 'registerNewDomain',
       },
       {
         id: WorkflowSteps.UPDATING_NAMESERVERS,
         label: 'Updating nameservers',
-        order: 9,
+        order: 8,
         conditional: 'registerNewDomain',
+      },
+      {
+        id: WorkflowSteps.MAPPING_DOMAIN,
+        label: 'Mapping domain to site',
+        order: 9,
       },
       {
         id: WorkflowSteps.CONFIGURING_SECURITY,
         label: 'Configuring security',
         order: 10,
+        conditional: 'registerNewDomain',
       },
       {
         id: WorkflowSteps.COMPLETE,

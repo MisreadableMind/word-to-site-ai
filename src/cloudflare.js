@@ -211,6 +211,42 @@ class CloudflareAPI {
     console.log(`✅ A records configured successfully`);
   }
 
+  async setCnameRecords(zoneId, domainName, target, includeWww = true, { proxied = false } = {}) {
+    console.log(`Setting CNAME records for ${domainName} → ${target} (proxied=${proxied})`);
+
+    const apexNames = new Set([domainName, '@']);
+    const wwwNames = new Set([`www.${domainName}`, 'www']);
+    const conflictNames = includeWww ? new Set([...apexNames, ...wwwNames]) : apexNames;
+
+    for (const type of ['CNAME', 'A', 'AAAA']) {
+      const existing = await this.listDnsRecords(zoneId, type);
+      const toDelete = existing.filter((r) => conflictNames.has(r.name));
+      for (const record of toDelete) {
+        await this.deleteDnsRecord(zoneId, record.id);
+      }
+    }
+
+    await this.createDnsRecord(zoneId, {
+      type: 'CNAME',
+      name: domainName,
+      content: target,
+      ttl: 1,
+      proxied,
+    });
+
+    if (includeWww) {
+      await this.createDnsRecord(zoneId, {
+        type: 'CNAME',
+        name: `www.${domainName}`,
+        content: target,
+        ttl: 1,
+        proxied,
+      });
+    }
+
+    console.log(`✅ CNAME records configured successfully`);
+  }
+
   async getNameservers(domainName) {
     const zone = await this.getOrCreateZone(domainName);
     return zone.name_servers;

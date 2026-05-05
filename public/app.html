@@ -2286,6 +2286,7 @@
 
     const MAX_DEPLOY_RETRIES = 3;
     let deployRetryCount = 0;
+    let acceptOwnedDomain = false;
 
     async function loadRecommendedSkins() {
         const container = document.getElementById('skinPickerContent');
@@ -2412,6 +2413,7 @@
     async function confirmOnboarding() {
         if (!onboardingResult) return;
         deployRetryCount = 0;
+        acceptOwnedDomain = false;
         const ok = await preflightDomain();
         if (!ok) return;
         await runDeploy();
@@ -2502,6 +2504,7 @@
         if (domain) {
             params.set('domain', domain);
             params.set('registerNewDomain', String(registerNewDomain));
+            if (acceptOwnedDomain) params.set('acceptOwnedDomain', 'true');
         }
 
         const eventSource = new EventSource(`/api/onboard/confirm/stream?${params.toString()}`);
@@ -2513,7 +2516,11 @@
                 eventSource.close();
                 loading.classList.remove('active');
                 workflowProgress.classList.remove('active');
-                data.data.success ? displayWizardResult(data.data) : displayDeployError(data.data.error || 'Deployment failed');
+                if (data.data.needsConfirmation) {
+                    displayOwnedDomainConfirmation(data.data.alreadyOwnedDomain || domain);
+                } else {
+                    data.data.success ? displayWizardResult(data.data) : displayDeployError(data.data.error || 'Deployment failed');
+                }
             } else if (data.step === 'error') {
                 eventSource.close();
                 loading.classList.remove('active');
@@ -2541,6 +2548,7 @@
 
     function backToDomainFromError() {
         deployRetryCount = 0;
+        acceptOwnedDomain = false;
         const resultEl = document.getElementById('result');
         resultEl.classList.remove('active');
         resultEl.innerHTML = '';
@@ -2567,6 +2575,7 @@
             if (domain) {
                 body.domain = domain;
                 body.registerNewDomain = registerNewDomain;
+                if (acceptOwnedDomain) body.acceptOwnedDomain = true;
             }
 
             const res = await fetch('/api/onboard/confirm', {
@@ -2577,7 +2586,11 @@
             const data = await res.json();
             loading.classList.remove('active');
             workflowProgress.classList.remove('active');
-            data.success ? displayWizardResult(data) : displayDeployError(data.error || 'Deployment failed');
+            if (data.needsConfirmation) {
+                displayOwnedDomainConfirmation(data.alreadyOwnedDomain || domain);
+            } else {
+                data.success ? displayWizardResult(data) : displayDeployError(data.error || 'Deployment failed');
+            }
         } catch (e) {
             loading.classList.remove('active');
             workflowProgress.classList.remove('active');
@@ -2785,6 +2798,28 @@
             <div class="error-detail"><p>${text}</p></div>
             <p class="error-subline">Check your configuration and try again.</p>
         </div>`;
+    }
+
+    function displayOwnedDomainConfirmation(domain) {
+        const el = document.getElementById('result');
+        el.classList.add('active');
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('workflowProgress').classList.remove('active');
+        el.innerHTML = `<div class="result-card error">
+            <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg> Domain already registered</h3>
+            <div class="error-detail"><p><strong>${domain}</strong> is already registered to your account from a previous deploy. Continue setting up its DNS and WordPress site?</p></div>
+            <p class="error-subline">A new WordPress site will be created and pointed at this domain.</p>
+            <div class="error-actions">
+                <button class="btn btn-ghost" onclick="backToDomainFromError()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmOwnedDomainAndRetry()">Continue</button>
+            </div>
+        </div>`;
+    }
+
+    async function confirmOwnedDomainAndRetry() {
+        acceptOwnedDomain = true;
+        deployRetryCount = 0;
+        await runDeploy();
     }
 
     function displayDomainConfigError(domain, cnameTarget, hasAnyDns) {
