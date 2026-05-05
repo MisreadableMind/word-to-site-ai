@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import multer from 'multer';
+import dns from 'dns';
 import InstaWPSiteCreator from './index.js';
 import { sanitizeSiteName } from './instawp.js';
 import DomainWorkflow from './domain-workflow.js';
@@ -635,6 +636,50 @@ app.get('/api/onboard/flows', (req, res) => {
   res.json({
     flows: OnboardingWorkflow.getFlowOptions(),
   });
+});
+
+app.get('/api/onboard/check-domain-dns', async (req, res) => {
+  const domain = (req.query.domain || '').toString().trim().toLowerCase();
+  if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+    return res.status(400).json({ error: 'Valid domain is required' });
+  }
+
+  const baseHostMatcher = /\.at\.wordtosite\.ai$|\.wordtosite\.ai$|\.instawp\.xyz$|\.instawp\.com$/i;
+  const expectedCnameTarget = `${domain.replace(/\./g, '-')}.at.wordtosite.ai`;
+
+  const result = {
+    domain,
+    expectedCnameTarget,
+    resolves: false,
+    pointsHere: false,
+    cname: [],
+    a: [],
+  };
+
+  try {
+    const cname = await dns.promises.resolveCname(domain);
+    result.cname = cname;
+    result.resolves = result.resolves || cname.length > 0;
+    result.pointsHere = cname.some((c) => baseHostMatcher.test(c.toLowerCase()));
+  } catch (err) {
+    if (err.code !== 'ENODATA' && err.code !== 'ENOTFOUND') {
+      console.warn(`CNAME lookup for ${domain} failed:`, err.code || err.message);
+    }
+  }
+
+  if (!result.pointsHere) {
+    try {
+      const a = await dns.promises.resolve4(domain);
+      result.a = a;
+      result.resolves = result.resolves || a.length > 0;
+    } catch (err) {
+      if (err.code !== 'ENODATA' && err.code !== 'ENOTFOUND') {
+        console.warn(`A-record lookup for ${domain} failed:`, err.code || err.message);
+      }
+    }
+  }
+
+  res.json(result);
 });
 
 // Flow A: Analyze existing website

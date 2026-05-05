@@ -286,7 +286,6 @@ class DomainWorkflow {
     } catch (error) {
       this.emitProgress(WorkflowSteps.ERROR, {
         message: error.message,
-        error: error,
       });
 
       result.error = error.message;
