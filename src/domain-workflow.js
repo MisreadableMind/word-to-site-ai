@@ -7,7 +7,7 @@ import EditorService from './services/editor-service.js';
 import AIService from './services/ai-service.js';
 import WordPressService from './services/wordpress-service.js';
 import { buildWizardData } from './utils/wizard-data.js';
-import pWaitFor from 'p-wait-for';
+import pRetry from 'p-retry';
 
 const CRITICAL_ONBOARDING_STEPS = [
   'site_registered',
@@ -255,27 +255,24 @@ class DomainWorkflow {
         message: `Mapping ${domain} to WordPress site...`,
       });
 
+      const isMapDomainDnsError = (err) =>
+        err?.status === 422 && err?.fieldErrors?.name?.length > 0;
+
       const mapStart = Date.now();
-      const domainMapping = await pWaitFor(
-        async () => {
-          try {
-            const value = await this.instawp.mapDomain(site.id, domain, {
-              www: includeWww,
-              routeWww: includeWww,
+      const domainMapping = await pRetry(
+        () => this.instawp.mapDomain(site.id, domain, { www: includeWww, routeWww: includeWww }),
+        {
+          retries: 5,
+          minTimeout: 60_000,
+          factor: 1,
+          shouldRetry: ({ error }) => isMapDomainDnsError(error),
+          onFailedAttempt: ({ attemptNumber }) => {
+            const elapsed = Math.floor((Date.now() - mapStart) / 1000);
+            this.emitProgress(WorkflowSteps.MAPPING_DOMAIN, {
+              message: `Waiting for DNS to propagate (attempt ${attemptNumber}, ${elapsed}s elapsed)...`,
             });
-            return { value };
-          } catch (err) {
-            if (/DNS not configured|DNS resolves to wrong IP/i.test(err.message || '')) {
-              const elapsed = Math.floor((Date.now() - mapStart) / 1000);
-              this.emitProgress(WorkflowSteps.MAPPING_DOMAIN, {
-                message: `Waiting for DNS to propagate (${elapsed}s elapsed)...`,
-              });
-              return false;
-            }
-            throw err;
-          }
-        },
-        { interval: 60_000, timeout: 5 * 60_000, resolveWith: (x) => x.value }
+          },
+        }
       );
 
       result.steps.push({

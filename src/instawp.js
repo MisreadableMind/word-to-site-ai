@@ -53,7 +53,10 @@ class InstaWPAPI {
         console.error(`  Status: ${error.response.status}`);
         console.error(`  Response body:`, JSON.stringify(error.response.data, null, 2));
         console.error(`  Request body:`, JSON.stringify(data, null, 2));
-        throw new Error(`InstaWP API Error: ${error.response.status} - ${errorMessage}`);
+        const wrapped = new Error(`InstaWP API Error: ${error.response.status} - ${errorMessage}`);
+        wrapped.status = error.response.status;
+        wrapped.fieldErrors = fieldErrors ?? null;
+        throw wrapped;
       }
       throw error;
     }
