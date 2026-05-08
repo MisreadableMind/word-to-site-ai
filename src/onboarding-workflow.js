@@ -430,9 +430,11 @@ class OnboardingWorkflow {
 
       // Enhance with brief data
       if (brief.businessInfo) {
+        const { contactInfo: briefContact, ...rest } = brief.businessInfo;
         context.business = {
           ...context.business,
-          ...brief.businessInfo,
+          ...rest,
+          contactInfo: { ...context.business.contactInfo, ...(briefContact || {}) },
         };
       }
 

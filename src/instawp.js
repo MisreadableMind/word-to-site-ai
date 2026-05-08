@@ -215,6 +215,7 @@ class InstaWPAPI {
         }
         if (isActive(site.status)) {
           activeSite = site;
+          console.log(`Site ${siteId} reached active status (${site.status}); waiting for URL to be reachable...`);
           return true;
         }
         console.log(`Site ${siteId} status: ${site.status} (waiting for active)...`);
@@ -235,16 +236,21 @@ class InstaWPAPI {
 
     notify({ phase: 'booting', message: 'WordPress is starting up...' });
 
+    let probeAttempt = 0;
     try {
       await pWaitFor(async () => {
+        probeAttempt++;
         try {
           const probe = await fetch(siteUrl, {
             method: 'HEAD',
             redirect: 'manual',
             signal: AbortSignal.timeout(8000),
           });
-          return probe.status < 400;
-        } catch {
+          if (probe.status < 400) return true;
+          console.log(`Probing ${siteUrl}: HTTP ${probe.status} (attempt ${probeAttempt})`);
+          return false;
+        } catch (err) {
+          console.log(`Probing ${siteUrl}: ${err.message} (attempt ${probeAttempt})`);
           return false;
         }
       }, { interval: 3000, timeout: maxWaitTime });

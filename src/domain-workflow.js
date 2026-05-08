@@ -6,11 +6,10 @@ import { DEFAULTS } from './constants.js';
 import EditorService from './services/editor-service.js';
 import AIService from './services/ai-service.js';
 import WordPressService from './services/wordpress-service.js';
-import { buildWizardData } from './utils/wizard-data.js';
+import { prepareWizardData } from './services/business-structurer.js';
 import pRetry from 'p-retry';
 
 const CRITICAL_ONBOARDING_STEPS = [
-  'site_registered',
   'skin_switched',
   'deployment_applied',
   'wizard_data_saved',
@@ -513,13 +512,6 @@ class DomainWorkflow {
       password: site.password,
     });
 
-    // Register site with wizard plugin
-    try {
-      await wp.registerSite(site.username, site.password);
-    } catch (error) {
-      console.warn('Failed to register site with wizard:', error.message);
-    }
-
     const results = { applied: true, favicon, template: context.template?.slug };
 
     // 0. Switch skin if a non-default template was selected
@@ -589,7 +581,10 @@ class DomainWorkflow {
     // Save wizard data to the plugin
     if (contentContext || context.branding) {
       try {
-        const wizardData = buildWizardData(context, contentContext, site);
+        this.emitProgress('structuring_business', {
+          message: 'Structuring company info...',
+        });
+        const wizardData = await prepareWizardData(context, contentContext, site);
         await wp.saveWizardData(wizardData);
         results.wizardDataSaved = true;
         console.log('  Wizard data saved');
