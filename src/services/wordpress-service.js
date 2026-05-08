@@ -410,27 +410,6 @@ class WordPressService {
       }),
     });
   }
-  // ==========================================
-  // WaaS Wizard Registration
-  // ==========================================
-
-  /**
-   * Register the site with the TRX WaaS Wizard plugin so it can
-   * make authenticated REST calls on itself.
-   * @param {string} appUsername - WP admin username
-   * @param {string} appPassword - WP admin password
-   * @returns {Promise<Object>} Registration result
-   */
-  async registerSite(appUsername, appPassword) {
-    return this.requestRaw('trx-waas-wizard/v1/register-site', {
-      method: 'POST',
-      body: JSON.stringify({
-        app_username: appUsername,
-        app_password: appPassword,
-      }),
-    });
-  }
-
   /**
    * Save wizard data (company info, site settings) in one shot
    * @param {Object} data - Flat object with wizard fields

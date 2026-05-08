@@ -363,6 +363,8 @@ Return JSON:
 Interview Answers:
 ${JSON.stringify(interviewAnswers, null, 2)}
 
+Always populate contactInfo.address if a physical address is mentioned, in addition to location.
+
 Return a JSON object with:
 {
   "businessInfo": {
@@ -373,7 +375,11 @@ Return a JSON object with:
     "targetAudience": "",
     "uniqueSellingPoints": [],
     "location": "",
-    "contactInfo": {}
+    "contactInfo": {
+      "phone": "",
+      "email": "",
+      "address": ""
+    }
   },
   "websiteGoals": [],
   "preferredStyle": "",

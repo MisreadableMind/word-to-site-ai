@@ -9,7 +9,7 @@ import { sanitizeSiteName } from './instawp.js';
 import DomainWorkflow from './domain-workflow.js';
 import NamecheapAPI from './namecheap.js';
 import { config, validateDomainConfig, toWpLocale } from './config.js';
-import { buildWizardData } from './utils/wizard-data.js';
+import { prepareWizardData } from './services/business-structurer.js';
 import OnboardingWorkflow, { OnboardingSteps } from './onboarding-workflow.js';
 import ExcerptService from './services/excerpt-service.js';
 import EditorService from './services/editor-service.js';
@@ -37,7 +37,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const CRITICAL_ONBOARDING_STEPS = [
-  'site_registered',
   'skin_switched',
   'deployment_applied',
   'wizard_data_saved',
@@ -1062,15 +1061,6 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
         password: config.instawp.snapshotWpPassword,
       });
 
-      try {
-        await wp.registerSite(config.instawp.snapshotWpUsername, config.instawp.snapshotWpPassword);
-        result.steps.push({ step: 'site_registered', success: true });
-      } catch (error) {
-        console.error('Failed to register site:', error.message);
-        result.steps.push({ step: 'site_registered', success: false, error: error.message });
-        return res.json(withAggregateSuccess(result));
-      }
-
       const skinSlug = templateSlug || deploymentContext.template?.slug;
       if (skinSlug && skinSlug !== 'default') {
         try {
@@ -1107,7 +1097,7 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
       }
 
       try {
-        const wizardData = buildWizardData(deploymentContext, contentContext, site);
+        const wizardData = await prepareWizardData(deploymentContext, contentContext, site);
         await wp.saveWizardData(wizardData);
         result.steps.push({ step: 'wizard_data_saved', success: true });
       } catch (error) {
@@ -1366,19 +1356,6 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
           password: config.instawp.snapshotWpPassword,
         });
 
-        sendProgress('registering_site', { message: 'Registering site with wizard...' });
-        try {
-          await wp.registerSite(config.instawp.snapshotWpUsername, config.instawp.snapshotWpPassword);
-          result.steps.push({ step: 'site_registered', success: true });
-        } catch (error) {
-          console.error('Failed to register site:', error.message);
-          result.steps.push({ step: 'site_registered', success: false, error: error.message });
-          const finalResult = withAggregateSuccess(result);
-          res.write(`data: ${JSON.stringify({ step: 'result', data: finalResult })}\n\n`);
-          res.end();
-          return;
-        }
-
         const skinSlug = templateSlug || deploymentContext.template?.slug;
         if (skinSlug && skinSlug !== 'default') {
           sendProgress('switching_skin', { message: `Switching skin to "${skinSlug}"...` });
@@ -1414,9 +1391,10 @@ app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
           result.steps.push({ step: 'deployment_applied', success: false, error: error.message });
         }
 
-        sendProgress('saving_wizard_data', { message: 'Saving wizard data...' });
+        sendProgress('structuring_business', { message: 'Structuring company info...' });
         try {
-          const wizardData = buildWizardData(deploymentContext, contentContext, site);
+          const wizardData = await prepareWizardData(deploymentContext, contentContext, site);
+          sendProgress('saving_wizard_data', { message: 'Saving wizard data...' });
           await wp.saveWizardData(wizardData);
           result.steps.push({ step: 'wizard_data_saved', success: true });
         } catch (error) {

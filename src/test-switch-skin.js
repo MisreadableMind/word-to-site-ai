@@ -1,5 +1,5 @@
 /**
- * E2E test: create site from snapshot → register → switch-skin
+ * E2E test: create site from snapshot → switch-skin
  *
  * Usage: node src/test-switch-skin.js [skin-slug]
  * Default skin: kindergarten
@@ -52,18 +52,8 @@ async function main() {
 
   const wp = new WordPressService(url, { username, password });
 
-  // Step 3: Register site with WaaS Wizard
-  console.log('--- Step 3: registerSite() ---');
-  try {
-    const res = await wp.registerSite(username, password);
-    console.log('  Result:', JSON.stringify(res));
-  } catch (err) {
-    console.error('  FAILED:', err.message);
-  }
-  console.log('');
-
-  // Step 4: Switch skin (POST-based polling)
-  console.log(`--- Step 4: switchSkin("${skinSlug}") ---`);
+  // Step 3: Switch skin (POST-based polling)
+  console.log(`--- Step 3: switchSkin("${skinSlug}") ---`);
   try {
     const res = await wp.switchSkin(skinSlug, {
       onProgress: (p) => console.log(`  [${p.phase}] ${p.message}${p.status ? ` (status: ${p.status})` : ''}`),
