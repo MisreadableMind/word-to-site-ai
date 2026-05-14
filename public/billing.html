@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <title>WordToSite | Billing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #FFFDF7; --bg-subtle: #FFF8F0;
+            --surface: #FFFFFF; --surface-hover: #FFF5EC;
+            --border: rgba(140, 120, 100, 0.18); --border-hover: rgba(140, 120, 100, 0.30);
+            --text: #2D2926; --text-secondary: #4A4540; --text-muted: #8A8580;
+            --accent: #6C5CE7; --accent-bright: #5A4BD1; --accent-dim: rgba(108,92,231,0.10);
+            --green: #16A34A; --green-dim: rgba(22,163,74,0.12);
+            --warn: #B45309; --warn-dim: rgba(180,83,9,0.08);
+            --error: #DC2626; --error-dim: rgba(220,38,38,0.06);
+            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
+            --radius: 12px; --radius-sm: 8px;
+        }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px); background-size: 64px 64px; pointer-events: none; z-index: 0; }
+        .grid-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent); }
+        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,253,247,0.8); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); border-bottom: 1px solid var(--border); }
+        .nav-inner { max-width: 720px; margin: 0 auto; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+        .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 700; font-size: 15px; letter-spacing: -0.3px; }
+        .nav-logo { width: 28px; height: 28px; background: linear-gradient(135deg, #6C5CE7, #5A4BD1); border-radius: 7px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(108,92,231,0.3); }
+        .nav-logo svg { width: 15px; height: 15px; }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-link { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; color: var(--text-muted); padding: 6px 12px; border-radius: 6px; transition: all 150ms; text-decoration: none; }
+        .nav-link:hover { color: var(--text-secondary); background: var(--accent-dim); }
+        .main { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 92px 24px 60px; }
+        .main h1 { font-size: 24px; font-weight: 700; margin-bottom: 32px; }
+        .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 24px; margin-bottom: 20px; }
+        .section h2 { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+        .info-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--text-muted); font-size: 13px; }
+        .info-value { font-weight: 500; }
+        .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
+        .badge-plan { background: var(--accent-dim); color: var(--accent); }
+        .badge-status-active { background: var(--green-dim); color: var(--green); }
+        .badge-status-past_due, .badge-status-canceled { background: var(--warn-dim); color: var(--warn); }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; font-family: inherit; font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; transition: all 150ms; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); text-decoration: none; }
+        .btn:hover { border-color: var(--border-hover); background: var(--surface-hover); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn-primary:hover { background: var(--accent-bright); }
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+        .banner { padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 20px; display: none; }
+        .banner.success { display: block; background: var(--green-dim); color: var(--green); border: 1px solid rgba(22,163,74,0.15); }
+        .banner.warn { display: block; background: var(--warn-dim); color: var(--warn); border: 1px solid rgba(180,83,9,0.15); }
+        .banner.error { display: block; background: var(--error-dim); color: var(--error); border: 1px solid rgba(220,38,38,0.15); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table th, table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+        table th { font-weight: 600; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+        table td a { color: var(--accent); text-decoration: none; }
+        .muted { color: var(--text-muted); font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="/">
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <span>WordToSite</span>
+        </a>
+        <div class="nav-right">
+            <a class="nav-link" href="/dashboard.html">Dashboard</a>
+            <a class="nav-link" href="/profile.html">Profile</a>
+        </div>
+    </div>
+</nav>
+
+<div class="main">
+    <h1>Billing</h1>
+
+    <div class="banner" id="banner"></div>
+
+    <div class="section">
+        <h2>Current plan</h2>
+        <div class="info-row">
+            <span class="info-label">Plan</span>
+            <span class="badge badge-plan" id="planBadge">—</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Status</span>
+            <span class="badge" id="statusBadge">—</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Sites used</span>
+            <span class="info-value" id="sitesUsed">—</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">AI tokens / month</span>
+            <span class="info-value" id="tokenLimit">—</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Domain credits remaining</span>
+            <span class="info-value" id="domainCredits">—</span>
+        </div>
+        <div class="info-row" id="periodEndRow" style="display:none">
+            <span class="info-label">Renews on</span>
+            <span class="info-value" id="periodEnd">—</span>
+        </div>
+        <div class="btn-row">
+            <a class="btn btn-primary" href="/pricing.html" id="upgradeBtn">Change plan</a>
+            <button class="btn" id="portalBtn">Manage subscription</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Invoices</h2>
+        <div id="invoicesContainer" class="muted">Loading…</div>
+    </div>
+</div>
+
+<script>
+async function load() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('status') === 'success') {
+        showBanner('success', 'Subscription updated. It may take a moment for the new plan to appear here.');
+    }
+
+    let me;
+    try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) throw new Error();
+        me = (await res.json()).user;
+    } catch {
+        location.href = '/login.html';
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/billing/subscription');
+        if (!res.ok) {
+            if (res.status === 404) {
+                showBanner('warn', 'Billing is not enabled on this deployment.');
+                return;
+            }
+            throw new Error('Failed to load billing');
+        }
+        const data = await res.json();
+        renderSubscription(data);
+    } catch (err) {
+        showBanner('error', err.message);
+    }
+
+    try {
+        const res = await fetch('/api/billing/invoices');
+        if (res.ok) {
+            renderInvoices((await res.json()).invoices);
+        } else {
+            document.getElementById('invoicesContainer').textContent = 'No invoices yet.';
+        }
+    } catch {
+        document.getElementById('invoicesContainer').textContent = 'Could not load invoices.';
+    }
+}
+
+function renderSubscription(data) {
+    const ent = data.entitlements;
+    document.getElementById('planBadge').textContent = ent.label || data.planTier;
+    document.getElementById('sitesUsed').textContent = `${data.usage.sitesUsed} / ${ent.maxSites}`;
+    document.getElementById('tokenLimit').textContent = ent.monthlyTokens.toLocaleString();
+    document.getElementById('domainCredits').textContent = `${data.usage.domainCreditsRemaining} / ${ent.includedDomains}`;
+
+    const statusEl = document.getElementById('statusBadge');
+    const sub = data.subscription;
+    if (sub) {
+        statusEl.textContent = sub.status;
+        statusEl.className = 'badge badge-status-' + sub.status;
+        if (sub.currentPeriodEnd) {
+            document.getElementById('periodEndRow').style.display = '';
+            const date = new Date(sub.currentPeriodEnd);
+            const label = sub.cancelAtPeriodEnd ? 'Ends on' : 'Renews on';
+            document.querySelector('#periodEndRow .info-label').textContent = label;
+            document.getElementById('periodEnd').textContent = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+        if (sub.status === 'past_due') {
+            showBanner('warn', 'A recent payment failed. Update your payment method via "Manage subscription" to avoid losing access.');
+        }
+        if (sub.cancelAtPeriodEnd) {
+            showBanner('warn', 'Your subscription is set to cancel at the end of the current period.');
+        }
+    } else {
+        statusEl.textContent = 'Free';
+        statusEl.className = 'badge badge-plan';
+        document.getElementById('portalBtn').style.display = 'none';
+    }
+}
+
+function renderInvoices(invoices) {
+    const el = document.getElementById('invoicesContainer');
+    if (!invoices || invoices.length === 0) {
+        el.textContent = 'No invoices yet.';
+        return;
+    }
+    const rows = invoices.map(inv => {
+        const date = new Date(inv.created * 1000).toLocaleDateString();
+        const amount = (inv.amountPaid / 100).toFixed(2);
+        const link = inv.hostedInvoiceUrl ? `<a href="${inv.hostedInvoiceUrl}" target="_blank" rel="noopener">View</a>` : '';
+        const pdf = inv.invoicePdf ? `<a href="${inv.invoicePdf}" target="_blank" rel="noopener">PDF</a>` : '';
+        return `<tr><td>${inv.number || inv.id}</td><td>${date}</td><td>${inv.status}</td><td>$${amount} ${inv.currency.toUpperCase()}</td><td>${link} ${pdf}</td></tr>`;
+    }).join('');
+    el.innerHTML = `<table>
+        <thead><tr><th>Number</th><th>Date</th><th>Status</th><th>Amount</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function showBanner(type, text) {
+    const el = document.getElementById('banner');
+    el.className = `banner ${type}`;
+    el.textContent = text;
+}
+
+document.getElementById('portalBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('portalBtn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/billing/portal', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Failed');
+        location.href = data.url;
+    } catch (err) {
+        showBanner('error', err.message);
+        btn.disabled = false;
+    }
+});
+
+load();
+</script>
+</body>
+</html>
