@@ -5,6 +5,8 @@ export const PLAN_TIERS = {
   BUSINESS: 'business',
 };
 
+export const DOMAIN_MARKUP_PERCENT = 0.20;
+
 export const PLAN_ENTITLEMENTS = {
   free: {
     label: 'Free',
@@ -12,7 +14,6 @@ export const PLAN_ENTITLEMENTS = {
     lookupKey: null,
     maxSites: 1,
     customDomain: false,
-    includedDomains: 0,
     monthlyTokens: 50_000,
     voicePerDay: 5,
     watermark: true,
@@ -23,7 +24,6 @@ export const PLAN_ENTITLEMENTS = {
     lookupKey: 'wts_starter',
     maxSites: 1,
     customDomain: 'byod',
-    includedDomains: 0,
     monthlyTokens: 250_000,
     voicePerDay: 25,
     watermark: false,
@@ -34,7 +34,6 @@ export const PLAN_ENTITLEMENTS = {
     lookupKey: 'wts_pro',
     maxSites: 3,
     customDomain: 'managed',
-    includedDomains: 1,
     monthlyTokens: 1_000_000,
     voicePerDay: 100,
     watermark: false,
@@ -45,7 +44,6 @@ export const PLAN_ENTITLEMENTS = {
     lookupKey: 'wts_business',
     maxSites: 10,
     customDomain: 'managed',
-    includedDomains: 5,
     monthlyTokens: 5_000_000,
     voicePerDay: 500,
     watermark: false,

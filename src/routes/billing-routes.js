@@ -71,7 +71,6 @@ export default function createBillingRouter(billingService, authService) {
       const planTier = req.user.planTier || PLAN_TIERS.FREE;
       const ent = getEntitlements(planTier);
       const siteCount = await billingService.getSiteCount(req.user.id);
-      const domainCreditsUsed = await billingService.getDomainCreditsUsed(req.user.id);
 
       res.json({
         success: true,
@@ -79,8 +78,6 @@ export default function createBillingRouter(billingService, authService) {
         entitlements: ent,
         usage: {
           sitesUsed: siteCount,
-          domainCreditsUsed,
-          domainCreditsRemaining: Math.max(0, ent.includedDomains - domainCreditsUsed),
         },
         subscription: sub
           ? {

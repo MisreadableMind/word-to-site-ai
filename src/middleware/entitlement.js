@@ -33,7 +33,7 @@ export function requireSiteCreate(billingService) {
   };
 }
 
-export function requireCustomDomain(billingService) {
+export function requireCustomDomain() {
   return async (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ error: { message: 'Authentication required', type: 'authentication_error' } });
@@ -41,7 +41,6 @@ export function requireCustomDomain(billingService) {
     const planTier = req.user.planTier || 'free';
 
     const source = (req.body && Object.keys(req.body).length > 0) ? req.body : (req.query || {});
-    const wantsRegistration = source.registerNewDomain === true || source.registerNewDomain === 'true';
     const wantsAnyDomain = Boolean(source.domain);
 
     if (wantsAnyDomain && !allowsCustomDomain(planTier)) {
@@ -52,25 +51,24 @@ export function requireCustomDomain(billingService) {
       });
     }
 
-    if (wantsRegistration) {
-      if (!allowsCustomDomainRegistration(planTier)) {
-        return paymentRequired(res, {
-          message: 'Domain registration requires the Pro or Business plan.',
-          currentPlan: planTier,
-          requiredFor: 'domainRegistration',
-        });
-      }
-      const ent = getEntitlements(planTier);
-      const used = await billingService.getDomainCreditsUsed(req.user.id);
-      if (used >= ent.includedDomains) {
-        return paymentRequired(res, {
-          message: `Domain credits exhausted (${used}/${ent.includedDomains}). Upgrade to register more domains.`,
-          currentPlan: planTier,
-          requiredFor: 'domainCredit',
-        });
-      }
-    }
+    req.entitlements = getEntitlements(planTier);
+    next();
+  };
+}
 
+export function requireDomainPurchase() {
+  return async (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: { message: 'Authentication required', type: 'authentication_error' } });
+    }
+    const planTier = req.user.planTier || 'free';
+    if (!allowsCustomDomainRegistration(planTier)) {
+      return paymentRequired(res, {
+        message: 'Domain registration requires the Pro or Business plan.',
+        currentPlan: planTier,
+        requiredFor: 'domainRegistration',
+      });
+    }
     req.entitlements = getEntitlements(planTier);
     next();
   };

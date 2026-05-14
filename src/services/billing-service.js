@@ -4,15 +4,18 @@ import { fileURLToPath } from 'url';
 import pool from '../db.js';
 import { getStripe, planForPriceId, invalidatePriceCache } from '../billing/stripe-client.js';
 import { getEntitlements, PLAN_TIERS } from '../billing/entitlements.js';
+import { DomainStatus } from './domain-service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default class BillingService {
 
-  constructor({ proxyService = null } = {}) {
+  constructor({ proxyService = null, domainService = null, namecheap = null } = {}) {
     this.initialized = false;
     this.proxyService = proxyService;
+    this.domainService = domainService;
+    this.namecheap = namecheap;
   }
 
   async initialize() {
@@ -83,29 +86,6 @@ export default class BillingService {
       [userId]
     );
     return result.rows[0].count;
-  }
-
-  async getDomainCreditsUsed(userId) {
-    await this.initialize();
-    const result = await pool.query(
-      `SELECT COUNT(*)::int AS count
-       FROM domain_registrations
-       WHERE user_id = $1 AND used_plan_credit = TRUE`,
-      [userId]
-    );
-    return result.rows[0].count;
-  }
-
-  async recordDomainRegistration({ userId, siteId, domain, namecheapOrderId, expiresAt, usedPlanCredit = true }) {
-    await this.initialize();
-    const result = await pool.query(
-      `INSERT INTO domain_registrations
-         (user_id, site_id, domain, namecheap_order_id, expires_at, used_plan_credit)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [userId, siteId || null, domain, namecheapOrderId || null, expiresAt, usedPlanCredit]
-    );
-    return result.rows[0];
   }
 
   async markEventProcessed(eventId, eventType, payload) {
@@ -207,6 +187,10 @@ export default class BillingService {
   }
 
   async _handleCheckoutCompleted(session) {
+    const intent = session.metadata?.intent;
+    if (intent === 'domain_purchase') {
+      return this._handleDomainPurchase(session);
+    }
     if (session.mode !== 'subscription') {
       return { processed: true, reason: 'non-subscription checkout' };
     }
@@ -217,6 +201,75 @@ export default class BillingService {
       return { processed: true, reason: 'unknown customer' };
     }
     return { processed: true, reason: 'subscription event will follow', userId: user.id };
+  }
+
+  async _handleDomainPurchase(session) {
+    if (!this.domainService || !this.namecheap) {
+      console.error('Domain purchase webhook received but domainService/namecheap not wired');
+      return { processed: true, reason: 'misconfigured' };
+    }
+
+    const sessionId = session.id;
+    const paymentIntentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id;
+    const domain = session.metadata?.domain;
+    const userId = session.metadata?.user_id;
+
+    if (!domain || !userId) {
+      console.error('Domain purchase missing metadata:', { sessionId, domain, userId });
+      return { processed: true, reason: 'missing metadata' };
+    }
+
+    const row = await this.domainService.getByCheckoutSession(sessionId);
+    if (!row) {
+      console.warn('Domain purchase webhook for unknown session:', sessionId);
+      return { processed: true, reason: 'unknown session' };
+    }
+    if (row.status === DomainStatus.Registered) {
+      return { processed: true, reason: 'already registered' };
+    }
+
+    await this.domainService.markRegistering(sessionId);
+
+    try {
+      const availability = await this.namecheap.checkDomain(domain);
+      if (!availability.available) {
+        throw new Error(`Domain ${domain} is no longer available`);
+      }
+      if (availability.premium) {
+        throw new Error(`Domain ${domain} is now flagged premium and cannot be auto-registered`);
+      }
+
+      const registration = await this.namecheap.registerDomain(domain, 1);
+      if (!registration.registered) {
+        throw new Error(`Namecheap reported registration unsuccessful for ${domain}`);
+      }
+
+      const expiresAt = new Date();
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+      await this.domainService.markRegistered({
+        sessionId,
+        namecheapOrderId: registration.orderId,
+        paymentIntentId,
+        expiresAt: expiresAt.toISOString(),
+      });
+
+      return { processed: true, domain, orderId: registration.orderId };
+    } catch (err) {
+      console.error(`Domain registration failed for ${domain}; refunding payment:`, err.message);
+      const errorMessage = err.message || 'Unknown error';
+      try {
+        if (paymentIntentId) {
+          await getStripe().refunds.create({ payment_intent: paymentIntentId });
+        }
+      } catch (refundErr) {
+        console.error('Refund creation failed:', refundErr.message);
+      }
+      await this.domainService.markFailed({ sessionId, errorMessage });
+      return { processed: true, reason: 'failed-and-refunded', error: errorMessage };
+    }
   }
 
   async _handleSubscriptionChange(subscription) {

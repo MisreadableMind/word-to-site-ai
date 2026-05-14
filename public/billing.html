@@ -103,10 +103,6 @@
             <span class="info-label">AI tokens / month</span>
             <span class="info-value" id="tokenLimit">—</span>
         </div>
-        <div class="info-row">
-            <span class="info-label">Domain credits remaining</span>
-            <span class="info-value" id="domainCredits">—</span>
-        </div>
         <div class="info-row" id="periodEndRow" style="display:none">
             <span class="info-label">Renews on</span>
             <span class="info-value" id="periodEnd">—</span>
@@ -172,7 +168,6 @@ function renderSubscription(data) {
     document.getElementById('planBadge').textContent = ent.label || data.planTier;
     document.getElementById('sitesUsed').textContent = `${data.usage.sitesUsed} / ${ent.maxSites}`;
     document.getElementById('tokenLimit').textContent = ent.monthlyTokens.toLocaleString();
-    document.getElementById('domainCredits').textContent = `${data.usage.domainCreditsRemaining} / ${ent.includedDomains}`;
 
     const statusEl = document.getElementById('statusBadge');
     const sub = data.subscription;

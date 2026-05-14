@@ -29,10 +29,12 @@ import createProxyRouter from './routes/proxy-routes.js';
 import AuthService from './services/auth-service.js';
 import SiteService from './services/site-service.js';
 import BillingService from './services/billing-service.js';
+import DomainService from './services/domain-service.js';
 import createAuthRouter from './routes/auth-routes.js';
 import createSiteRouter from './routes/site-routes.js';
 import createEditorRouter from './routes/editor-routes.js';
 import createBillingRouter, { createBillingWebhookRouter } from './routes/billing-routes.js';
+import createDomainRouter from './routes/domain-routes.js';
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth.js';
 import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement.js';
 import { getEntitlements as getPlanEntitlements } from './billing/entitlements.js';
@@ -82,7 +84,11 @@ if (proxyService) {
 // User Auth & Sites routes (mounted BEFORE basic auth - uses its own session auth)
 const authService = new AuthService();
 const siteService = new SiteService();
-const billingService = config.stripe?.secretKey ? new BillingService({ proxyService }) : null;
+const namecheapForBilling = config.stripe?.secretKey ? new NamecheapAPI() : null;
+const domainService = config.stripe?.secretKey ? new DomainService() : null;
+const billingService = config.stripe?.secretKey
+  ? new BillingService({ proxyService, domainService, namecheap: namecheapForBilling })
+  : null;
 const aiService = new AIService({ openaiApiKey: config.openai?.apiKey, geminiApiKey: config.gemini?.apiKey });
 const editorService = new EditorService({ aiService, siteService });
 if (config.auth?.enabled !== false) {
@@ -96,12 +102,37 @@ if (config.auth?.enabled !== false) {
 if (billingService) {
   app.use('/api/billing', createBillingWebhookRouter(billingService));
   app.use('/api/billing', express.json(), createBillingRouter(billingService, authService));
+  app.use('/api/domains', express.json(), createDomainRouter({
+    authService,
+    namecheap: namecheapForBilling,
+    billingService,
+    domainService,
+    domainWorkflowFactory: () => new DomainWorkflow({
+      instawpApiKey: config.instawp.apiKey,
+      proxyService,
+    }),
+  }));
 }
 
 const noopMiddleware = (req, res, next) => next();
 const requireAuthForBilling = billingService ? createUserAuth(authService) : noopMiddleware;
 const siteCreateGate = billingService ? requireSiteCreate(billingService) : noopMiddleware;
-const customDomainGate = billingService ? requireCustomDomain(billingService) : noopMiddleware;
+const customDomainGate = billingService ? requireCustomDomain() : noopMiddleware;
+
+function refuseLegacyDomainRegistration(req, res, next) {
+  if (!billingService) return next();
+  const source = (req.body && Object.keys(req.body).length > 0) ? req.body : (req.query || {});
+  if (source.registerNewDomain === true || source.registerNewDomain === 'true') {
+    return res.status(400).json({
+      error: {
+        type: 'flow_moved',
+        message: 'Domain registration is now a separate, payment-confirmed step. Finish onboarding with a subdomain (or "bring your own domain"), then add a custom domain from /domains.html.',
+        redirect: '/domains.html',
+      },
+    });
+  }
+  return next();
+}
 
 // Basic auth middleware (skipped when NODE_ENV=development or user auth is enabled)
 const BASIC_AUTH_PASSWORD = process.env.BASIC_AUTH_PASSWORD || 'WAAS';
@@ -366,7 +397,7 @@ app.post('/api/check-domain', async (req, res) => {
 });
 
 // New: Create site with full domain workflow
-app.post('/api/create-site-with-domain', requireAuthForBilling, siteCreateGate, customDomainGate, async (req, res) => {
+app.post('/api/create-site-with-domain', requireAuthForBilling, refuseLegacyDomainRegistration, siteCreateGate, customDomainGate, async (req, res) => {
   try {
     const {
       apiKey,
@@ -428,7 +459,7 @@ app.post('/api/create-site-with-domain', requireAuthForBilling, siteCreateGate, 
 });
 
 // New: Server-Sent Events for real-time progress
-app.get('/api/create-site-with-domain/stream', requireAuthForBilling, siteCreateGate, customDomainGate, async (req, res) => {
+app.get('/api/create-site-with-domain/stream', requireAuthForBilling, refuseLegacyDomainRegistration, siteCreateGate, customDomainGate, async (req, res) => {
   // Set headers for SSE
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -998,7 +1029,7 @@ const optionalAuth = createOptionalUserAuth(authService);
 
 // Confirm and proceed with deployment (full pipeline)
 const confirmAuth = billingService ? requireAuth : optionalAuth;
-app.post('/api/onboard/confirm', confirmAuth, siteCreateGate, customDomainGate, async (req, res) => {
+app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, siteCreateGate, customDomainGate, async (req, res) => {
   try {
     const {
       sessionId,
@@ -1266,7 +1297,7 @@ app.post('/api/onboard/confirm', confirmAuth, siteCreateGate, customDomainGate, 
 });
 
 // SSE streaming confirm endpoint for real-time deploy progress
-app.get('/api/onboard/confirm/stream', confirmAuth, siteCreateGate, customDomainGate, async (req, res) => {
+app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistration, siteCreateGate, customDomainGate, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
