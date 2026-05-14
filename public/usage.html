@@ -4,253 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <title>WordToSite | Usage</title>
+    <title>word→site | Usage</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/wts.css?v=2">
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --bg: #FFFDF7;
-            --bg-subtle: #FFF8F0;
-            --surface: #FFFFFF;
-            --surface-hover: #FFF5EC;
-            --border: rgba(140, 120, 100, 0.18);
-            --border-hover: rgba(140, 120, 100, 0.30);
-            --text: #2D2926;
-            --text-secondary: #4A4540;
-            --text-muted: #8A8580;
-            --accent: #6C5CE7;
-            --accent-bright: #5A4BD1;
-            --accent-dim: rgba(108,92,231,0.10);
-            --green: #16A34A;
-            --green-dim: rgba(22,163,74,0.12);
-            --warning: #F59E0B;
-            --warning-dim: rgba(245,158,11,0.12);
-            --error: #DC2626;
-            --error-dim: rgba(220,38,38,0.06);
-            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
-            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
-            --radius: 12px;
-            --radius-sm: 8px;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg); color: var(--text);
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .grid-bg {
-            position: fixed; inset: 0;
-            background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
-            background-size: 64px 64px; pointer-events: none; z-index: 0;
-        }
-        .grid-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent); }
-
-        /* NAV */
-        .nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(255,253,247,0.8);
-            backdrop-filter: blur(16px) saturate(1.2);
-            -webkit-backdrop-filter: blur(16px) saturate(1.2);
-            border-bottom: 1px solid var(--border);
-        }
-        .nav-inner {
-            max-width: 720px; margin: 0 auto;
-            padding: 0 24px; height: 60px;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .nav-brand {
-            display: flex; align-items: center; gap: 10px;
-            text-decoration: none; color: var(--text);
-            font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
-        }
-        .nav-logo {
-            width: 28px; height: 28px;
-            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
-            border-radius: 7px; display: flex;
-            align-items: center; justify-content: center;
-            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
-        }
-        .nav-logo svg { width: 15px; height: 15px; }
-        .nav-right { display: flex; align-items: center; gap: 12px; }
-        .nav-link {
-            display: inline-flex; align-items: center; gap: 5px;
-            font-size: 13px; font-weight: 500;
-            color: var(--text-muted); padding: 6px 12px;
-            border-radius: 6px; transition: all 150ms;
-            text-decoration: none;
-        }
-        .nav-link:hover { color: var(--text-secondary); background: var(--accent-dim); }
-        .nav-link svg { width: 14px; height: 14px; }
-
-        /* MAIN */
-        .main {
-            position: relative; z-index: 1;
-            max-width: 720px; margin: 0 auto;
-            padding: 92px 24px 60px;
-        }
-
-        .page-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .page-header h1 { font-size: 24px; font-weight: 700; }
-        .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
-
-        /* SITE SELECTOR */
-        .site-selector {
-            position: relative;
-        }
-        .site-selector select {
-            appearance: none;
-            padding: 8px 36px 8px 14px;
-            font-family: inherit; font-size: 13px; font-weight: 500;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: var(--surface); color: var(--text);
-            cursor: pointer; outline: none;
-            transition: border-color 150ms;
-            min-width: 180px;
-        }
-        .site-selector select:hover { border-color: var(--border-hover); }
-        .site-selector select:focus { border-color: var(--accent); }
-        .site-selector::after {
-            content: '';
-            position: absolute; right: 12px; top: 50%;
-            transform: translateY(-50%);
-            width: 0; height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 5px solid var(--text-muted);
-            pointer-events: none;
-        }
-
-        /* SECTIONS */
-        .section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
-            padding: 24px; margin-bottom: 20px;
-        }
-        .section h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-        .section-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
-
-        .usage-bar-wrap {
-            background: var(--bg-subtle);
-            border-radius: 6px;
-            height: 10px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-        .usage-bar {
-            height: 100%;
-            border-radius: 6px;
-            background: var(--accent);
-            transition: width 400ms ease;
-        }
-        .usage-bar.warning { background: var(--warning); }
-        .usage-bar.danger { background: var(--error); }
-
-        .usage-stats {
-            display: flex; justify-content: space-between;
-            font-size: 13px; color: var(--text-muted);
-        }
-        .usage-stats strong { color: var(--text); font-weight: 600; }
-
-        .usage-pct {
-            font-size: 36px; font-weight: 800;
-            letter-spacing: -1px; margin-bottom: 4px;
-        }
-        .usage-pct.ok { color: var(--accent); }
-        .usage-pct.warning { color: var(--warning); }
-        .usage-pct.danger { color: var(--error); }
-
-        .info-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-        }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { color: var(--text-muted); font-size: 13px; }
-        .info-value { font-weight: 500; }
-
-        .badge {
-            display: inline-flex; align-items: center;
-            padding: 3px 10px; border-radius: 100px;
-            font-size: 11px; font-weight: 600;
-            letter-spacing: 0.3px; text-transform: uppercase;
-        }
-        .badge-active { background: var(--green-dim); color: var(--green); }
-        .badge-inactive { background: var(--error-dim); color: var(--error); }
-
-        .empty-state {
-            text-align: center; padding: 40px 20px;
-            color: var(--text-muted); font-size: 14px;
-        }
-        .empty-state p { margin-top: 8px; }
-
-        .loading {
-            text-align: center; padding: 40px;
-            color: var(--text-muted); font-size: 14px;
-        }
+        .loading-state { text-align: center; padding: 60px; color: var(--muted); font-size: 14px; }
     </style>
 </head>
-<body>
-<div class="grid-bg"></div>
+<body class="wts">
+<div class="wts-shell">
+    <div id="wts-sidebar-mount"></div>
 
-<nav class="nav">
-    <div class="nav-inner">
-        <a class="nav-brand" href="/">
-            <div class="nav-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <div class="wts-shell-main">
+        <div class="wts-top">
+            <div class="wts-crumbs">
+                <span id="crumbUser">Account</span>
+                <span class="sep">/</span>
+                <span>Account</span>
+                <span class="sep">/</span>
+                <b>Usage</b>
             </div>
-            <span>WordToSite</span>
-        </a>
-        <div class="nav-right">
-            <a class="nav-link" href="/billing.html">Billing</a>
-            <a class="nav-link" href="/pricing.html">Pricing</a>
-            <a class="nav-link" href="/dashboard.html">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                Dashboard
-            </a>
+            <div style="display:flex; gap:6px; align-items:center;" id="siteSelectorWrap">
+                <span style="font-size:12px; color:var(--muted);">Site:</span>
+                <select id="siteSelect" class="wts-input" style="height:30px; min-width:200px; padding:0 28px 0 10px; font-size:13px;"></select>
+            </div>
         </div>
-    </div>
-</nav>
 
-<div class="main">
-    <div class="page-header">
-        <h1>Usage</h1>
-        <div class="site-selector" id="selectorWrap" style="display:none">
-            <select id="siteSelect"></select>
+        <div class="wts-content">
+            <div class="account-subnav">
+                <div class="account-subnav-inner">
+                    <a href="/profile.html">Profile</a>
+                    <a href="/billing.html">Billing</a>
+                    <a href="/usage.html" class="active">Usage</a>
+                    <a href="/pricing.html">Plans</a>
+                </div>
+            </div>
+
+            <div style="padding: 32px 36px 60px; max-width: 1080px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px; gap:24px;">
+                    <div>
+                        <h1 class="wts-page-title">Usage</h1>
+                        <p class="wts-page-lede">AI proxy token usage this month. Hourly refresh.</p>
+                    </div>
+                </div>
+
+                <div id="content">
+                    <div class="loading-state">Loading usage data…</div>
+                </div>
+            </div>
         </div>
-    </div>
-    <p class="subtitle">AI proxy token usage this month.</p>
-
-    <div id="content">
-        <div class="loading">Loading usage data...</div>
     </div>
 </div>
 
+<script src="/assets/wts-platform.js"></script>
 <script>
 let allSites = [];
 let usageCache = {};
 
-async function checkAuth() {
-    try {
-        const res = await fetch('/api/auth/me');
-        if (!res.ok) throw new Error();
-        return true;
-    } catch {
-        window.location.href = '/login.html';
-        return false;
-    }
-}
+WtsPlatform.init({ active: 'usage' }).then(loadUsage).catch(() => {});
 
 function formatTokens(n) {
     if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
@@ -270,7 +83,7 @@ function getDomain(site) {
 }
 
 function getSiteName(site) {
-    return site.site_name || site.siteName || site.domain || 'Unnamed Site';
+    return site.site_name || site.siteName || site.domain || 'Unnamed site';
 }
 
 async function fetchUsage(siteId) {
@@ -287,20 +100,20 @@ async function fetchUsage(siteId) {
 
 function renderUsage(site, usage) {
     const container = document.getElementById('content');
-    const domain = getDomain(site) || '-';
+    const domain = getDomain(site) || '—';
 
     if (!usage) {
         container.innerHTML = `
-        <div class="section">
-            <h2>${esc(getSiteName(site))}</h2>
-            <p class="section-sub">${esc(domain)}</p>
-            <div class="empty-state" style="padding:20px 0">
-                <p>No usage data yet</p>
-                <p style="font-size:12px;margin-top:4px;color:var(--text-muted)">
-                    AI proxy key will be registered automatically when your site is deployed.
-                </p>
-            </div>
-        </div>`;
+            <div class="wts-card">
+                <div class="wts-card-head">
+                    <span class="wts-card-title">${esc(getSiteName(site))}</span>
+                    <span class="wts-mono" style="font-size:12px; color:var(--muted);">${esc(domain)}</span>
+                </div>
+                <div class="wts-card-body" style="text-align:center; padding:48px 24px; color:var(--muted-2);">
+                    <div style="font-size:14px;">No usage data yet</div>
+                    <div style="font-size:12px; margin-top:6px;">AI proxy key will be registered automatically when your site is deployed.</div>
+                </div>
+            </div>`;
         return;
     }
 
@@ -308,49 +121,58 @@ function renderUsage(site, usage) {
     const limit = usage.tokenLimit || 0;
     const pct = limit > 0 ? (used / limit) * 100 : 0;
     const barPct = Math.min(pct, 100);
-    const barClass = pct > 90 ? 'danger' : pct > 70 ? 'warning' : '';
-    const pctClass = pct > 90 ? 'danger' : pct > 70 ? 'warning' : 'ok';
+    const barColor = pct > 90 ? 'var(--danger)' : pct > 70 ? 'var(--warn)' : 'var(--ink)';
     const status = usage.status || 'active';
+    const statusBadge = status === 'active'
+        ? '<span class="wts-badge live"><span class="dot"></span>Active</span>'
+        : '<span class="wts-badge archived"><span class="dot"></span>' + esc(status) + '</span>';
 
     container.innerHTML = `
-    <div class="section">
-        <h2>${esc(getSiteName(site))}</h2>
-        <p class="section-sub">${esc(domain)}</p>
+        <div class="wts-card" style="margin-bottom:16px;">
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr);">
+                <div style="padding:20px 22px; border-right:1px solid var(--line);">
+                    <div style="font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em;">Tokens used</div>
+                    <div style="display:flex; align-items:baseline; gap:6px; margin-top:6px;">
+                        <div class="wts-serif" style="font-size:36px;">${formatTokens(used)}</div>
+                        <div style="font-size:12px; color:var(--muted);">/ ${formatTokens(limit)}</div>
+                    </div>
+                    <div style="margin-top:6px; height:4px; background:var(--bg-3); border-radius:2px;">
+                        <div style="width:${barPct.toFixed(1)}%; height:100%; background:${barColor}; border-radius:2px;"></div>
+                    </div>
+                </div>
+                <div style="padding:20px 22px; border-right:1px solid var(--line);">
+                    <div style="font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em;">Usage</div>
+                    <div class="wts-serif" style="font-size:36px; margin-top:6px;">${pct.toFixed(1)}%</div>
+                    <div style="font-size:12px; color:var(--muted); margin-top:2px;">of monthly limit</div>
+                </div>
+                <div style="padding:20px 22px; border-right:1px solid var(--line);">
+                    <div style="font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em;">Remaining</div>
+                    <div class="wts-serif" style="font-size:36px; margin-top:6px;">${formatTokens(Math.max(0, limit - used))}</div>
+                    <div style="font-size:12px; color:var(--muted); margin-top:2px;">tokens left</div>
+                </div>
+                <div style="padding:20px 22px;">
+                    <div style="font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em;">Period</div>
+                    <div class="wts-serif" style="font-size:22px; margin-top:6px;">${esc(usage.period || '—')}</div>
+                    <div style="margin-top:8px;">${statusBadge}</div>
+                </div>
+            </div>
+        </div>
 
-        <div class="usage-pct ${pctClass}">${pct.toFixed(1)}%</div>
-
-        <div class="usage-bar-wrap">
-            <div class="usage-bar ${barClass}" style="width: ${barPct.toFixed(1)}%"></div>
-        </div>
-        <div class="usage-stats">
-            <span><strong>${formatTokens(used)}</strong> tokens used</span>
-            <span>${formatTokens(limit)} limit</span>
-        </div>
-    </div>
-
-    <div class="section">
-        <h2>Details</h2>
-        <div class="info-row">
-            <span class="info-label">Status</span>
-            <span class="badge badge-${status === 'active' ? 'active' : 'inactive'}">${status}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Period</span>
-            <span class="info-value">${usage.period || '-'}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Tokens used</span>
-            <span class="info-value">${used.toLocaleString()}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Token limit</span>
-            <span class="info-value">${limit.toLocaleString()}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Remaining</span>
-            <span class="info-value">${Math.max(0, limit - used).toLocaleString()}</span>
-        </div>
-    </div>`;
+        <div class="wts-card">
+            <div class="wts-card-head">
+                <span class="wts-card-title">${esc(getSiteName(site))}</span>
+                <span class="wts-mono" style="font-size:12px; color:var(--muted);">${esc(domain)}</span>
+            </div>
+            <table class="wts-table">
+                <tbody>
+                    <tr><td style="color:var(--muted); width:200px;">Status</td><td>${statusBadge}</td></tr>
+                    <tr><td style="color:var(--muted);">Period</td><td>${esc(usage.period || '—')}</td></tr>
+                    <tr><td style="color:var(--muted);">Tokens used</td><td class="num">${used.toLocaleString()}</td></tr>
+                    <tr><td style="color:var(--muted);">Token limit</td><td class="num">${limit.toLocaleString()}</td></tr>
+                    <tr><td style="color:var(--muted);">Remaining</td><td class="num">${Math.max(0, limit - used).toLocaleString()}</td></tr>
+                </tbody>
+            </table>
+        </div>`;
 }
 
 async function selectSite(siteId) {
@@ -358,36 +180,31 @@ async function selectSite(siteId) {
     const site = allSites.find(s => s.id === siteId);
     if (!site) return;
 
-    container.innerHTML = '<div class="loading">Loading usage...</div>';
+    container.innerHTML = '<div class="loading-state">Loading usage…</div>';
     const usage = await fetchUsage(siteId);
     renderUsage(site, usage);
 }
 
 async function loadUsage() {
-    const authed = await checkAuth();
-    if (!authed) return;
-
     const container = document.getElementById('content');
+    document.getElementById('siteSelectorWrap').style.display = 'none';
 
-    // Fetch user's sites
     try {
         const res = await fetch('/api/sites');
         const data = await res.json();
         allSites = (data.sites || []).filter(s => s.wp_url || s.domain);
     } catch {
-        container.innerHTML = '<div class="empty-state"><p>Failed to load sites.</p></div>';
+        container.innerHTML = '<div class="wts-card" style="padding:24px; text-align:center; color:var(--danger);">Failed to load sites.</div>';
         return;
     }
 
     if (allSites.length === 0) {
-        container.innerHTML = '<div class="empty-state"><p>No sites with domains yet. Create your first site from the dashboard.</p></div>';
+        container.innerHTML = '<div class="wts-card" style="padding:48px 24px; text-align:center; color:var(--muted);">No sites with domains yet. Create your first site from the <a href="/dashboard.html" style="color:var(--accent);">dashboard</a>.</div>';
         return;
     }
 
-    // Build selector
     const select = document.getElementById('siteSelect');
-    const selectorWrap = document.getElementById('selectorWrap');
-
+    select.innerHTML = '';
     for (const site of allSites) {
         const opt = document.createElement('option');
         opt.value = site.id;
@@ -395,14 +212,11 @@ async function loadUsage() {
         select.appendChild(opt);
     }
 
-    selectorWrap.style.display = 'block';
+    document.getElementById('siteSelectorWrap').style.display = '';
     select.addEventListener('change', () => selectSite(select.value));
 
-    // Show first site
     await selectSite(allSites[0].id);
 }
-
-loadUsage();
 </script>
 </body>
 </html>

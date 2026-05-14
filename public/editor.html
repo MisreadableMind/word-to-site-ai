@@ -4,482 +4,223 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <title>WordToSite | Editor</title>
+    <title>word→site | Editor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/wts.css?v=2">
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; }
+        .editor-shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        :root {
-            --bg: #FFFDF7;
-            --bg-subtle: #FFF8F0;
-            --surface: #FFFFFF;
-            --surface-hover: #FFF5EC;
-            --border: rgba(140, 120, 100, 0.18);
-            --border-hover: rgba(140, 120, 100, 0.30);
-            --text: #2D2926;
-            --text-secondary: #4A4540;
-            --text-muted: #8A8580;
-            --accent: #6C5CE7;
-            --accent-bright: #5A4BD1;
-            --accent-dim: rgba(108,92,231,0.10);
-            --green: #16A34A;
-            --green-dim: rgba(22,163,74,0.12);
-            --error: #DC2626;
-            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
-            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
-            --radius: 12px;
-            --radius-sm: 8px;
-            --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
-        }
+        .editor-topbar { height: 52px; border-bottom: 1px solid var(--line); background: var(--bg); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0; }
+        .editor-topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .editor-divider { width: 1px; height: 22px; background: var(--line-2); flex-shrink: 0; }
+        .editor-topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg); color: var(--text);
-            height: 100vh; display: flex; flex-direction: column;
-            -webkit-font-smoothing: antialiased;
-        }
+        .editor-body { flex: 1; display: grid; grid-template-columns: 260px 1fr 1.05fr; overflow: hidden; min-height: 0; }
+        @media (max-width: 1100px) { .editor-body { grid-template-columns: 240px 1fr; } .editor-body .preview-pane { display: none; } }
+        @media (max-width: 760px) { .editor-body { grid-template-columns: 1fr; } .editor-body .conversations-pane { display: none; } }
 
-        /* NAV */
-        .nav {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0; z-index: 100;
-        }
-        .nav-inner {
-            max-width: 100%; margin: 0 auto;
-            padding: 0 24px; height: 56px;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .nav-brand {
-            display: flex; align-items: center; gap: 10px;
-            text-decoration: none; color: var(--text);
-            font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
-        }
-        .nav-logo {
-            width: 28px; height: 28px;
-            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
-            border-radius: 7px; display: flex;
-            align-items: center; justify-content: center;
-            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
-        }
-        .nav-logo svg { width: 15px; height: 15px; }
-        .nav-center { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
-        .nav-right { display: flex; align-items: center; gap: 12px; }
-        .nav-link {
-            font-size: 13px; font-weight: 500;
-            color: var(--text-muted); padding: 6px 12px;
-            border-radius: 6px; transition: all 150ms;
-            text-decoration: none;
-        }
-        .nav-link:hover { color: var(--text-secondary); background: var(--accent-dim); }
-        .nav-link-admin {
-            font-size: 13px; font-weight: 500;
-            color: var(--text-muted); padding: 6px 12px;
-            border-radius: 6px; transition: all 150ms;
-            text-decoration: none;
-            border: 1px solid var(--border);
-            display: inline-flex; align-items: center; gap: 5px;
-        }
-        .nav-link-admin:hover { color: var(--text-secondary); border-color: var(--border-hover); background: var(--surface-hover); }
-        .nav-link-admin svg { width: 14px; height: 14px; }
+        .conversations-pane { border-right: 1px solid var(--line); background: var(--bg-2); display: flex; flex-direction: column; overflow: hidden; }
+        .conversations-head { padding: 14px 14px 10px; display: flex; justify-content: space-between; align-items: center; }
+        .conversations-head-label { font-size: 11.5px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        .conversations-list { flex: 1; overflow: auto; padding: 0 8px 12px; }
+        .session-item { display: block; width: 100%; text-align: left; padding: 9px 10px; border-radius: 6px; margin-bottom: 2px; background: transparent; border: 1px solid transparent; font: inherit; cursor: pointer; }
+        .session-item:hover { background: var(--bg-3); }
+        .session-item.active { background: var(--surface); border-color: var(--line); }
+        .session-item-title { font-size: 13px; font-weight: 500; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .session-date { font-size: 11px; color: var(--muted-2); margin-top: 2px; }
+        .conversations-foot { border-top: 1px solid var(--line); padding: 12px 14px; }
 
-        /* LAYOUT */
-        .editor-layout {
-            flex: 1; display: flex; overflow: hidden;
-        }
+        .chat-pane { display: flex; flex-direction: column; overflow: hidden; background: var(--bg); min-width: 0; }
+        .chat-head { padding: 16px 28px 12px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .chat-head-title { font-size: 15px; font-weight: 500; }
+        .chat-head-label { font-size: 11.5px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.04em; }
+        .messages { flex: 1; overflow: auto; padding: 24px 28px; }
+        .welcome-msg { max-width: 480px; margin: 40px auto; text-align: center; }
+        .welcome-msg h2 { font-family: var(--serif); font-weight: 500; font-size: 26px; letter-spacing: -0.015em; }
+        .welcome-msg p { font-size: 13.5px; color: var(--muted); margin-top: 8px; line-height: 1.55; }
+        .message { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; max-width: 680px; }
+        .message-header { display: flex; align-items: center; gap: 8px; }
+        .message-avatar { width: 20px; height: 20px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 600; display: grid; place-items: center; }
+        .message.user .message-avatar { background: var(--ink); }
+        .message.assistant .message-avatar { background: var(--accent); }
+        .message-author { font-size: 12.5px; font-weight: 500; }
+        .message-time { font-size: 11px; color: var(--muted-2); }
+        .message-bubble { margin-left: 28px; font-size: 14px; line-height: 1.55; color: var(--ink); }
+        .changes-badge { margin-left: 28px; margin-top: 6px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+        .changes-badge-label { font-size: 11px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .changes-badge-label svg { width: 12px; height: 12px; color: var(--success); }
+        .change-detail { font-size: 12.5px; color: var(--muted); display: flex; gap: 8px; padding: 2px 0; }
+        .change-detail::before { content: '✓'; color: var(--success); }
 
-        /* SIDEBAR */
-        .sidebar {
-            width: 260px; flex-shrink: 0;
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
-        }
-        .sidebar-header {
-            padding: 16px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .sidebar-header h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        .btn-new {
-            display: inline-flex; align-items: center; gap: 4px;
-            padding: 5px 10px; font-family: inherit; font-size: 12px; font-weight: 600;
-            background: var(--accent); color: #fff;
-            border: none; border-radius: 6px; cursor: pointer; transition: all 150ms;
-        }
-        .btn-new:hover { background: var(--accent-bright); }
-        .btn-new svg { width: 14px; height: 14px; }
+        .typing-indicator { display: none; gap: 4px; padding: 8px 28px 0; }
+        .typing-indicator.visible { display: flex; }
+        .typing-dot { width: 6px; height: 6px; background: var(--muted-2); border-radius: 50%; animation: wts-typing 1.2s infinite ease-in-out; }
+        .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes wts-typing { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
 
-        .session-list { flex: 1; overflow-y: auto; padding: 8px; }
-        .session-item {
-            display: block; width: 100%; text-align: left;
-            padding: 10px 12px; margin-bottom: 2px;
-            font-family: inherit; font-size: 13px; font-weight: 500;
-            color: var(--text-secondary);
-            background: none; border: none; border-radius: var(--radius-sm);
-            cursor: pointer; transition: all 150ms;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .session-item:hover { background: var(--surface-hover); }
-        .session-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
-        .session-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: block; }
+        .chat-composer { border-top: 1px solid var(--line); padding: 14px 28px; background: var(--surface); flex-shrink: 0; }
+        .composer-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 8px; }
+        .composer-bar:focus-within { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(14,14,12,0.06); }
+        .btn-mic-primary { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; border: 0; cursor: pointer; flex-shrink: 0; }
+        .btn-mic-primary:hover { background: var(--accent-2); }
+        .btn-mic-primary.recording { background: var(--danger); animation: wts-pulse 1.4s ease-in-out infinite; }
+        .btn-mic-primary.transcribing { background: var(--muted); }
+        .btn-mic-primary svg { width: 16px; height: 16px; }
+        .btn-mic-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        @keyframes wts-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(180,35,24,0.35); } 50% { box-shadow: 0 0 0 6px rgba(180,35,24,0); } }
+        .chat-input { flex: 1; resize: none; border: 0; outline: 0; background: transparent; font: inherit; color: var(--ink); font-size: 14px; line-height: 1.5; max-height: 120px; }
+        .chat-input::placeholder { color: var(--muted-2); }
+        .btn-send { width: 32px; height: 32px; border-radius: var(--r-md); background: var(--ink); color: var(--bg); border: 0; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+        .btn-send:hover { background: var(--ink-2); }
+        .btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-send svg { width: 14px; height: 14px; }
+        .voice-status { display: none; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+        .voice-status:not(:empty) { display: flex; }
+        .vc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: wts-pulse 1.4s ease-in-out infinite; flex-shrink: 0; }
+        .vc-level-bars { display: inline-flex; gap: 2px; align-items: center; height: 16px; }
+        .vc-level-bar { display: inline-block; width: 2px; background: var(--ink); border-radius: 1px; transition: height 80ms ease-out; }
+        .vc-timer { font-family: var(--mono); font-size: 11px; color: var(--muted-2); }
+        .composer-hint { margin-top: 8px; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted-2); }
 
-        /* CHAT AREA */
-        .chat-area {
-            flex: 1; display: flex; flex-direction: column;
-            min-width: 0;
-        }
+        .preview-pane { border-left: 1px solid var(--line); background: var(--bg-2); display: flex; flex-direction: column; overflow: hidden; }
+        .preview-head { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .preview-head-label { font-size: 11.5px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.04em; }
+        .preview-body { flex: 1; overflow: auto; padding: 16px; }
+        .preview-frame { background: #fff; border: 1px solid var(--line); border-radius: 6px; min-height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+        .preview-chrome { height: 28px; background: var(--bg-2); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 6px; padding: 0 10px; flex-shrink: 0; }
+        .preview-chrome-dots { display: flex; gap: 5px; }
+        .preview-chrome-dots span { width: 9px; height: 9px; border-radius: 50%; opacity: 0.7; }
+        .preview-chrome-url { font-family: var(--mono); font-size: 10.5px; color: var(--muted-2); margin-left: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .preview-iframe { width: 100%; flex: 1; border: 0; min-height: 400px; }
+        .preview-foot { padding: 10px 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: var(--bg); flex-shrink: 0; font-size: 11.5px; color: var(--muted); }
 
-        .messages {
-            flex: 1; overflow-y: auto;
-            padding: 24px; display: flex; flex-direction: column; gap: 16px;
-        }
+        .loading-screen { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--muted); font-size: 14px; }
 
-        .message { max-width: 720px; width: 100%; }
-        .message.user { align-self: flex-end; }
-        .message.assistant { align-self: flex-start; }
-
-        .message-bubble {
-            padding: 12px 16px;
-            border-radius: var(--radius);
-            font-size: 14px; line-height: 1.6;
-            word-wrap: break-word;
-        }
-        .message.user .message-bubble {
-            background: var(--accent); color: #fff;
-            border-bottom-right-radius: 4px;
-        }
-        .message.assistant .message-bubble {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-bottom-left-radius: 4px;
-        }
-
-        .changes-badge {
-            display: inline-flex; align-items: center; gap: 4px;
-            margin-top: 8px; padding: 4px 10px;
-            background: var(--green-dim); color: var(--green);
-            font-size: 11px; font-weight: 600;
-            border-radius: 100px; letter-spacing: 0.3px;
-        }
-        .changes-badge svg { width: 12px; height: 12px; }
-
-        .change-detail {
-            font-size: 12px; color: var(--text-muted);
-            margin-top: 4px; padding-left: 4px;
-        }
-
-        .message-time {
-            font-size: 11px; color: var(--text-muted);
-            margin-top: 4px; padding: 0 4px;
-        }
-
-        /* TYPING INDICATOR */
-        .typing-indicator {
-            display: none; align-self: flex-start;
-            padding: 12px 16px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            border-bottom-left-radius: 4px;
-        }
-        .typing-indicator.visible { display: flex; gap: 4px; align-items: center; }
-        .typing-dot {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: var(--text-muted);
-            animation: typingBounce 1.4s infinite;
-        }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typingBounce {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-4px); }
-        }
-
-        /* INPUT */
-        .chat-input-area {
-            padding: 16px 24px 24px;
-            border-top: 1px solid var(--border);
-            background: var(--surface);
-        }
-        .chat-input-wrap {
-            display: flex; flex-direction: column; gap: 12px;
-            max-width: 720px; margin: 0 auto;
-        }
-
-        /* VOICE PRIMARY ZONE */
-        .voice-primary-zone {
-            display: flex; flex-direction: column; align-items: center; gap: 8px;
-        }
-        .btn-mic-primary {
-            width: 64px; height: 64px; border-radius: 50%;
-            border: 2px solid var(--border);
-            background: var(--surface);
-            color: var(--text-muted);
-            cursor: pointer; transition: all 200ms;
-            display: flex; align-items: center; justify-content: center;
-            position: relative;
-            box-shadow: var(--shadow-sm);
-        }
-        .btn-mic-primary:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            box-shadow: var(--shadow-md);
-        }
-        .btn-mic-primary:disabled {
-            opacity: 0.4; cursor: not-allowed;
-        }
-        .btn-mic-primary:disabled:hover {
-            border-color: var(--border);
-            color: var(--text-muted);
-            box-shadow: var(--shadow-sm);
-        }
-        .btn-mic-primary svg { width: 26px; height: 26px; position: relative; z-index: 1; }
-        .btn-mic-primary.recording {
-            background: var(--error); border-color: var(--error);
-            color: #fff; box-shadow: 0 0 0 0 rgba(220,38,38,0.4);
-            animation: pulse-mic 1.5s ease-in-out infinite;
-        }
-        .btn-mic-primary.transcribing {
-            background: var(--accent); border-color: var(--accent);
-            color: #fff;
-        }
-        @keyframes pulse-mic {
-            0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
-            70% { box-shadow: 0 0 0 12px rgba(220,38,38,0); }
-            100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .voice-status {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 12px; font-weight: 500; color: var(--text-muted);
-            height: 20px;
-        }
-        .voice-status:empty { visibility: hidden; }
-        .vc-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: var(--error);
-            animation: blink-dot 1s ease-in-out infinite;
-        }
-        @keyframes blink-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        .vc-level-bars {
-            display: flex; align-items: flex-end; gap: 2px; height: 16px;
-        }
-        .vc-level-bar {
-            width: 3px; border-radius: 1.5px;
-            background: var(--error);
-            transition: height 80ms ease;
-        }
-        .vc-timer { font-variant-numeric: tabular-nums; }
-
-        /* TEXT ROW (secondary) */
-        .chat-text-row {
-            display: flex; gap: 8px;
-            border-top: 1px solid var(--border);
-            padding-top: 12px;
-        }
-        .chat-input {
-            flex: 1; padding: 12px 16px;
-            font-family: inherit; font-size: 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--bg);
-            color: var(--text);
-            outline: none; resize: none;
-            transition: border-color 150ms;
-            min-height: 44px; max-height: 120px;
-        }
-        .chat-input:focus { border-color: var(--accent); }
-        .chat-input::placeholder { color: var(--text-muted); }
-        .btn-send {
-            display: flex; align-items: center; justify-content: center;
-            width: 44px; height: 44px; flex-shrink: 0;
-            background: var(--accent); color: #fff;
-            border: none; border-radius: var(--radius);
-            cursor: pointer; transition: all 150ms;
-        }
-        .btn-send:hover { background: var(--accent-bright); }
-        .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-send svg { width: 18px; height: 18px; }
-
-        /* EMPTY / LOADING */
-        .loading-screen {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            color: var(--text-muted); font-size: 14px;
-        }
-        .welcome-msg {
-            text-align: center; padding: 40px 24px;
-            color: var(--text-muted); font-size: 14px; line-height: 1.6;
-            display: flex; flex-direction: column; align-items: center; gap: 20px;
-        }
-        .welcome-msg h2 { font-size: 20px; color: var(--text); margin-bottom: 4px; }
-        .welcome-msg .voice-hint { color: var(--text-secondary); font-size: 15px; margin-bottom: 2px; }
-        .welcome-msg .text-hint { font-size: 13px; }
-
-        /* SITE INFO CARD */
-        .site-info-card {
-            width: 100%; max-width: 520px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-            text-align: left;
-        }
-        .site-preview-wrap {
-            position: relative;
-            width: 100%; height: 260px;
-            background: var(--bg-subtle);
-            border-bottom: 1px solid var(--border);
-            overflow: hidden;
-        }
-        .site-preview-wrap iframe {
-            position: absolute; top: 0; left: 0;
-            width: 1280px; height: 800px;
-            transform: scale(0.40625);
-            transform-origin: top left;
-            border: none; pointer-events: none;
-        }
-        .site-preview-overlay {
-            position: absolute; inset: 0;
-            cursor: pointer;
-        }
-        .site-preview-overlay:hover { background: rgba(0,0,0,0.03); }
-        .site-info-body {
-            padding: 14px 16px;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .site-info-url {
-            font-size: 13px; color: var(--text-secondary);
-            display: flex; align-items: center; gap: 6px;
-            word-break: break-all;
-        }
-        .site-info-url svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--text-muted); }
-        .site-info-actions {
-            display: flex; gap: 8px; flex-wrap: wrap;
-        }
-        .site-info-btn {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 7px 14px; font-family: inherit; font-size: 12px; font-weight: 600;
-            border-radius: 6px; text-decoration: none;
-            cursor: pointer; transition: all 150ms;
-        }
-        .site-info-btn svg { width: 14px; height: 14px; }
-        .site-info-btn.primary {
-            background: var(--accent); color: #fff; border: none;
-        }
-        .site-info-btn.primary:hover { background: var(--accent-bright); }
-        .site-info-btn.secondary {
-            background: none; color: var(--text-secondary);
-            border: 1px solid var(--border);
-        }
-        .site-info-btn.secondary:hover { border-color: var(--border-hover); background: var(--surface-hover); }
-
-        /* MOBILE */
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .messages { padding: 16px; }
-            .chat-input-area { padding: 12px 16px 16px; }
-        }
+        .wordmark-link { display: flex; align-items: center; gap: 8px; text-decoration: none; }
     </style>
 </head>
-<body>
-
-<nav class="nav">
-    <div class="nav-inner">
-        <a class="nav-brand" href="/dashboard.html">
-            <div class="nav-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            </div>
-            <span>WordToSite</span>
-        </a>
-        <div class="nav-center" id="siteName">Loading...</div>
-        <div class="nav-right">
-            <a class="nav-link-admin" id="adminLink" style="display:none" target="_blank">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                WP Admin
+<body class="wts">
+<div class="editor-shell">
+    <div class="editor-topbar">
+        <div class="editor-topbar-left">
+            <a class="wordmark-link" href="/dashboard.html">
+                <div class="wts-mark">w</div>
+                <span class="wts-wordmark">word<span class="arrow">→</span>site</span>
             </a>
-            <a class="nav-link" href="/dashboard.html">Back to Dashboard</a>
+            <div class="editor-divider"></div>
+            <a class="wts-btn ghost" href="/dashboard.html" style="height:30px; padding:0 10px; font-size:12.5px;">
+                <span style="color:var(--muted);">Site:</span>
+                <b style="font-weight:500;" id="siteName">Loading…</b>
+                <span style="color:var(--muted-2);">▾</span>
+            </a>
+            <div class="editor-divider"></div>
+            <div class="wts-tabs">
+                <button class="wts-tab active">Editor</button>
+                <button class="wts-tab" onclick="window.location.href='/dashboard.html'">Sites</button>
+            </div>
+        </div>
+        <div class="editor-topbar-right">
+            <span class="wts-badge" id="changesBadge" style="display:none;"><span class="dot"></span><span id="changesBadgeText">0 unpublished changes</span></span>
+            <a class="wts-btn" id="adminLink" style="display:none;" target="_blank">WP Admin ↗</a>
+            <a class="wts-btn" id="viewLiveBtn" style="display:none;" target="_blank">View live ↗</a>
         </div>
     </div>
-</nav>
 
-<div class="editor-layout" id="editorLayout" style="display:none">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h3>Conversations</h3>
-            <button class="btn-new" id="newSessionBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-                New
-            </button>
-        </div>
-        <div class="session-list" id="sessionList"></div>
-    </aside>
+    <div class="editor-body" id="editorLayout" style="display:none;">
+        <aside class="conversations-pane">
+            <div class="conversations-head">
+                <span class="conversations-head-label">Conversations</span>
+                <button class="wts-btn ghost" id="newSessionBtn" style="height:22px; width:22px; padding:0; justify-content:center;">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+                </button>
+            </div>
+            <nav class="conversations-list" id="sessionList"></nav>
+        </aside>
 
-    <div class="chat-area">
-        <div class="messages" id="messages">
-            <div class="welcome-msg" id="welcomeMsg">
+        <main class="chat-pane">
+            <div class="chat-head">
                 <div>
-                    <h2>Chat with your site</h2>
-                    <p class="voice-hint">Tap the mic and describe your changes</p>
-                    <p class="text-hint">or type below</p>
+                    <div class="chat-head-label">Conversation</div>
+                    <div class="chat-head-title" id="conversationTitle">New conversation</div>
                 </div>
-                <div class="site-info-card" id="siteInfoCard" style="display:none">
-                    <div class="site-preview-wrap">
-                        <iframe id="sitePreviewFrame" loading="lazy" sandbox="allow-same-origin allow-scripts" tabindex="-1"></iframe>
-                        <a class="site-preview-overlay" id="sitePreviewLink" target="_blank" title="Open site in new tab"></a>
-                    </div>
-                    <div class="site-info-body">
-                        <div class="site-info-url" id="siteInfoUrl">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                            <span id="siteUrlText"></span>
-                        </div>
-                        <div class="site-info-actions">
-                            <a class="site-info-btn primary" id="siteVisitBtn" target="_blank">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                Visit Site
-                            </a>
-                            <a class="site-info-btn secondary" id="siteAdminBtn" target="_blank" style="display:none">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                                WP Admin
-                            </a>
-                        </div>
-                    </div>
+                <div style="display:flex; gap:6px;">
+                    <button class="wts-btn ghost" style="height:28px; padding:0 10px; font-size:12px;">History</button>
                 </div>
             </div>
-        </div>
-        <div class="typing-indicator" id="typingIndicator">
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-        </div>
-        <div class="chat-input-area">
-            <div class="chat-input-wrap">
-                <div class="voice-primary-zone">
-                    <button class="btn-mic-primary" id="micBtn" title="Record voice message">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                    </button>
-                    <div class="voice-status" id="voiceStatus"></div>
+
+            <div class="messages" id="messages">
+                <div class="welcome-msg" id="welcomeMsg">
+                    <h2>Chat with your site.</h2>
+                    <p>Tap the mic and describe your changes, or type below. Try: "make the headline quieter and italicise Sunday."</p>
                 </div>
-                <div class="chat-text-row">
-                    <textarea class="chat-input" id="chatInput" placeholder="or type your changes here..." rows="1"></textarea>
-                    <button class="btn-send" id="sendBtn" disabled>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+
+            <div class="chat-composer">
+                <div class="composer-bar">
+                    <button class="btn-mic-primary" id="micBtn" title="Record voice message" aria-label="Record">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5v2M5.5 14.5h5"/></svg>
+                    </button>
+                    <textarea class="chat-input" id="chatInput" placeholder="Or type your changes here…" rows="1"></textarea>
+                    <button class="btn-send" id="sendBtn" disabled aria-label="Send">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                     </button>
                 </div>
+                <div class="voice-status" id="voiceStatus"></div>
+                <div class="composer-hint">
+                    <span>Or type — <span class="wts-kbd">⌘ ↵</span> to send</span>
+                    <span id="composerHintRight">Voice and prompts welcome</span>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
+        </main>
 
-<div class="loading-screen" id="loadingScreen">Loading editor...</div>
+        <aside class="preview-pane">
+            <div class="preview-head">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="preview-head-label">Preview</span>
+                    <span class="wts-mono" style="font-size:12px; color:var(--ink);" id="previewPath">/</span>
+                </div>
+                <div class="wts-tabs">
+                    <button class="wts-tab active">Desktop</button>
+                </div>
+            </div>
+            <div class="preview-body" id="previewBody">
+                <div class="preview-frame" id="siteInfoCard" style="display:none;">
+                    <div class="preview-chrome">
+                        <div class="preview-chrome-dots">
+                            <span style="background:#E27D60;"></span>
+                            <span style="background:#E8B26F;"></span>
+                            <span style="background:#67B26F;"></span>
+                        </div>
+                        <span class="preview-chrome-url" id="siteUrlText"></span>
+                    </div>
+                    <iframe id="sitePreviewFrame" class="preview-iframe" loading="lazy" sandbox="allow-same-origin allow-scripts" tabindex="-1"></iframe>
+                    <a id="sitePreviewLink" style="display:none;" target="_blank"></a>
+                </div>
+                <div id="previewEmpty" style="text-align:center; padding:48px 24px; color:var(--muted);">
+                    <div class="wts-mono" style="font-size:11px; color:var(--muted-2); text-transform:uppercase; letter-spacing:0.04em;">No site loaded</div>
+                    <p style="font-size:13px; margin-top:8px;">Open a site from your dashboard to preview it here.</p>
+                </div>
+            </div>
+            <div class="preview-foot">
+                <span><span style="color:var(--accent);" id="previewChangesCount">No</span> changes staged</span>
+                <a class="wts-btn ghost" id="siteVisitBtn" target="_blank" style="height:26px; padding:0 8px; font-size:12px; display:none;">Visit ↗</a>
+                <a class="wts-btn ghost" id="siteAdminBtn" target="_blank" style="height:26px; padding:0 8px; font-size:12px; display:none;">Admin ↗</a>
+            </div>
+        </aside>
+    </div>
+
+    <div class="loading-screen" id="loadingScreen">Loading editor…</div>
+</div>
 
 <script>
 const params = new URLSearchParams(window.location.search);
@@ -490,7 +231,6 @@ let currentSite = null;
 let currentSessionId = null;
 let sending = false;
 
-// Voice state
 let isRecording = false;
 let mediaRecorder = null;
 let audioChunks = [];
@@ -509,9 +249,7 @@ const $welcomeMsg = document.getElementById('welcomeMsg');
 const $micBtn = document.getElementById('micBtn');
 const $voiceStatus = document.getElementById('voiceStatus');
 
-// Auth guard
 async function init() {
-    // --- MOCK MODE (remove when real API is wired up) ---
     const isMock = !siteId;
     if (isMock) {
         currentSite = {
@@ -521,21 +259,18 @@ async function init() {
             wp_password: 'demo',
         };
     }
-    // --- END MOCK ---
 
     if (!isMock) {
-        // Auth check
         try {
             const authRes = await fetch('/api/auth/me');
             if (!authRes.ok) throw new Error();
             const authData = await authRes.json();
             currentUser = authData.user;
         } catch {
-            window.location.href = '/login.html';
+            window.location.href = '/login.html?redirect=' + encodeURIComponent('/editor.html' + window.location.search);
             return;
         }
 
-        // Load site
         try {
             const siteRes = await fetch(`/api/sites/${siteId}`);
             if (!siteRes.ok) throw new Error('Site not found');
@@ -547,10 +282,9 @@ async function init() {
         }
     }
 
-    document.getElementById('siteName').textContent = currentSite.site_name || 'Untitled Site';
-    document.title = `Editor | ${currentSite.site_name || 'WordToSite'}`;
+    document.getElementById('siteName').textContent = currentSite.site_name || 'Untitled site';
+    document.title = `${currentSite.site_name || 'word→site'} | Editor`;
 
-    // WP Admin link + site info card
     const wpUrl = currentSite.wp_url || currentSite.url;
     const hasCreds = currentSite.wp_username && currentSite.wp_password;
 
@@ -566,13 +300,16 @@ async function init() {
         const displayUrl = wpUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
         document.getElementById('siteUrlText').textContent = displayUrl;
         document.getElementById('siteVisitBtn').href = wpUrl;
-        document.getElementById('sitePreviewLink').href = wpUrl;
+        document.getElementById('siteVisitBtn').style.display = 'inline-flex';
+        document.getElementById('viewLiveBtn').href = wpUrl;
+        document.getElementById('viewLiveBtn').style.display = 'inline-flex';
         document.getElementById('sitePreviewFrame').src = wpUrl;
-        document.getElementById('siteInfoCard').style.display = 'block';
+        document.getElementById('siteInfoCard').style.display = '';
+        document.getElementById('previewEmpty').style.display = 'none';
     }
 
     document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('editorLayout').style.display = 'flex';
+    document.getElementById('editorLayout').style.display = '';
 
     if (!isMock) {
         await loadSessions();
@@ -580,14 +317,13 @@ async function init() {
     }
 }
 
-// Sessions
 async function loadSessions() {
     try {
         const res = await fetch(`/api/editor/chat/sessions?siteId=${siteId}`);
         const data = await res.json();
         renderSessionList(data.sessions || []);
     } catch {
-        // Ignore
+        // ignore
     }
 }
 
@@ -596,8 +332,8 @@ function renderSessionList(sessions) {
         const date = new Date(s.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const active = s.id === currentSessionId ? 'active' : '';
         return `<button class="session-item ${active}" data-id="${s.id}">
-            ${escapeHtml(s.title)}
-            <span class="session-date">${date}</span>
+            <div class="session-item-title">${escapeHtml(s.title)}</div>
+            <div class="session-date">${date}</div>
         </button>`;
     }).join('');
 
@@ -616,6 +352,7 @@ async function createNewSession() {
         const data = await res.json();
         if (!data.success) throw new Error(data.error?.message || 'Failed to create session');
         currentSessionId = data.session.id;
+        document.getElementById('conversationTitle').textContent = data.session.title || 'New conversation';
         clearMessages();
         $welcomeMsg.style.display = '';
         await loadSessions();
@@ -632,6 +369,7 @@ async function switchSession(sessionId) {
         if (!data.session) return;
 
         currentSessionId = sessionId;
+        document.getElementById('conversationTitle').textContent = data.session.title || 'Conversation';
         clearMessages();
         $welcomeMsg.style.display = 'none';
 
@@ -650,7 +388,6 @@ async function switchSession(sessionId) {
     }
 }
 
-// Messages
 function clearMessages() {
     const welcome = $welcomeMsg;
     $messages.innerHTML = '';
@@ -662,20 +399,42 @@ function appendMessage(role, content, metadata = null) {
 
     const div = document.createElement('div');
     div.className = `message ${role}`;
+    const isUser = role === 'user';
+    const initial = isUser ? (currentUser?.displayName?.[0]?.toUpperCase() || 'Y') : 'w';
+    const author = isUser ? 'You' : 'word→site';
+    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false });
 
-    let html = `<div class="message-bubble">${role === 'assistant' ? formatMarkdown(content) : escapeHtml(content)}</div>`;
+    let html = `
+        <div class="message-header">
+            <div class="message-avatar">${escapeHtml(initial)}</div>
+            <span class="message-author">${author}</span>
+            <span class="message-time">${time}</span>
+        </div>
+        <div class="message-bubble">${role === 'assistant' ? formatMarkdown(content) : escapeHtml(content)}</div>
+    `;
 
     if (metadata?.changes && metadata.changes.length > 0) {
         const successCount = metadata.changes.filter(c => c.success).length;
         html += `<div class="changes-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            ${successCount} change${successCount !== 1 ? 's' : ''} applied
-        </div>`;
+            <div class="changes-badge-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                ${successCount} change${successCount !== 1 ? 's' : ''} applied
+            </div>`;
         for (const change of metadata.changes) {
             const label = change.type.replace(/_/g, ' ');
             const status = change.success ? 'applied' : `failed: ${change.error}`;
             html += `<div class="change-detail">${escapeHtml(label)} — ${escapeHtml(status)}</div>`;
         }
+        html += '</div>';
+
+        const badge = document.getElementById('changesBadge');
+        const badgeText = document.getElementById('changesBadgeText');
+        const countEl = document.getElementById('previewChangesCount');
+        const currentCount = parseInt(badge.dataset.count || '0', 10) + successCount;
+        badge.dataset.count = currentCount;
+        badge.style.display = 'inline-flex';
+        badgeText.textContent = `${currentCount} unpublished change${currentCount !== 1 ? 's' : ''}`;
+        if (countEl) countEl.textContent = String(currentCount);
     }
 
     div.innerHTML = html;
@@ -686,7 +445,6 @@ function scrollToBottom() {
     $messages.scrollTop = $messages.scrollHeight;
 }
 
-// Send message
 async function sendMessage() {
     const text = $input.value.trim();
     if (!text || sending || !currentSessionId) return;
@@ -701,7 +459,6 @@ async function sendMessage() {
     scrollToBottom();
 
     $typing.classList.add('visible');
-    $messages.appendChild($typing);
     scrollToBottom();
 
     try {
@@ -732,7 +489,6 @@ async function sendMessage() {
     scrollToBottom();
 }
 
-// Voice
 function toggleVoice() {
     if (sending) return;
     if (isRecording) {
@@ -809,17 +565,17 @@ function setMicState(state) {
     isRecording = false;
 
     if (state === 'idle') {
-        $micBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+        $micBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5v2M5.5 14.5h5"/></svg>';
         $voiceStatus.innerHTML = '';
     } else if (state === 'recording') {
         isRecording = true;
         $micBtn.classList.add('recording');
-        $micBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
-        $voiceStatus.innerHTML = '<span class="vc-dot"></span><span class="vc-level-bars" id="vcLevelBars"><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span></span><span class="vc-timer" id="vcTimer">0:00</span><span style="color:var(--text-muted)">tap to stop</span>';
+        $micBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="5" y="5" width="6" height="6" rx="1"/></svg>';
+        $voiceStatus.innerHTML = '<span class="vc-dot"></span><span class="vc-level-bars" id="vcLevelBars"><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span><span class="vc-level-bar" style="height:4px"></span></span><span class="vc-timer" id="vcTimer">0:00</span><span style="color:var(--muted-2);">tap to stop</span>';
     } else if (state === 'transcribing') {
         $micBtn.classList.add('transcribing');
-        $micBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0 1 10 10"/></svg>';
-        $voiceStatus.innerHTML = '<span style="color:var(--accent)">Transcribing...</span>';
+        $micBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="animation: wts-spin 1s linear infinite;"><path d="M12 2a10 10 0 0 1 10 10"/></svg>';
+        $voiceStatus.innerHTML = '<span style="color:var(--accent);">Transcribing…</span>';
     }
 }
 
@@ -845,7 +601,7 @@ function startVoiceAudioLevel(stream) {
         }
         updateLevels();
     } catch {
-        // AudioContext not supported — ignore
+        // ignore
     }
 }
 
@@ -866,7 +622,6 @@ function formatTime(s) {
     return m + ':' + String(sec).padStart(2, '0');
 }
 
-// Input handling
 $input.addEventListener('input', () => {
     $input.style.height = 'auto';
     $input.style.height = Math.min($input.scrollHeight, 120) + 'px';
@@ -889,20 +644,16 @@ function updateSendBtn() {
     $sendBtn.disabled = !$input.value.trim() || sending;
 }
 
-// Helpers
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function formatMarkdown(text) {
     if (!text) return '';
     let html = escapeHtml(text);
-    // Bold
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code style="background:var(--accent-dim);padding:1px 4px;border-radius:3px;font-family:var(--mono);font-size:13px;">$1</code>');
-    // Line breaks
+    html = html.replace(/`([^`]+)`/g, '<code style="background:var(--bg-2);padding:1px 4px;border-radius:3px;font-family:var(--mono);font-size:13px;">$1</code>');
     html = html.replace(/\n/g, '<br>');
     return html;
 }

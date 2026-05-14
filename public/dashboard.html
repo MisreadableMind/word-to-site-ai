@@ -4,352 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <title>WordToSite | Dashboard</title>
+    <title>word→site | Sites</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/wts.css?v=2">
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --bg: #FFFDF7;
-            --bg-subtle: #FFF8F0;
-            --surface: #FFFFFF;
-            --surface-hover: #FFF5EC;
-            --border: rgba(140, 120, 100, 0.18);
-            --border-hover: rgba(140, 120, 100, 0.30);
-            --text: #2D2926;
-            --text-secondary: #4A4540;
-            --text-muted: #8A8580;
-            --accent: #6C5CE7;
-            --accent-bright: #5A4BD1;
-            --accent-dim: rgba(108,92,231,0.10);
-            --green: #16A34A;
-            --green-dim: rgba(22,163,74,0.12);
-            --yellow: #D97706;
-            --yellow-dim: rgba(217,119,6,0.10);
-            --error: #DC2626;
-            --error-dim: rgba(220,38,38,0.06);
-            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
-            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
-            --radius: 12px;
-            --radius-sm: 8px;
-            --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg); color: var(--text);
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .grid-bg {
-            position: fixed; inset: 0;
-            background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
-            background-size: 64px 64px; pointer-events: none; z-index: 0;
-        }
-        .grid-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent); }
-
-        /* NAV */
-        .nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(255,253,247,0.8);
-            backdrop-filter: blur(16px) saturate(1.2);
-            -webkit-backdrop-filter: blur(16px) saturate(1.2);
-            border-bottom: 1px solid var(--border);
-        }
-        .nav-inner {
-            max-width: 960px; margin: 0 auto;
-            padding: 0 24px; height: 60px;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .nav-brand {
-            display: flex; align-items: center; gap: 10px;
-            text-decoration: none; color: var(--text);
-            font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
-        }
-        .nav-logo {
-            width: 28px; height: 28px;
-            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
-            border-radius: 7px; display: flex;
-            align-items: center; justify-content: center;
-            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
-        }
-        .nav-logo svg { width: 15px; height: 15px; }
-
-        .nav-right { display: flex; align-items: center; gap: 12px; }
-        .nav-link {
-            font-size: 13px; font-weight: 500;
-            color: var(--text-muted); padding: 6px 12px;
-            border-radius: 6px; transition: all 150ms;
-            text-decoration: none;
-        }
-        .nav-link:hover { color: var(--text-secondary); background: var(--accent-dim); }
-
-        .user-menu {
-            position: relative;
-        }
-        .user-menu-btn {
-            display: flex; align-items: center; gap: 8px;
-            padding: 5px 12px 5px 8px;
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 100px; cursor: pointer;
-            font-family: inherit; font-size: 13px; font-weight: 500;
-            color: var(--text-secondary); transition: all 150ms;
-        }
-        .user-menu-btn:hover { border-color: var(--border-hover); background: var(--surface-hover); }
-        .user-avatar {
-            width: 24px; height: 24px; border-radius: 50%;
-            background: var(--accent-dim); color: var(--accent);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 11px; font-weight: 700;
-        }
-        .user-dropdown {
-            display: none; position: absolute; right: 0; top: calc(100% + 8px);
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius-sm); box-shadow: var(--shadow-md);
-            min-width: 180px; overflow: hidden; z-index: 200;
-        }
-        .user-dropdown.open { display: block; }
-        .dropdown-item {
-            display: block; width: 100%; padding: 10px 16px;
-            font-family: inherit; font-size: 13px; font-weight: 500;
-            color: var(--text-secondary); text-decoration: none;
-            border: none; background: none; cursor: pointer;
-            text-align: left; transition: background 150ms;
-        }
-        .dropdown-item:hover { background: var(--surface-hover); }
-        .dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
-        .dropdown-item.danger { color: var(--error); }
-
-        /* MAIN */
-        .main {
-            position: relative; z-index: 1;
-            max-width: 960px; margin: 0 auto;
-            padding: 92px 24px 60px;
-        }
-
-        .page-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 32px;
-        }
-        .page-header h1 { font-size: 24px; font-weight: 700; }
-
-        .btn-create {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 10px 20px;
-            font-family: inherit; font-size: 13px; font-weight: 600;
-            background: var(--accent); color: #fff;
-            border: none; border-radius: var(--radius-sm);
-            cursor: pointer; transition: all 150ms;
-            text-decoration: none;
-        }
-        .btn-create:hover { background: var(--accent-bright); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(108,92,231,0.3); }
-        .btn-create svg { width: 16px; height: 16px; }
-
-        /* SITE CARDS */
-        .sites-list { display: flex; flex-direction: column; gap: 12px; }
-
-        .site-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px 24px;
-            box-shadow: var(--shadow-sm);
-            transition: border-color 150ms, box-shadow 150ms;
-        }
-        .site-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-md); }
-
-        .site-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
-        .site-name { font-size: 16px; font-weight: 600; }
-        .site-url {
-            font-size: 12px; font-family: var(--mono);
-            color: var(--text-muted); margin-top: 4px;
-            word-break: break-all;
-        }
-
-        .site-badges { display: flex; gap: 8px; flex-wrap: wrap; }
-        .badge {
-            display: inline-flex; align-items: center;
-            padding: 3px 10px; border-radius: 100px;
-            font-size: 11px; font-weight: 600;
-            letter-spacing: 0.3px; text-transform: uppercase;
-        }
-        .badge-active { background: var(--green-dim); color: var(--green); }
-        .badge-provisioning { background: var(--yellow-dim); color: var(--yellow); }
-        .badge-deleted { background: var(--error-dim); color: var(--error); }
-        .badge-template { background: var(--accent-dim); color: var(--accent); }
-
-        .site-card-meta {
-            display: flex; align-items: center; gap: 16px;
-            font-size: 12px; color: var(--text-muted);
-            margin-bottom: 16px;
-        }
-
-        .site-card-actions { display: flex; gap: 8px; }
-        .btn-site {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 7px 14px;
-            font-family: inherit; font-size: 12px; font-weight: 600;
-            border-radius: 6px; cursor: pointer;
-            transition: all 150ms; text-decoration: none;
-            border: 1px solid var(--border);
-            background: var(--surface); color: var(--text-secondary);
-        }
-        .btn-site:hover { border-color: var(--border-hover); background: var(--surface-hover); }
-        .btn-site svg { width: 14px; height: 14px; }
-        .btn-site.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .btn-site.primary:hover { background: var(--accent-bright); }
-        .btn-site.danger { color: var(--error); border-color: rgba(220,38,38,0.2); }
-        .btn-site.danger:hover { background: var(--error-dim); }
-
-        /* EMPTY STATE */
-        .empty-state {
-            text-align: center; padding: 80px 24px;
-            background: var(--surface);
-            border: 1px dashed var(--border);
-            border-radius: var(--radius);
-        }
-        .empty-icon {
-            width: 56px; height: 56px; margin: 0 auto 20px;
-            background: var(--accent-dim); border-radius: 16px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .empty-icon svg { width: 28px; height: 28px; color: var(--accent); }
-        .empty-state h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-        .empty-state p { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
-
-        /* CONFIRM DIALOG */
-        .dialog-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.4); z-index: 300;
-            align-items: center; justify-content: center;
-        }
+        .dialog-overlay { display: none; position: fixed; inset: 0; background: rgba(14,14,12,0.45); z-index: 300; align-items: center; justify-content: center; }
         .dialog-overlay.open { display: flex; }
-        .dialog {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            padding: 28px; max-width: 400px; width: 90%;
-        }
-        .dialog h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-        .dialog p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
-        .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
-        .btn-cancel {
-            padding: 8px 16px; font-family: inherit; font-size: 13px; font-weight: 500;
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 6px; cursor: pointer; color: var(--text-secondary);
-        }
-        .btn-confirm-delete {
-            padding: 8px 16px; font-family: inherit; font-size: 13px; font-weight: 600;
-            background: var(--error); border: none;
-            border-radius: 6px; cursor: pointer; color: #fff;
-        }
-
-        /* LOADING */
-        .loading { text-align: center; padding: 60px; color: var(--text-muted); font-size: 14px; }
+        .dialog { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-md); padding: 24px; max-width: 420px; width: 90%; }
+        .empty-card { text-align: center; padding: 64px 24px; background: var(--surface); border: 1px dashed var(--line-2); border-radius: 8px; }
+        .empty-icon { width: 48px; height: 48px; margin: 0 auto 16px; background: var(--bg-3); border-radius: 8px; display: grid; place-items: center; color: var(--muted); }
+        .loading-state { text-align: center; padding: 60px; color: var(--muted); font-size: 14px; }
     </style>
 </head>
-<body>
-<div class="grid-bg"></div>
+<body class="wts">
+<div class="wts-shell">
+    <div id="wts-sidebar-mount"></div>
 
-<nav class="nav">
-    <div class="nav-inner">
-        <a class="nav-brand" href="/">
-            <div class="nav-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <div class="wts-shell-main">
+        <div class="wts-top">
+            <div class="wts-crumbs">
+                <span id="crumbUser">Account</span>
+                <span class="sep">/</span>
+                <b>Sites</b>
             </div>
-            <span>WordToSite</span>
-        </a>
-        <div class="nav-right">
-            <div class="user-menu">
-                <button class="user-menu-btn" id="userMenuBtn">
-                    <div class="user-avatar" id="userAvatar">?</div>
-                    <span id="userName">Account</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="user-dropdown" id="userDropdown">
-                    <a class="dropdown-item" href="/profile.html">Profile</a>
-                    <a class="dropdown-item" href="/billing.html">Billing</a>
-                    <a class="dropdown-item" href="/domains.html">Domains</a>
-                    <a class="dropdown-item" href="/pricing.html">Pricing</a>
-                    <a class="dropdown-item" href="/usage.html">Usage</a>
-                    <div class="dropdown-divider"></div>
-                    <button class="dropdown-item danger" id="logoutBtn">Log out</button>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <a class="wts-btn primary" href="/app.html">
+                    <span class="ico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg></span>
+                    New site
+                </a>
+            </div>
+        </div>
+
+        <div class="wts-content">
+            <div class="loading-state" id="loadingState">Loading…</div>
+
+            <div id="content" style="display:none; padding:32px 36px 60px; max-width:1280px; margin:0 auto;">
+                <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:28px;">
+                    <div>
+                        <h1 class="wts-page-title">Sites</h1>
+                        <p class="wts-page-lede" id="sitesSummary">Loading…</p>
+                    </div>
+                </div>
+
+                <div id="sitesList"></div>
+
+                <div id="emptyState" class="empty-card" style="display:none">
+                    <div class="empty-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                    </div>
+                    <h2 class="wts-page-sub" style="font-size:18px;">No sites yet</h2>
+                    <p style="font-size:13.5px; color:var(--muted); margin:8px 0 20px;">Create your first website in under 90 seconds.</p>
+                    <a class="wts-btn primary" href="/app.html">
+                        <span class="ico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg></span>
+                        Create your first site
+                    </a>
                 </div>
             </div>
-        </div>
-    </div>
-</nav>
-
-<div class="main">
-    <div class="loading" id="loadingState">Loading...</div>
-
-    <div id="content" style="display:none">
-        <div class="page-header">
-            <h1>Your Sites</h1>
-            <a class="btn-create" href="/app.html">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-                Create New Site
-            </a>
-        </div>
-
-        <div id="sitesList" class="sites-list"></div>
-        <div id="emptyState" class="empty-state" style="display:none">
-            <div class="empty-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-            </div>
-            <h2>No sites yet</h2>
-            <p>Create your first website in under 90 seconds.</p>
-            <a class="btn-create" href="/app.html">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-                Create Your First Site
-            </a>
         </div>
     </div>
 </div>
 
 <div class="dialog-overlay" id="deleteDialog">
     <div class="dialog">
-        <h3>Delete site?</h3>
-        <p>This will remove the site from your dashboard. The WordPress instance will remain active.</p>
-        <div class="dialog-actions">
-            <button class="btn-cancel" id="cancelDelete">Cancel</button>
-            <button class="btn-confirm-delete" id="confirmDelete">Delete</button>
+        <h3 class="wts-page-sub" style="font-size:16px; margin-bottom:8px;">Delete site?</h3>
+        <p style="font-size:13px; color:var(--muted); line-height:1.5; margin-bottom:20px;">This will remove the site from your dashboard. The WordPress instance will remain active.</p>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+            <button class="wts-btn" id="cancelDelete">Cancel</button>
+            <button class="wts-btn danger" id="confirmDelete">Delete</button>
         </div>
     </div>
 </div>
 
+<script src="/assets/wts-platform.js"></script>
 <script>
-let currentUser = null;
 let deletingSiteId = null;
+let allSites = [];
+let activeFilter = 'all';
 
-// Auth guard
-async function checkAuth() {
-    try {
-        const res = await fetch('/api/auth/me');
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        currentUser = data.user;
-        updateUserUI();
-        loadSites();
-    } catch {
-        window.location.href = '/login.html';
-    }
-}
-
-function updateUserUI() {
-    const initials = (currentUser.displayName || currentUser.email || '?')
-        .split(/[\s@]/)
-        .map(w => w[0]?.toUpperCase())
-        .filter(Boolean)
-        .slice(0, 2)
-        .join('');
-    document.getElementById('userAvatar').textContent = initials;
-    document.getElementById('userName').textContent = currentUser.displayName || currentUser.email.split('@')[0];
-}
+WtsPlatform.init({ active: 'sites' }).then(loadSites).catch(() => {});
 
 async function loadSites() {
     document.getElementById('loadingState').style.display = 'none';
@@ -358,33 +92,90 @@ async function loadSites() {
     try {
         const res = await fetch('/api/sites');
         const data = await res.json();
-        const sites = data.sites || [];
-
-        if (sites.length === 0) {
-            document.getElementById('emptyState').style.display = '';
-            document.getElementById('sitesList').style.display = 'none';
-            return;
-        }
-
-        document.getElementById('sitesList').innerHTML = sites.map(site => renderSiteCard(site)).join('');
+        allSites = data.sites || [];
+        renderSites();
     } catch {
-        document.getElementById('sitesList').innerHTML = '<p style="color:var(--error);text-align:center;padding:20px;">Failed to load sites</p>';
+        document.getElementById('sitesList').innerHTML = '<div class="wts-card" style="padding:24px; text-align:center; color:var(--danger);">Failed to load sites</div>';
     }
 }
 
-function tryParseUrl(value) {
-    if (typeof value !== 'string' || !value.trim()) {
-      return null;
-    }
+function renderSites() {
+    const counts = {
+        all: allSites.length,
+        active: allSites.filter(s => s.status === 'active').length,
+        provisioning: allSites.filter(s => s.status === 'provisioning').length,
+        deleted: allSites.filter(s => s.status === 'deleted').length,
+    };
 
+    document.getElementById('sitesSummary').textContent =
+        `${counts.all} site${counts.all !== 1 ? 's' : ''} · ${counts.active} live · ${counts.provisioning} provisioning · ${counts.deleted} archived`;
+    const sidebarCount = document.getElementById('sidebarCount');
+    if (sidebarCount) sidebarCount.textContent = counts.all || '';
+
+    if (allSites.length === 0) {
+        document.getElementById('emptyState').style.display = '';
+        document.getElementById('sitesList').innerHTML = '';
+        return;
+    }
+    document.getElementById('emptyState').style.display = 'none';
+
+    const filtered = activeFilter === 'all'
+        ? allSites
+        : allSites.filter(s => s.status === activeFilter);
+
+    const rows = filtered.map(site => renderSiteRow(site)).join('');
+
+    document.getElementById('sitesList').innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+            <div class="wts-tabs">
+                <button class="wts-tab ${activeFilter==='all'?'active':''}" data-filter="all">All <span class="count">${counts.all}</span></button>
+                <button class="wts-tab ${activeFilter==='active'?'active':''}" data-filter="active">Live <span class="count">${counts.active}</span></button>
+                <button class="wts-tab ${activeFilter==='provisioning'?'active':''}" data-filter="provisioning">Provisioning <span class="count">${counts.provisioning}</span></button>
+                <button class="wts-tab ${activeFilter==='deleted'?'active':''}" data-filter="deleted">Archived <span class="count">${counts.deleted}</span></button>
+            </div>
+        </div>
+
+        <div class="wts-card">
+            <div class="wts-card-head">
+                <div class="wts-card-title">Your sites</div>
+                <div style="display:flex; gap:12px; align-items:center; font-size:12px; color:var(--muted);">
+                    <span>Sort: <b style="color:var(--ink); font-weight:500;">Last updated</b> ↓</span>
+                </div>
+            </div>
+            ${filtered.length === 0 ? `
+                <div style="padding:48px 24px; text-align:center; color:var(--muted-2); font-size:13.5px;">No sites in this filter.</div>
+            ` : `
+                <table class="wts-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th style="width:1%; white-space:nowrap;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            `}
+        </div>
+    `;
+
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            activeFilter = btn.dataset.filter;
+            renderSites();
+        });
+    });
+}
+
+function tryParseUrl(value) {
+    if (typeof value !== 'string' || !value.trim()) return null;
     const protocolRegExp = new RegExp(/^https?:\/\//i);
     const full = protocolRegExp.test(value) ? value.trim() : `https://${value.trim()}`;
-
-    try {
-      return new URL(full);
-    } catch {
-      return null;
-    }
+    try { return new URL(full); } catch { return null; }
 }
 
 function siteBaseUrl(site) {
@@ -395,58 +186,65 @@ function siteBaseUrl(site) {
     return wp ? wp.origin : '';
 }
 
-function renderSiteCard(site) {
-    const statusClass = site.status === 'active' ? 'badge-active' : site.status === 'deleted' ? 'badge-deleted' : 'badge-provisioning';
+const SITE_COLORS = ['#3F3D3A', '#8B5A2B', '#1F5240', '#2A3050', '#7A7A72', '#5A4B6E'];
+function colorForSite(site) {
+    let hash = 0;
+    const key = (site.id || site.site_name || '').toString();
+    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+    return SITE_COLORS[hash % SITE_COLORS.length];
+}
+
+function siteInitials(name) {
+    return (name || 'NA')
+        .split(/\s+/)
+        .map(w => w[0]?.toUpperCase() || '')
+        .filter(Boolean)
+        .slice(0, 2)
+        .join('') || 'NA';
+}
+
+function statusBadge(status) {
+    if (status === 'active') return '<span class="wts-badge live"><span class="dot"></span>Live</span>';
+    if (status === 'provisioning') return '<span class="wts-badge draft"><span class="dot"></span>Provisioning</span>';
+    if (status === 'deleted') return '<span class="wts-badge archived"><span class="dot"></span>Archived</span>';
+    return `<span class="wts-badge archived"><span class="dot"></span>${escapeHtml(status || 'Unknown')}</span>`;
+}
+
+function renderSiteRow(site) {
     const displayUrl = site.domain || site.wp_url || '';
     const baseUrl = siteBaseUrl(site);
-    const visitUrl = baseUrl || null;
     const editorUrl = `/editor.html?site=${site.id}`;
-    const wpAdminUrl = baseUrl ? `${baseUrl}/wp-admin` : '#';
     const created = new Date(site.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const inits = siteInitials(site.site_name);
+    const color = colorForSite(site);
 
     return `
-        <div class="site-card" data-id="${site.id}">
-            <div class="site-card-header">
-                <div>
-                    <div class="site-name">${escapeHtml(site.site_name || 'Untitled Site')}</div>
-                    <div class="site-url">${escapeHtml(displayUrl)}</div>
+        <tr data-id="${site.id}">
+            <td>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:30px; height:30px; background:${color}; border-radius:5px; color:var(--bg); display:grid; place-items:center; font-size:11px; font-weight:600; flex-shrink:0;">${escapeHtml(inits)}</div>
+                    <div style="min-width:0;">
+                        <div style="font-weight:500; font-size:13.5px;">${escapeHtml(site.site_name || 'Untitled site')}</div>
+                        <div class="wts-mono" style="font-size:11.5px; color:var(--muted-2); margin-top:1px;">${escapeHtml(displayUrl)}</div>
+                    </div>
                 </div>
-                <div class="site-badges">
-                    ${site.template_slug ? `<span class="badge badge-template">${escapeHtml(site.template_slug)}</span>` : ''}
-                    <span class="badge ${statusClass}">${escapeHtml(site.status)}</span>
-                </div>
-            </div>
-            <div class="site-card-meta">
-                <span>Created ${created}</span>
-                ${site.onboard_type ? `<span>via ${escapeHtml(site.onboard_type)}</span>` : ''}
-            </div>
-            <div class="site-card-actions">
-                ${visitUrl ? `<a class="btn-site primary" href="${escapeHtml(visitUrl)}" target="_blank" rel="noopener">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    Visit
-                </a>` : ''}
-                <a class="btn-site" href="${escapeHtml(editorUrl)}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    Edit
-                </a>
-                ${wpAdminUrl !== '#' ? `<a class="btn-site" href="${escapeHtml(wpAdminUrl)}" target="_blank" rel="noopener">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                    WP Admin
-                </a>` : ''}
-                <button class="btn-site danger" onclick="openDelete('${site.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                    Delete
-                </button>
-            </div>
-        </div>`;
+            </td>
+            <td style="color:var(--muted);">${escapeHtml(site.template_slug || site.onboard_type || '—')}</td>
+            <td>${statusBadge(site.status)}</td>
+            <td style="color:var(--muted);">${created}</td>
+            <td style="text-align:right; white-space:nowrap;">
+                ${baseUrl ? `<a class="wts-btn ghost" href="${escapeHtml(baseUrl)}" target="_blank" rel="noopener" style="height:26px; padding:0 10px; font-size:12px;">Visit ↗</a>` : ''}
+                <a class="wts-btn ghost" href="${escapeHtml(editorUrl)}" style="height:26px; padding:0 10px; font-size:12px;">Open</a>
+                <button class="wts-btn ghost" onclick="openDelete('${site.id}')" style="height:26px; padding:0 8px; font-size:12px; color:var(--danger);">Delete</button>
+            </td>
+        </tr>`;
 }
 
 function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Delete flow
 function openDelete(siteId) {
     deletingSiteId = siteId;
     document.getElementById('deleteDialog').classList.add('open');
@@ -468,23 +266,6 @@ document.getElementById('confirmDelete').addEventListener('click', async () => {
         alert('Failed to delete site');
     }
 });
-
-// User menu
-document.getElementById('userMenuBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    document.getElementById('userDropdown').classList.toggle('open');
-});
-document.addEventListener('click', () => {
-    document.getElementById('userDropdown').classList.remove('open');
-});
-
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/login.html';
-});
-
-checkAuth();
 </script>
 </body>
 </html>

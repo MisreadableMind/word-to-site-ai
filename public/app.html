@@ -4,1618 +4,582 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <title>WordToSite | Create your website</title>
+    <title>word→site | New site</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/wts.css?v=2">
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        /* Stepper */
+        .wts-stepper { display: flex; align-items: center; gap: 0; }
+        .wts-step { display: flex; align-items: center; gap: 8px; }
+        .wts-step-circle { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 600; font-family: var(--mono); color: #fff; }
+        .wts-step.todo .wts-step-circle { background: transparent; border: 1px solid var(--line-2); color: var(--muted-2); }
+        .wts-step.active .wts-step-circle { background: var(--accent); }
+        .wts-step.done .wts-step-circle { background: var(--ink); }
+        .wts-step-label { font-size: 12.5px; }
+        .wts-step.todo .wts-step-label { color: var(--muted-2); }
+        .wts-step.active .wts-step-label { color: var(--ink); font-weight: 500; }
+        .wts-step.done .wts-step-label { color: var(--ink); }
+        .wts-step-connector { width: 32px; height: 1px; background: var(--line-2); margin: 0 14px; }
 
-        :root {
-            --bg: #FFFDF7;
-            --bg-subtle: #FFF8F0;
-            --surface: #FFFFFF;
-            --surface-hover: #FFF5EC;
-            --border: rgba(140, 120, 100, 0.18);
-            --border-hover: rgba(140, 120, 100, 0.30);
-            --text: #2D2926;
-            --text-secondary: #4A4540;
-            --text-muted: #8A8580;
-            --accent: #6C5CE7;
-            --accent-bright: #5A4BD1;
-            --accent-dim: rgba(108,92,231,0.10);
-            --green: #16A34A;
-            --green-dim: rgba(22,163,74,0.12);
-            --yellow: #D97706;
-            --yellow-dim: rgba(217,119,6,0.10);
-            --pink: #DB2777;
-            --pink-dim: rgba(219,39,119,0.10);
-            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
-            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
-            --orange: #EA580C;
-            --error: #DC2626;
-            --error-dim: rgba(220,38,38,0.06);
-            --radius: 12px;
-            --radius-sm: 8px;
-            --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
-        }
+        /* Choice cards (state 1) */
+        .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 700px) { .choice-grid { grid-template-columns: 1fr; } }
+        .choice-card { text-align: left; background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px; padding: 22px 24px 20px; position: relative; cursor: pointer; display: flex; flex-direction: column; min-height: 280px; font: inherit; color: inherit; box-shadow: var(--shadow-sm); transition: border-color 120ms, box-shadow 120ms; }
+        .choice-card:hover { border-color: var(--ink); box-shadow: var(--shadow-md); }
+        .choice-card.selected { border-color: var(--ink); box-shadow: var(--shadow-md), 0 0 0 1px var(--ink); }
+        .choice-card-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+        .choice-card-title { font-family: var(--serif); font-weight: 500; font-size: 24px; letter-spacing: -0.015em; margin-top: 18px; }
+        .choice-card-body { margin-top: 8px; font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+        .choice-card-steps { margin-top: auto; padding-top: 24px; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .choice-card-steps li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--ink-2); }
+        .choice-card-steps li .n { font-family: var(--mono); font-size: 11px; color: var(--muted-2); min-width: 16px; padding-top: 1px; }
+        .choice-card .badge-selected { display: none; }
+        .choice-card.selected .badge-time { display: none; }
+        .choice-card.selected .badge-selected { display: inline-flex; }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+        /* Form/Voice fields */
+        .voice-form { display: flex; flex-direction: column; gap: 18px; }
+        .input-with-mic { position: relative; }
+        .input-with-mic .wts-input, .input-with-mic .wts-textarea { padding-right: 44px; }
+        .mic-btn { position: absolute; right: 6px; top: 6px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); border: 0; cursor: pointer; }
+        .mic-btn:hover { background: var(--ink-2); }
+        .mic-btn.recording { background: var(--danger); animation: wts-pulse 1.4s ease-in-out infinite; }
+        .mic-btn.transcribing { background: var(--accent); }
+        .input-with-mic textarea + .mic-btn { top: 8px; }
+        .mic-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+        @keyframes wts-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(180,35,24,0.35); } 50% { box-shadow: 0 0 0 6px rgba(180,35,24,0); } }
 
-        ::selection { background: rgba(108,92,231,0.2); color: #2D2926; }
-
-        .grid-bg {
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
-            background-size: 64px 64px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .grid-bg::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent);
-        }
-
-        /* --- NAV --- */
-        .nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            background: rgba(255,253,247,0.8);
-            backdrop-filter: blur(16px) saturate(1.2);
-            -webkit-backdrop-filter: blur(16px) saturate(1.2);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .nav-inner {
-            max-width: 720px;
-            margin: 0 auto;
-            padding: 0 24px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: var(--text);
-            font-weight: 700;
-            font-size: 15px;
-            letter-spacing: -0.3px;
-        }
-
-        .nav-logo {
-            width: 28px;
-            height: 28px;
-            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
-            border-radius: 7px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
-        }
-
-        .nav-logo svg { width: 15px; height: 15px; }
-
-        .nav-right { display: flex; align-items: center; gap: 12px; }
-
-        .nav-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 100px;
-            border: 1px solid var(--border);
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-muted);
-        }
-
-        .nav-badge .pulse {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: var(--green);
-            animation: pulse 2s ease infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
-            50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(52,211,153,0); }
-        }
-
-        .nav-link-back {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-muted);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 6px;
-            transition: all 150ms;
-        }
-
-        .nav-link-back:hover { color: var(--text-secondary); background: rgba(0,0,0,0.04); }
-        .nav-link-back svg { width: 14px; height: 14px; }
-
-        /* --- MAIN --- */
-        .main, .auth-gate {
-            position: relative;
-            z-index: 1;
-            max-width: 640px;
-            margin: 0 auto;
-            padding: 100px 24px 120px;
-        }
-
-        .page-header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
-        .page-header h1 {
-            font-size: 32px;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            line-height: 1.1;
-            margin-bottom: 12px;
-        }
-
-        .page-header h1 .gradient {
-            background: linear-gradient(135deg, #5A4BD1 0%, #9333EA 50%, #BE185D 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .page-header p {
-            font-size: 16px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        /* --- SECTION LABEL --- */
-        .section-label {
-            font-family: var(--mono);
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--accent);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .section-label::before {
-            content: '';
-            width: 16px;
-            height: 1px;
-            background: var(--accent);
-        }
-
-        /* --- FLOW CARDS (Accordion) --- */
-        .flow-selection { margin-bottom: 24px; }
-
-        .flow-card-wrapper { margin-bottom: 12px; }
-
-        .flow-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px 28px;
-            cursor: pointer;
-            transition: all 200ms;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .flow-card:hover {
-            border-color: var(--border-hover);
-            background: var(--surface);
-            box-shadow: var(--shadow-md);
-        }
-
-        .flow-card.selected {
-            border-color: var(--accent);
-            background: var(--accent-dim);
-            box-shadow: 0 0 0 1px var(--accent), 0 4px 24px rgba(108,92,231,0.12);
-            border-radius: var(--radius) var(--radius) 0 0;
-        }
-
-        .flow-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .flow-icon.migrate { background: rgba(108,92,231,0.14); color: var(--accent); }
-        .flow-icon.fresh { background: rgba(22,163,74,0.14); color: var(--green); }
-        .flow-icon svg { width: 22px; height: 22px; }
-
-        .flow-text { flex: 1; }
-
-        .flow-text h3 {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .flow-text p {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.4;
-        }
-
-        .time-badge {
-            display: inline-flex;
-            align-items: center;
-            font-family: var(--mono);
-            font-size: 11px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 100px;
-            background: rgba(22,163,74,0.12);
-            color: #15803D;
-        }
-
-        .flow-arrow {
-            color: var(--text-muted);
-            transition: transform 200ms;
-        }
-
-        .flow-card:hover .flow-arrow { transform: translateX(3px); }
-        .flow-card svg { flex-shrink: 0; }
-
-        /* Accordion panel under each flow card */
-        .flow-accordion {
-            display: grid;
-            grid-template-rows: 0fr;
-            transition: grid-template-rows 0.35s ease;
-            background: var(--surface);
-            border: 1px solid var(--accent);
-            border-top: none;
-            border-radius: 0 0 var(--radius) var(--radius);
-        }
-
-        .flow-accordion > .flow-accordion-inner {
-            overflow: hidden;
-            padding: 0 28px;
-            transition: padding 0.35s ease;
-        }
-
-        .flow-accordion.open {
-            grid-template-rows: 1fr;
-        }
-
-        .flow-accordion.open > .flow-accordion-inner {
-            padding: 24px 28px;
-        }
-
-        /* --- ONBOARDING FORM --- */
-        .onboarding-form { display: flex; flex-direction: column; gap: 18px; }
-
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-
-        .form-group label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .form-group label .required { color: var(--error); margin-left: 2px; }
-
-        .input-with-mic {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .input-with-mic input,
-        .input-with-mic textarea { flex: 1; }
-
-        textarea {
-            width: 100%;
-            padding: 11px 14px;
-            font-size: 14px;
-            font-family: inherit;
-            color: var(--text);
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            transition: all 150ms;
-            outline: none;
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        textarea:hover { border-color: var(--border-hover); }
-        textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108,92,231,0.12); }
-
-        .mic-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 150ms;
-            flex-shrink: 0;
-            padding: 0;
-        }
-
-        .mic-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-        .mic-btn svg { width: 16px; height: 16px; }
-
-        .mic-btn.recording {
-            background: var(--error);
-            border-color: var(--error);
-            color: #fff;
-            animation: pulse-btn 1.5s ease infinite;
-        }
-
-        .mic-btn.transcribing {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-            pointer-events: none;
-        }
-
-        .mic-btn.transcribing svg { display: none; }
-
-        .mic-btn.transcribing::after {
-            content: '';
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
-
-        /* Recording: input border glow */
-        .input-with-mic.is-recording input,
-        .input-with-mic.is-recording textarea {
-            border-color: var(--error);
-            box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
-        }
-
-        .input-with-mic.is-transcribing input,
-        .input-with-mic.is-transcribing textarea {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(108,92,231,0.12);
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        /* Quick-select chips */
+        /* Quick chips */
         .quick-options { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-        .quick-chip {
-            padding: 5px 12px;
-            border-radius: 16px;
-            font-size: 13px;
-            border: 1px solid var(--border);
-            background: var(--surface);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.15s;
-            user-select: none;
-        }
-        .quick-chip:hover { border-color: var(--accent); color: var(--accent); }
-        .quick-chip.selected {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-        }
+        .quick-chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; color: var(--muted); background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 100px; cursor: pointer; }
+        .quick-chip:hover { border-color: var(--ink); color: var(--ink); }
+        .quick-chip.selected { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
-        /* Address row */
-        .address-row {
-            display: flex;
-            gap: 8px;
-        }
-        .address-row input { flex: 1; }
+        /* Voice status bar */
+        .voice-status { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px 12px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-md); font-size: 12px; color: var(--muted); animation: wts-fade-in 200ms ease-out; }
+        .voice-status.is-exiting { animation: wts-fade-out 200ms ease-in forwards; }
+        @keyframes wts-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+        @keyframes wts-fade-out { from { opacity: 1; } to { opacity: 0; } }
+        .voice-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: wts-pulse 1.4s ease-in-out infinite; }
+        .voice-status.transcribing .voice-status-dot { display: none; }
+        .voice-status-spinner { width: 14px; height: 14px; border: 1.5px solid var(--line-2); border-top-color: var(--accent); border-radius: 50%; animation: wts-spin 0.8s linear infinite; }
+        @keyframes wts-spin { to { transform: rotate(360deg); } }
+        .voice-level { display: inline-flex; gap: 2px; align-items: center; height: 16px; }
+        .voice-level-bar { display: inline-block; width: 2px; background: var(--ink); border-radius: 1px; transition: height 80ms ease-out; }
+        .voice-status-text { color: var(--ink); }
+        .voice-status-timer { font-family: var(--mono); font-size: 11px; color: var(--muted-2); margin-left: auto; }
+        .voice-status-hint { font-size: 11px; color: var(--muted-2); }
 
-        /* Generate with AI button */
-        .btn-generate {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--accent);
-            background: var(--accent-dim);
-            border: 1px solid transparent;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.15s;
-            align-self: flex-start;
-        }
-        .btn-generate:hover { background: rgba(108,92,231,0.18); }
-        .btn-generate:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .btn-generate.is-generating {
-            pointer-events: none;
-            cursor: wait;
-        }
-        .btn-generate.is-generating:disabled {
-            opacity: 1;
-        }
-        .btn-generate .icon-spinner { display: none; }
+        /* Tagline */
+        .tagline-box { position: relative; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; font-family: var(--serif); font-size: 16px; color: var(--ink); display: flex; align-items: center; gap: 12px; }
+        .tagline-text { flex: 1; }
+        .tagline-skeleton { position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(14,14,12,0.04), transparent); background-size: 200% 100%; opacity: 0; pointer-events: none; border-radius: inherit; }
+        .tagline-box.is-regenerating .tagline-skeleton { opacity: 1; animation: shimmer 1.2s ease-in-out infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .regenerate-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 11.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); cursor: pointer; }
+        .regenerate-btn:hover { border-color: var(--ink); color: var(--ink); }
+        .regenerate-btn svg { width: 11px; height: 11px; }
+
+        /* AI generate button */
+        .btn-generate { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 12px; color: var(--accent); background: var(--accent-bg); border: 1px solid rgba(23,51,209,0.18); border-radius: var(--r-md); cursor: pointer; margin-top: 8px; }
+        .btn-generate:hover { background: rgba(23,51,209,0.10); }
+        .btn-generate:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-generate .icon-spinner { display: none; animation: wts-spin 1s linear infinite; }
         .btn-generate.is-generating .icon-sparkle { display: none; }
-        .btn-generate.is-generating .icon-spinner {
-            display: inline-block;
-            animation: spin 0.7s linear infinite;
-        }
-
-        /* Recording status bar */
-        .voice-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            border-radius: var(--radius-sm);
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 8px;
-            flex: 1 0 100%;
-            transform-origin: top center;
-            animation: voiceStatusIn 280ms cubic-bezier(0.16, 1, 0.3, 1);
-            transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
-        }
-
-        @keyframes voiceStatusIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px) scaleY(0.55);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scaleY(1);
-            }
-        }
-
-        .voice-status.is-exiting {
-            animation: voiceStatusOut 220ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            pointer-events: none;
-        }
-
-        @keyframes voiceStatusOut {
-            from {
-                opacity: 1;
-                transform: translateY(0) scaleY(1);
-            }
-            to {
-                opacity: 0;
-                transform: translateY(-10px) scaleY(0.55);
-            }
-        }
-
-        .voice-status.recording {
-            background: rgba(220,38,38,0.06);
-            border: 1px solid rgba(220,38,38,0.14);
-            color: var(--error);
-        }
-
-        .voice-status.transcribing {
-            background: var(--accent-dim);
-            border: 1px solid rgba(108,92,231,0.18);
-            color: var(--accent);
-        }
-
-        .voice-status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .voice-status.recording .voice-status-dot {
-            background: var(--error);
-            animation: blink-dot 1s ease infinite;
-        }
-
-        @keyframes blink-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .voice-status-text { flex: 0 0 auto; }
-        .voice-status-timer { font-variant-numeric: tabular-nums; }
-
-        .voice-status-hint {
-            margin-left: auto;
-            padding-left: 12px;
-            font-weight: 400;
-            color: var(--text-muted);
-            font-size: 11px;
-        }
-
-        .voice-status-spinner {
-            width: 12px;
-            height: 12px;
-            border: 2px solid rgba(108,92,231,0.2);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            flex-shrink: 0;
-        }
-
-        /* Audio level bars */
-        .voice-level {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            height: 16px;
-        }
-
-        .voice-level-bar {
-            width: 3px;
-            border-radius: 2px;
-            background: var(--error);
-            transition: height 80ms ease;
-        }
-
-        /* --- TAGLINE BOX --- */
-        .tagline-box {
-            padding: 12px 16px;
-            background: var(--accent-dim);
-            border: 1px solid rgba(108,92,231,0.18);
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            min-height: 44px;
-        }
-
-        .tagline-box .tagline-text {
-            font-size: 14px;
-            color: var(--text-secondary);
-            font-style: italic;
-            flex: 1;
-        }
-
-        .tagline-box .tagline-skeleton {
-            display: none;
-            flex: 1;
-            height: 14px;
-            border-radius: 4px;
-            background: linear-gradient(90deg, rgba(108,92,231,0.10) 0%, rgba(108,92,231,0.28) 50%, rgba(108,92,231,0.10) 100%);
-            background-size: 200% 100%;
-            animation: taglineShimmer 1.2s ease-in-out infinite;
-        }
-
-        .tagline-box.is-regenerating .tagline-text { display: none; }
-        .tagline-box.is-regenerating .tagline-skeleton { display: block; }
-        .tagline-box.is-regenerating .regenerate-btn .icon-refresh {
-            animation: spin 0.7s linear infinite;
-        }
-
-        @keyframes taglineShimmer {
-            0%   { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .tagline-box .regenerate-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--accent);
-            background: none;
-            border: none;
-            cursor: pointer;
-            white-space: nowrap;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .tagline-box .regenerate-btn:hover { background: rgba(108,92,231,0.1); }
-        .tagline-box .regenerate-btn:disabled { cursor: wait; }
-
-        /* --- INCLUDED FEATURES (static) --- */
-        .included-features { margin-bottom: 24px; }
-
-        .included-features-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .included-feature-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 14px;
-            border: 1px solid rgba(22,163,74,0.2);
-            border-radius: var(--radius-sm);
-            font-size: 13px;
-            color: var(--text-secondary);
-            background: var(--green-dim);
-        }
-
-        .included-feature-item svg {
-            width: 16px;
-            height: 16px;
-            color: var(--green);
-            flex-shrink: 0;
-        }
-
-        /* --- WIZARD STEP 2 --- */
-        .wizard-step { display: none; animation: fadeUp 0.4s ease; }
-        .wizard-step.active { display: block; }
-
-        .step-nav {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .step-nav .btn { flex: 1; }
-
-        .input-row { display: flex; gap: 10px; }
-        .input-row input { flex: 1; }
-
-        input[type="text"],
-        input[type="url"],
-        input[type="email"],
-        input[type="tel"] {
-            width: 100%;
-            padding: 11px 14px;
-            font-size: 14px;
-            font-family: inherit;
-            color: var(--text);
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            transition: all 150ms;
-            outline: none;
-        }
-
-        input::placeholder { color: var(--text-muted); }
-        input:hover { border-color: var(--border-hover); }
-
-        input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(108,92,231,0.12);
-        }
-
-        .input-hint {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 10px;
-        }
-
-        /* --- BUTTONS --- */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 11px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: inherit;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: all 150ms;
-            border: none;
-            outline: none;
-            white-space: nowrap;
-        }
-
-        .btn:focus-visible { box-shadow: 0 0 0 3px rgba(108,92,231,0.2); }
-
-        .btn-primary {
-            background: var(--accent);
-            color: #fff;
-        }
-
-        .btn-primary:hover { background: #5A4BD1; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(90,75,209,0.25); }
-        .btn-primary:active { transform: translateY(0); }
-
-        .btn-primary:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-ghost {
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-        }
-
-        .btn-ghost:hover { background: rgba(0,0,0,0.03); color: var(--text-secondary); border-color: var(--border-hover); }
-
-        .btn-full { width: 100%; }
-
-        .btn-lg { padding: 14px 28px; font-size: 15px; border-radius: 10px; }
-
-        .btn-launch {
-            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
-            color: #fff;
-            font-size: 15px;
-            font-weight: 700;
-            padding: 14px 32px;
-            border-radius: 10px;
-            width: 100%;
-            box-shadow: 0 4px 16px rgba(108,92,231,0.3);
-        }
-
-        .btn-launch:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(108,92,231,0.35); }
-        .btn-launch svg { width: 16px; height: 16px; }
-
-        @keyframes pulse-btn {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.3); }
-            50% { box-shadow: 0 0 0 10px rgba(220,38,38,0); }
-        }
-
-        /* --- ANSWER SUMMARY --- */
-        .answer-summary {
-            margin-top: 24px;
-            padding: 20px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .answer-summary-title {
-            font-family: var(--mono);
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-muted);
-            margin-bottom: 14px;
-        }
-
-        .summary-item {
-            display: flex;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-            animation: slideIn 0.3s ease;
-        }
-
-        .summary-item:last-child { border-bottom: none; }
-
-        .summary-item .summary-label {
-            font-family: var(--mono);
-            font-weight: 500;
-            color: var(--accent);
-            min-width: 70px;
-            flex-shrink: 0;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            padding-top: 2px;
-        }
-
-        .summary-item .summary-value {
-            color: var(--text-secondary);
-            line-height: 1.4;
-        }
-
-        /* --- CELEBRATION --- */
-        .celebration {
-            text-align: center;
-            padding: 56px 24px;
-            animation: fadeUp 0.5s ease;
-        }
-
-        .celebration-icon {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 24px;
-            background: var(--accent-dim);
-            border: 1px solid rgba(108,92,231,0.15);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: scaleIn 0.5s ease;
-        }
-
-        .celebration-spinner {
-            width: 36px;
-            height: 36px;
-            border: 2.5px solid rgba(0,0,0,0.08);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        .celebration h2 {
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            letter-spacing: -0.02em;
-        }
-
-        .celebration p {
-            font-size: 15px;
-            color: var(--text-muted);
-        }
-
-        /* --- TEMPLATE PREVIEW --- */
-        .template-preview { display: none; margin-bottom: 16px; }
-        .template-preview.active { display: block; }
-
-        .skin-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 12px;
-        }
-
-        .skin-card {
-            background: var(--surface);
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-        .skin-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-md); }
-        .skin-card.selected {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 1px var(--accent), 0 4px 20px rgba(108,92,231,0.12);
-        }
-        .skin-card.selected::after {
-            content: '';
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 22px;
-            height: 22px;
-            background: var(--accent);
-            border-radius: 50%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
-            background-size: 14px;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-
-        .skin-thumb {
-            width: 100%;
-            aspect-ratio: 16/10;
-            background: var(--bg-subtle);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        .skin-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .skin-thumb svg { width: 32px; height: 32px; color: var(--text-muted); opacity: 0.4; }
-
-        .skin-info {
-            padding: 10px 12px;
-        }
-        .skin-info h4 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-        .skin-info p { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
-        .skin-info .skin-match {
-            display: inline-block;
-            margin-top: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            color: var(--green);
-            background: var(--green-dim);
-            padding: 2px 8px;
-            border-radius: 10px;
-        }
-
-        .skin-loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-        .skin-loading svg {
-            width: 24px;
-            height: 24px;
-            animation: spin 0.7s linear infinite;
-            margin-bottom: 8px;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-family: var(--mono);
-            font-size: 11px;
-            font-weight: 500;
-            padding: 3px 10px;
-            border-radius: 100px;
-        }
-
-        .badge-success { background: rgba(22,163,74,0.12); color: #15803D; }
-
-        .badge .dot {
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        /* --- DOMAIN STEP --- */
-        .domain-step { display: none; margin-bottom: 24px; }
-        .domain-step.active { display: block; }
-
-        /* --- PRE-DEPLOY SUMMARY --- */
-        .pre-deploy-summary {
-            display: none;
-            margin-bottom: 20px;
-        }
-
-        .pre-deploy-summary.active { display: block; }
-
-        /* --- LOADING --- */
-        .loading { display: none; text-align: center; padding: 48px 24px; }
-        .loading.active { display: block; }
-
-        .spinner {
-            width: 32px;
-            height: 32px;
-            border: 2.5px solid rgba(0,0,0,0.08);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .loading-text { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-        .loading-sub { font-size: 13px; color: var(--text-muted); }
-
-        /* --- WORKFLOW PROGRESS --- */
-        .workflow-progress { display: none; margin-top: 24px; }
+        .btn-generate.is-generating .icon-spinner { display: inline-block; }
+
+        /* Skin grid */
+        .skin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+        .skin-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; cursor: pointer; transition: border-color 120ms, box-shadow 120ms; position: relative; }
+        .skin-card:hover { border-color: var(--ink); box-shadow: var(--shadow-sm); }
+        .skin-card.selected { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+        .skin-card.selected::after { content: '✓'; position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 11px; }
+        .skin-thumb { aspect-ratio: 4 / 3; background: var(--bg-2); display: grid; place-items: center; overflow: hidden; border-bottom: 1px solid var(--line); }
+        .skin-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .skin-thumb svg { width: 32px; height: 32px; color: var(--muted-2); }
+        .skin-info { padding: 12px 14px; }
+        .skin-info h4 { font-family: var(--serif); font-weight: 500; font-size: 15px; letter-spacing: -0.01em; }
+        .skin-info p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+        .skin-match { display: inline-block; font-family: var(--mono); font-size: 10.5px; color: var(--accent); }
+        .skin-loading { padding: 48px 24px; text-align: center; color: var(--muted); font-size: 13px; }
+        .skin-loading svg { width: 18px; height: 18px; margin-bottom: 8px; animation: wts-spin 1s linear infinite; }
+
+        /* Progress steps */
+        .progress-card { padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+        .progress-steps { display: flex; flex-direction: column; gap: 10px; }
+        .progress-step { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+        .progress-step .step-icon { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; font-size: 11px; }
+        .progress-step.pending .step-icon { background: transparent; border: 1px solid var(--line-2); color: var(--muted-2); }
+        .progress-step.active .step-icon { background: var(--accent); color: #fff; }
+        .progress-step.active .step-icon::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: wts-pulse-small 1.4s ease-in-out infinite; }
+        .progress-step.completed .step-icon { background: var(--ink); color: #fff; }
+        .progress-step.error .step-icon { background: var(--danger); color: #fff; }
+        .progress-step.pending .step-label { color: var(--muted-2); }
+        .progress-step.active .step-label { color: var(--ink); font-weight: 500; }
+        .progress-step.completed .step-label { color: var(--ink); }
+        .progress-step.error .step-label { color: var(--danger); }
+        @keyframes wts-pulse-small { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* Result */
+        .result-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 24px 28px; }
+        .result-card.success { border-top: 4px solid var(--success); }
+        .result-card.error { border-top: 4px solid var(--danger); }
+        .result-card h3 { font-family: var(--serif); font-weight: 500; font-size: 22px; letter-spacing: -0.015em; display: flex; align-items: center; gap: 10px; }
+        .result-card.success h3 { color: var(--success); }
+        .result-card.error h3 { color: var(--danger); }
+        .result-row { display: flex; align-items: baseline; gap: 12px; margin-top: 10px; font-size: 13px; }
+        .result-label { font-family: var(--mono); font-size: 11px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.04em; min-width: 80px; }
+        .result-value { color: var(--ink); }
+        .result-value a { color: var(--accent); }
+        .result-note { margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+        .site-url-prominent { margin-top: 8px; font-family: var(--mono); font-size: 14px; }
+        .site-url-prominent a { color: var(--accent); }
+        .error-detail { margin-top: 12px; padding: 12px 14px; background: rgba(180,35,24,0.04); border-left: 2px solid var(--danger); border-radius: var(--r-sm); font-size: 13px; color: var(--ink); }
+        .error-subline { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+        .error-limit-note { margin-top: 8px; font-size: 12px; color: var(--danger); }
+        .error-actions { margin-top: 16px; display: flex; gap: 8px; }
+        .dns-instructions { margin-top: 12px; padding: 14px 16px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-md); }
+        .dns-instructions-label { font-family: var(--mono); font-size: 11px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+        .dns-instructions-row { display: grid; grid-template-columns: 80px 1fr; gap: 12px; padding: 4px 0; font-size: 12.5px; }
+        .dns-instructions-key { color: var(--muted); }
+        .dns-instructions-row code { font-family: var(--mono); font-size: 12px; color: var(--ink); }
+
+        /* Loading + celebration */
+        .loading-block { display: none; padding: 24px; text-align: center; }
+        .loading-block.active { display: block; }
+        .spinner { width: 24px; height: 24px; border: 2px solid var(--line-2); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 12px; animation: wts-spin 0.8s linear infinite; }
+        .loading-text { font-size: 14px; font-weight: 500; }
+        .loading-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+        #celebrationSection { min-height: 60vh; display: flex; align-items: center; justify-content: center; }
+        .celebration { display: flex; flex-direction: column; align-items: center; padding: 32px 24px; text-align: center; }
+        .celebration-spinner { width: 32px; height: 32px; border: 2px solid var(--line-2); border-top-color: var(--accent); border-radius: 50%; margin-bottom: 12px; animation: wts-spin 0.8s linear infinite; }
+        .celebration h2 { font-family: var(--serif); font-size: 22px; font-weight: 500; letter-spacing: -0.015em; }
+        .celebration p { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+        /* Workflow progress */
+        .workflow-progress { display: none; margin-top: 16px; }
         .workflow-progress.active { display: block; }
 
-        .workflow-progress .progress-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px 24px;
-            box-shadow: var(--shadow-sm);
-        }
+        /* State containers */
+        [data-state] { display: none; }
+        [data-state].active { display: block; }
+        [data-state].is-busy > .state-body { display: none; }
+        .transient-block { display: none; }
+        .transient-block.active { display: block; margin-top: 16px; }
 
-        .progress-steps { display: flex; flex-direction: column; gap: 2px; }
+        .summary-item { display: flex; align-items: baseline; gap: 12px; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--line); }
+        .summary-item:last-child { border-bottom: 0; }
+        .summary-label { font-family: var(--mono); font-size: 11px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.04em; min-width: 80px; }
+        .summary-value { color: var(--ink); flex: 1; }
 
-        .progress-step {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 0;
-            transition: all 150ms;
-        }
+        .section-label-row { font-family: var(--mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
 
-        .progress-step.pending { opacity: 0.3; }
+        .included-features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+        .included-feature-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); font-size: 13px; color: var(--ink); }
+        .included-feature-item svg { width: 14px; height: 14px; color: var(--success); }
 
-        .step-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            border: 1.5px solid rgba(0,0,0,0.1);
-            color: var(--text-muted);
-            background: var(--bg);
-            transition: all 150ms;
-        }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .field-row .wts-input { width: 100%; }
 
-        .progress-step.active .step-icon {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: var(--accent-dim);
-            animation: pulse-ring 1.5s ease infinite;
-        }
+        .right-rail { background: var(--bg-2); padding: 20px 24px; overflow: auto; border-left: 1px solid var(--line); }
+        .right-rail-section { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
 
-        .progress-step.completed .step-icon {
-            border-color: var(--green);
-            background: var(--green);
-            color: #064E3B;
-        }
-
-        .progress-step.error .step-icon {
-            border-color: var(--error);
-            background: var(--error);
-            color: #fff;
-        }
-
-        @keyframes pulse-ring {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(108,92,231,0.2); }
-            50% { box-shadow: 0 0 0 6px rgba(108,92,231,0); }
-        }
-
-        .step-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-muted);
-        }
-
-        .progress-step.active .step-label { color: var(--text); }
-        .progress-step.completed .step-label { color: var(--text-secondary); }
-
-        /* --- RESULT --- */
-        .result { display: none; margin-top: 24px; }
-        .result.active { display: block; }
-
-        .result-card {
-            border-radius: var(--radius);
-            padding: 28px;
-            border: 1px solid;
-            box-shadow: var(--shadow-md);
-        }
-
-        .result-card.success {
-            background: var(--green-dim);
-            border-color: rgba(22,163,74,0.2);
-        }
-
-        .result-card.error {
-            background: var(--error-dim);
-            border-color: rgba(220,38,38,0.15);
-        }
-
-        .result-card h3 {
-            font-size: 17px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .result-card.success h3 { color: var(--green); }
-        .result-card.error h3 { color: var(--error); }
-
-        .error-detail {
-            background: var(--surface);
-            border: 1px solid rgba(220,38,38,0.18);
-            border-left: 3px solid var(--error);
-            border-radius: var(--radius-sm);
-            padding: 12px 14px;
-            margin-bottom: 16px;
-        }
-        .error-detail p {
-            font-size: 14px;
-            line-height: 1.55;
-            color: var(--error);
-            margin: 0;
-            word-break: break-word;
-        }
-        .error-subline {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin: 0 0 8px 0;
-        }
-        .error-limit-note {
-            font-size: 13px;
-            color: var(--error);
-            margin: 0 0 8px 0;
-            font-weight: 500;
-        }
-        .error-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            flex-wrap: wrap;
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(220,38,38,0.12);
-        }
-
-        .dns-instructions {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 14px 16px;
-            margin-bottom: 14px;
-        }
-        .dns-instructions-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        .dns-instructions-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 13px;
-            margin-bottom: 6px;
-        }
-        .dns-instructions-row:last-child { margin-bottom: 0; }
-        .dns-instructions-key {
-            font-size: 12px;
-            color: var(--text-muted);
-            min-width: 56px;
-        }
-        .dns-instructions-row code {
-            font-family: var(--mono);
-            background: rgba(0,0,0,0.04);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: var(--text);
-            word-break: break-all;
-        }
-
-        .result-row {
-            display: flex;
-            align-items: baseline;
-            gap: 10px;
-            margin-bottom: 10px;
-            font-size: 13px;
-        }
-
-        .result-label {
-            font-family: var(--mono);
-            font-weight: 500;
-            color: var(--text-muted);
-            min-width: 80px;
-            flex-shrink: 0;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .result-value a {
-            color: var(--accent-bright);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .result-value a:hover { text-decoration: underline; }
-
-        .credentials-card {
-            margin-top: 16px;
-            padding: 16px;
-            background: rgba(0,0,0,0.02);
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-        }
-
-        .credentials-card .result-row { margin-bottom: 4px; }
-
-        .credentials-card .result-value {
-            font-family: var(--mono);
-            font-size: 13px;
-            color: var(--text);
-        }
-
-        .result-note {
-            margin-top: 16px;
-            padding: 12px 14px;
-            background: rgba(0,0,0,0.02);
-            border-radius: var(--radius-sm);
-            font-size: 12px;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-
-        .site-url-prominent {
-            display: block;
-            margin-top: 12px;
-            padding: 14px 18px;
-            background: var(--surface);
-            border: 1px solid rgba(22,163,74,0.2);
-            border-radius: var(--radius-sm);
-            text-align: center;
-        }
-
-        .site-url-prominent a {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--accent);
-            text-decoration: none;
-        }
-
-        .site-url-prominent a:hover { text-decoration: underline; }
-
-        /* --- ANIMATIONS --- */
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes checkmarkPop {
-            0% { transform: scale(0); opacity: 0; }
-            60% { transform: scale(1.3); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes scaleIn {
-            from { transform: scale(0); }
-            60% { transform: scale(1.15); }
-            to { transform: scale(1); }
-        }
-
-        .checkmark-pop {
-            display: inline-flex;
-            animation: checkmarkPop 0.4s ease;
-        }
-
-        /* --- HIDDEN --- */
-        .hidden { display: none !important; }
-
-        /* --- RESPONSIVE --- */
-        @media (max-width: 640px) {
-            .main, .auth-gate { padding: 80px 16px 100px; }
-            .page-header h1 { font-size: 26px; }
-            .editor-grid { grid-template-columns: 1fr; }
-            .included-features-grid { grid-template-columns: 1fr; }
-            .flow-card { padding: 18px 20px; }
-            .flow-accordion.open > .flow-accordion-inner { padding: 18px 20px; }
-            .address-row { flex-direction: column; }
-            .address-row input { max-width: 100% !important; }
-            .skin-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-        }
+        .step-nav { display: flex; gap: 8px; justify-content: space-between; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
     </style>
 </head>
-<body>
+<body class="wts">
+<div class="wts-shell">
+    <div id="wts-sidebar-mount"></div>
 
-<div class="grid-bg"></div>
-
-<!-- NAV -->
-<nav class="nav">
-    <div class="nav-inner">
-        <a class="nav-brand" href="/">
-            <div class="nav-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <div class="wts-shell-main">
+        <div class="wts-top">
+            <div class="wts-crumbs">
+                <span id="crumbUser">Account</span>
+                <span class="sep">/</span>
+                <span>Sites</span>
+                <span class="sep">/</span>
+                <b>New site</b>
             </div>
-            <span>WordToSite</span>
-        </a>
-        <div class="nav-right">
-            <a class="nav-link-back" href="/login.html" id="authNavLink" style="display:none">Log in</a>
-            <a class="nav-link-back" href="/">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                Home
-            </a>
-            <div class="nav-badge">
-                <span class="pulse"></span>
-                v3.0
+            <div style="display:flex; gap:10px; align-items:center;">
+                <a class="wts-btn ghost" href="/dashboard.html" style="height:28px; padding:0 10px; font-size:12px;">Cancel ✕</a>
+                <a class="wts-btn ghost" id="authNavLink" href="/login.html?redirect=/app.html" style="display:none; height:28px; padding:0 10px; font-size:12px;">Log in</a>
             </div>
         </div>
-    </div>
-</nav>
 
-<!-- MAIN -->
-<div class="auth-gate" id="authGate" style="display:none;">
-    <div class="page-header">
-        <h1>Create your <span class="gradient">website</span></h1>
-        <p>Sign in to start building. It takes 90 seconds.</p>
-    </div>
-    <div style="max-width:400px;margin:0 auto;">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px;box-shadow:var(--shadow-md);text-align:center;">
-            <div style="width:56px;height:56px;background:var(--accent-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        <div class="wts-content">
+            <!-- Auth gate -->
+            <div id="authGate" style="display:none; padding:60px 36px; max-width:520px; margin:0 auto;">
+                <div class="wts-card" style="padding:32px; text-align:center;">
+                    <div class="wts-mark" style="margin:0 auto 16px; width:36px; height:36px;">w</div>
+                    <h2 class="wts-page-sub" style="font-size:20px;">Sign in to start building</h2>
+                    <p style="font-size:13.5px; color:var(--muted); margin:10px 0 24px; line-height:1.55;">Create a free account to use the website builder, voice commands, and AI features.</p>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <a href="/login.html?redirect=/app.html" class="wts-btn primary lg" style="justify-content:center;">Sign in</a>
+                        <a href="/register.html?redirect=/app.html" class="wts-btn lg" style="justify-content:center;">Create free account</a>
+                    </div>
+                </div>
             </div>
-            <h3 style="font-size:18px;font-weight:700;margin-bottom:6px;">Sign in to continue</h3>
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;line-height:1.5;">Create a free account to use the website builder, voice commands, and AI features.</p>
-            <a href="/login.html?redirect=/app.html" class="btn btn-primary btn-full" style="margin-bottom:10px;">Log in</a>
-            <a href="/register.html?redirect=/app.html" class="btn btn-ghost btn-full">Create free account</a>
+
+            <!-- Main wizard -->
+            <div class="main" id="mainWizard" style="display:none; padding:28px 36px 60px; max-width:1280px; margin:0 auto;">
+                <!-- Stepper (rendered dynamically per flow) -->
+                <div class="wts-stepper" id="stepper"></div>
+
+                <!-- State 1: Path selection -->
+                <div data-state="path" class="active" id="flowSelection">
+                    <div style="margin-top:36px; margin-bottom:28px;">
+                        <h1 class="wts-page-title">How would you like to start?</h1>
+                        <p class="wts-page-lede">Two paths. Both end at a published site you can edit by voice.</p>
+                    </div>
+
+                    <div class="choice-grid">
+                        <button type="button" class="choice-card" id="flowVoice" onclick="selectFlow('voice')">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span class="choice-card-label">A · From scratch</span>
+                                <span class="wts-badge badge-time">~90 sec</span>
+                                <span class="wts-badge accent badge-selected"><span class="dot"></span>Selected</span>
+                            </div>
+                            <h3 class="choice-card-title">Start fresh</h3>
+                            <p class="choice-card-body">Fill out a quick form about your business. We'll draft pages, copy and a skin from scratch.</p>
+                            <ol class="choice-card-steps">
+                                <li><span class="n">1.</span><span>Tell us about your business</span></li>
+                                <li><span class="n">2.</span><span>Auto-generated pages and copy</span></li>
+                                <li><span class="n">3.</span><span>Skin &amp; domain selection</span></li>
+                                <li><span class="n">4.</span><span>Publish</span></li>
+                            </ol>
+                        </button>
+                        <button type="button" class="choice-card" id="flowCopy" onclick="selectFlow('copy')">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span class="choice-card-label">B · Migrate existing</span>
+                                <span class="wts-badge badge-time">~2 min</span>
+                                <span class="wts-badge accent badge-selected"><span class="dot"></span>Selected</span>
+                            </div>
+                            <h3 class="choice-card-title">Migrate from URL</h3>
+                            <p class="choice-card-body">Point us at your current site. We'll scrape pages, copy and assets, then rebuild on a calmer foundation.</p>
+                            <ol class="choice-card-steps">
+                                <li><span class="n">1.</span><span>Paste a URL</span></li>
+                                <li><span class="n">2.</span><span>Auto-extract brand &amp; structure</span></li>
+                                <li><span class="n">3.</span><span>Choose skin &amp; domain</span></li>
+                                <li><span class="n">4.</span><span>Publish</span></li>
+                            </ol>
+                        </button>
+                    </div>
+
+                    <div class="step-nav" style="margin-top:32px;">
+                        <span style="font-size:12.5px; color:var(--muted);">You can switch paths until you publish.</span>
+                        <div style="display:flex; gap:8px;">
+                            <a class="wts-btn" href="/dashboard.html">← Back</a>
+                            <button class="wts-btn primary" id="pathContinueBtn" onclick="proceedFromPath()">Continue →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- State 2a: Migrate from URL -->
+                <div data-state="describe-copy">
+                    <div class="state-body">
+                        <div style="margin-top:32px; margin-bottom:24px;">
+                            <h1 class="wts-page-title">Where does your site live?</h1>
+                            <p class="wts-page-lede">Paste a URL and we'll scrape pages, copy and assets.</p>
+                        </div>
+
+                        <div id="copyAccordion" class="open">
+                            <div class="wts-card" style="max-width:680px;">
+                                <div class="wts-card-body">
+                                    <div class="wts-field" style="margin-bottom:14px;">
+                                        <label class="wts-field-label">Site URL</label>
+                                        <div style="display:flex; gap:8px;">
+                                            <input class="wts-input" type="url" id="sourceUrl" placeholder="https://yourwebsite.com" style="flex:1;">
+                                            <button class="wts-btn primary" onclick="analyzeWebsite()">Scan</button>
+                                        </div>
+                                        <div class="wts-field-hint">We'll scrape your site, extract branding, and match the best skin.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-nav">
+                            <button class="wts-btn" onclick="backToPath()">← Back</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- State 2b: Voice/Text interview -->
+                <div data-state="describe-voice">
+                    <div style="display:grid; grid-template-columns:1fr 360px; gap:32px; margin-top:24px;">
+                        <div>
+                            <h1 class="wts-page-title">Tell us about your business.</h1>
+                            <p class="wts-page-lede">Speak naturally with the mic or type — whatever's easier.</p>
+
+                            <div id="voiceAccordion" class="open" style="margin-top:24px;">
+                                <form class="voice-form" id="onboardingStep1Form" onsubmit="return submitStep1(event)">
+                                    <div class="wts-field">
+                                        <label class="wts-field-label">Email <span style="color:var(--danger);">*</span></label>
+                                        <input class="wts-input" type="email" id="field-email" placeholder="you@company.com" required>
+                                    </div>
+
+                                    <div class="wts-field">
+                                        <label class="wts-field-label">Company name <span style="color:var(--danger);">*</span></label>
+                                        <div class="input-with-mic">
+                                            <input class="wts-input" type="text" id="field-companyName" placeholder="e.g., BrightPath" required>
+                                            <button type="button" class="mic-btn" onclick="recordForField('companyName')" id="mic-companyName" aria-label="Record">
+                                                <svg viewBox="0 0 16 16"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5v2M5.5 14.5h5"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="wts-field">
+                                        <label class="wts-field-label">Industry <span style="color:var(--danger);">*</span></label>
+                                        <div class="input-with-mic">
+                                            <input class="wts-input" type="text" id="field-industry" placeholder="e.g., Technology, Healthcare, Consulting" required>
+                                            <button type="button" class="mic-btn" onclick="recordForField('industry')" id="mic-industry" aria-label="Record">
+                                                <svg viewBox="0 0 16 16"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5v2M5.5 14.5h5"/></svg>
+                                            </button>
+                                        </div>
+                                        <div class="quick-options" id="chips-industry"></div>
+                                    </div>
+
+                                    <div class="wts-field" id="taglineGroup" style="display:none;">
+                                        <label class="wts-field-label">Tagline</label>
+                                        <div class="tagline-box" id="taglineBox">
+                                            <span class="tagline-text" id="taglineText"></span>
+                                            <div class="tagline-skeleton" aria-hidden="true"></div>
+                                            <button type="button" class="regenerate-btn" onclick="regenerateTagline()">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg>
+                                                <span>Regenerate</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="wts-field">
+                                        <label class="wts-field-label">Services / Products <span style="color:var(--danger);">*</span></label>
+                                        <div class="input-with-mic">
+                                            <input class="wts-input" type="text" id="field-services" placeholder="e.g., Web design, SEO, Branding" required>
+                                            <button type="button" class="mic-btn" onclick="recordForField('services')" id="mic-services" aria-label="Record">
+                                                <svg viewBox="0 0 16 16"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5v2M5.5 14.5h5"/></svg>
+                                            </button>
+                                        </div>
+                                        <div class="quick-options" id="chips-services"></div>
+                                    </div>
+
+                                    <div class="wts-field">
+                                        <label class="wts-field-label">About your business <span style="color:var(--danger);">*</span></label>
+                                        <div class="input-with-mic">
+                                            <textarea class="wts-textarea" id="field-aboutUs" placeholder="Brief description of what you do and who you serve…" rows="3" required></textarea>
+                                            <button type="button" class="mic-btn" onclick="recordForField('aboutUs')" id="mic-aboutUs" aria-label="Record">
+                                                <svg viewBox="0 0 16 16"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5v2M5.5 14.5h5"/></svg>
+                                            </button>
+                                        </div>
+                                        <div class="quick-options" id="chips-aboutUs"></div>
+                                    </div>
+
+                                    <div class="step-nav">
+                                        <button type="button" class="wts-btn" onclick="backToPath()">← Back</button>
+                                        <button type="submit" class="wts-btn primary">Continue →</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <aside class="right-rail" style="border-radius:8px; max-height:600px; align-self:start; position:sticky; top:24px;">
+                            <div style="font-size:11.5px; color:var(--muted-2); text-transform:uppercase; letter-spacing:0.04em; font-weight:600; margin-bottom:14px;">What we'll know</div>
+                            <div class="right-rail-section">
+                                <div style="font-size:11px; color:var(--muted-2); text-transform:uppercase; letter-spacing:0.04em;">Tip</div>
+                                <div style="font-size:13px; color:var(--ink); margin-top:6px; line-height:1.5;">Tap the mic on any field. We'll transcribe and auto-fill — including matching the right industry.</div>
+                            </div>
+                            <div class="right-rail-section">
+                                <div style="font-size:11px; color:var(--muted-2); text-transform:uppercase; letter-spacing:0.04em;">Up next</div>
+                                <div style="font-size:13px; color:var(--ink); margin-top:6px;">Optional details — address, phone, team.</div>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+
+                <!-- State 2c: Additional details -->
+                <div data-state="details" id="onboardingStep2">
+                    <div class="state-body">
+                    <div style="margin-top:32px; margin-bottom:24px;">
+                        <h1 class="wts-page-title">A few more details.</h1>
+                        <p class="wts-page-lede">All optional — skip what doesn't apply.</p>
+                    </div>
+
+                    <div class="wts-card" style="max-width:680px;">
+                        <div class="wts-card-body">
+                            <form class="voice-form" id="onboardingStep2Form" onsubmit="return submitStep2(event)">
+                                <div class="wts-field">
+                                    <label class="wts-field-label">Business address</label>
+                                    <input class="wts-input" type="text" id="field-street" placeholder="Street address" style="margin-bottom:8px;">
+                                    <div class="field-row">
+                                        <input class="wts-input" type="text" id="field-city" placeholder="City">
+                                        <input class="wts-input" type="text" id="field-state" placeholder="State" maxlength="2" style="text-transform:uppercase;">
+                                        <input class="wts-input" type="text" id="field-zip" placeholder="ZIP" maxlength="10">
+                                    </div>
+                                </div>
+
+                                <div class="wts-field">
+                                    <label class="wts-field-label">Phone number</label>
+                                    <input class="wts-input" type="tel" id="field-phone" placeholder="(555) 123-4567" maxlength="14">
+                                </div>
+
+                                <div class="wts-field">
+                                    <label class="wts-field-label">About your team</label>
+                                    <div class="input-with-mic">
+                                        <textarea class="wts-textarea" id="field-team" placeholder="e.g., 10-person team led by industry veterans…" rows="3"></textarea>
+                                        <button type="button" class="mic-btn" onclick="recordForField('team')" id="mic-team" aria-label="Record">
+                                            <svg viewBox="0 0 16 16"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5v2M5.5 14.5h5"/></svg>
+                                        </button>
+                                    </div>
+                                    <button type="button" class="btn-generate" id="btn-generate-team" onclick="generateStep2Suggestion('team')">
+                                        <svg class="icon-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                        <svg class="icon-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+                                        Generate with AI
+                                    </button>
+                                </div>
+
+                                <div class="wts-field">
+                                    <label class="wts-field-label">What makes you different?</label>
+                                    <div class="input-with-mic">
+                                        <textarea class="wts-textarea" id="field-advantages" placeholder="Your competitive advantages, unique selling points…" rows="3"></textarea>
+                                        <button type="button" class="mic-btn" onclick="recordForField('advantages')" id="mic-advantages" aria-label="Record">
+                                            <svg viewBox="0 0 16 16"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5v2M5.5 14.5h5"/></svg>
+                                        </button>
+                                    </div>
+                                    <button type="button" class="btn-generate" id="btn-generate-advantages" onclick="generateStep2Suggestion('advantages')">
+                                        <svg class="icon-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                                        <svg class="icon-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+                                        Generate with AI
+                                    </button>
+                                </div>
+
+                                <div class="step-nav">
+                                    <button type="button" class="wts-btn" onclick="backToStep1()">← Back</button>
+                                    <button type="submit" class="wts-btn primary">Continue →</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- State 3: Configure (skin + domain) -->
+                <div data-state="configure">
+                    <div style="margin-top:32px; margin-bottom:24px;">
+                        <h1 class="wts-page-title">Configure your site.</h1>
+                        <p class="wts-page-lede">Pick a skin and (optionally) a domain.</p>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 340px; gap:24px;">
+                        <div>
+                            <div id="preDeploySummary" style="margin-bottom:20px; display:none;">
+                                <div class="section-label-row">Your website brief</div>
+                                <div class="wts-card">
+                                    <div class="wts-card-body">
+                                        <div id="preDeploySummaryItems"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="templatePreview" style="display:none;">
+                                <div class="section-label-row">Choose your skin</div>
+                                <div id="skinPickerContent">
+                                    <div class="skin-loading">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+                                        <div>Finding the best skins for your business…</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="includedFeatures" style="display:none; margin-top:20px;">
+                                <div class="section-label-row">Included features</div>
+                                <div class="included-features-grid">
+                                    <div class="included-feature-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                        Contact form
+                                    </div>
+                                    <div class="included-feature-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                        AI blog posts
+                                    </div>
+                                    <div class="included-feature-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                        SEO optimization
+                                    </div>
+                                    <div class="included-feature-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                        Analytics
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="domainStep" style="display:none; margin-top:20px;">
+                                <div class="section-label-row">Domain (optional)</div>
+                                <div class="wts-card">
+                                    <div class="wts-card-body">
+                                        <div class="wts-field">
+                                            <label class="wts-field-label">Custom domain</label>
+                                            <input class="wts-input" type="text" id="domainInput" placeholder="example.com">
+                                            <input type="checkbox" id="registerNewDomain" style="display:none;">
+                                            <div class="wts-field-hint">Enter a domain you already own to point at your site. To register a new domain, complete onboarding first — you can buy one from <a href="/domains.html" style="color:var(--accent);">your domains</a>. Leave blank to use a free wts subdomain.</div>
+                                        </div>
+                                        <div class="step-nav" style="margin-top:18px; padding-top:0; border-top:0;">
+                                            <button class="wts-btn" onclick="backFromDomain()">← Back</button>
+                                            <button class="wts-btn accent" onclick="confirmOnboarding()">Publish →</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <aside style="position:sticky; top:24px; align-self:start;">
+                            <div class="wts-card" style="padding:18px 20px;">
+                                <div style="font-size:11.5px; color:var(--muted-2); text-transform:uppercase; letter-spacing:0.04em;">Almost there</div>
+                                <div class="wts-serif" style="font-size:20px; margin-top:4px;">Step 3 of 4</div>
+                                <p style="font-size:12.5px; color:var(--muted); margin-top:8px; line-height:1.55;">Pick a skin and add a domain. You can change both later from the dashboard.</p>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+
+                <!-- State 4: Review (deploy header + result) -->
+                <div data-state="review">
+                    <div style="margin-top:32px; margin-bottom:24px;">
+                        <h1 class="wts-page-title">Publishing.</h1>
+                        <p class="wts-page-lede">Hang tight — usually 30–60 seconds.</p>
+                    </div>
+                    <div id="result" style="margin-top:16px;"></div>
+                </div>
+
+                <!-- Shared transient processing surfaces (sit alongside states; shown over the active state when needed) -->
+                <div id="celebrationSection" style="display:none;">
+                    <div class="celebration">
+                        <div class="celebration-spinner" role="status" aria-label="Building"></div>
+                        <h2>Almost there</h2>
+                        <p>Building your website configuration…</p>
+                    </div>
+                </div>
+
+                <div class="loading-block" id="loading">
+                    <div class="spinner"></div>
+                    <p class="loading-text" id="loadingText">Creating your website…</p>
+                    <p class="loading-sub">This usually takes 30–60 seconds</p>
+                </div>
+
+                <div class="workflow-progress" id="workflowProgress">
+                    <div class="progress-card">
+                        <div class="progress-steps" id="progressSteps"></div>
+                    </div>
+                </div>
+
+                <!-- Hidden API key for server fallback -->
+                <input type="hidden" id="apiKey" value="">
+            </div>
         </div>
     </div>
 </div>
 
-<div class="main" style="display:none;">
-    <div class="page-header">
-        <h1>Create your <span class="gradient">website</span></h1>
-        <p>Choose your path. You're 90 seconds from production.</p>
-    </div>
-
-    <!-- Flow Selection (Accordion) -->
-    <div class="flow-selection" id="flowSelection">
-        <div class="section-label">choose your path</div>
-
-        <!-- Rebuild flow -->
-        <div class="flow-card-wrapper">
-            <div class="flow-card" id="flowCopy" onclick="selectFlow('copy')">
-                <div class="flow-icon migrate">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                </div>
-                <div class="flow-text">
-                    <h3>Rebuild from my website <span class="time-badge">~2 min</span></h3>
-                    <p>Paste your URL. We'll scrape it, extract your brand, and rebuild it better.</p>
-                </div>
-                <div class="flow-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </div>
-            </div>
-            <div class="flow-accordion" id="copyAccordion">
-                <div class="flow-accordion-inner">
-                    <div class="input-row">
-                        <input type="url" id="sourceUrl" placeholder="https://yourwebsite.com">
-                        <button class="btn btn-primary" onclick="analyzeWebsite()">Analyze</button>
-                    </div>
-                    <p class="input-hint">We'll scrape your site, extract branding, and match the best template</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Start fresh flow -->
-        <div class="flow-card-wrapper">
-            <div class="flow-card" id="flowVoice" onclick="selectFlow('voice')">
-                <div class="flow-icon fresh">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                </div>
-                <div class="flow-text">
-                    <h3>Start fresh <span class="time-badge">~90 sec</span></h3>
-                    <p>Fill out a quick form about your business. We'll build your site from scratch.</p>
-                </div>
-                <div class="flow-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </div>
-            </div>
-            <div class="flow-accordion" id="voiceAccordion">
-                <div class="flow-accordion-inner">
-                <form class="onboarding-form" id="onboardingStep1Form" onsubmit="return submitStep1(event)">
-                    <div class="form-group">
-                        <label>Email<span class="required">*</span></label>
-                        <div class="input-with-mic">
-                            <input type="email" id="field-email" placeholder="you@company.com" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Company name<span class="required">*</span></label>
-                        <div class="input-with-mic">
-                            <input type="text" id="field-companyName" placeholder="e.g., BrightPath" required>
-                            <button type="button" class="mic-btn" onclick="recordForField('companyName')" id="mic-companyName">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Industry<span class="required">*</span></label>
-                        <div class="input-with-mic">
-                            <input type="text" id="field-industry" placeholder="e.g., Technology, Healthcare, Consulting" required>
-                            <button type="button" class="mic-btn" onclick="recordForField('industry')" id="mic-industry">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                            </button>
-                        </div>
-                        <div class="quick-options" id="chips-industry"></div>
-                    </div>
-                    <!-- Tagline auto-generated -->
-                    <div class="form-group" id="taglineGroup" style="display:none">
-                        <label>Tagline</label>
-                        <div class="tagline-box" id="taglineBox">
-                            <span class="tagline-text" id="taglineText"></span>
-                            <div class="tagline-skeleton" aria-hidden="true"></div>
-                            <button type="button" class="regenerate-btn" onclick="regenerateTagline()">
-                                <svg class="icon-refresh" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg>
-                                <span>Regenerate</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Services / Products<span class="required">*</span></label>
-                        <div class="input-with-mic">
-                            <input type="text" id="field-services" placeholder="e.g., Web design, SEO, Branding" required>
-                            <button type="button" class="mic-btn" onclick="recordForField('services')" id="mic-services">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                            </button>
-                        </div>
-                        <div class="quick-options" id="chips-services"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>About your business<span class="required">*</span></label>
-                        <div class="input-with-mic">
-                            <textarea id="field-aboutUs" placeholder="Brief description of what you do and who you serve..." rows="3" required></textarea>
-                            <button type="button" class="mic-btn" onclick="recordForField('aboutUs')" id="mic-aboutUs">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                            </button>
-                        </div>
-                        <div class="quick-options" id="chips-aboutUs"></div>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-full">Continue</button>
-                </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Wizard Step 2: Additional Details -->
-    <div class="wizard-step" id="onboardingStep2">
-        <div class="section-label">additional details (optional)</div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow-sm);">
-            <form class="onboarding-form" id="onboardingStep2Form" onsubmit="return submitStep2(event)">
-                <div class="form-group">
-                    <label>Business address</label>
-                    <input type="text" id="field-street" placeholder="Street address">
-                    <div class="address-row">
-                        <input type="text" id="field-city" placeholder="City">
-                        <input type="text" id="field-state" placeholder="State" maxlength="2" style="max-width:80px;text-transform:uppercase;">
-                        <input type="text" id="field-zip" placeholder="ZIP" maxlength="10" style="max-width:100px;">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Phone number</label>
-                    <input type="tel" id="field-phone" placeholder="(555) 123-4567" maxlength="14">
-                </div>
-                <div class="form-group">
-                    <label>About your team</label>
-                    <div class="input-with-mic">
-                        <textarea id="field-team" placeholder="e.g., 10-person team led by industry veterans..." rows="3"></textarea>
-                        <button type="button" class="mic-btn" onclick="recordForField('team')" id="mic-team">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                        </button>
-                    </div>
-                    <button type="button" class="btn-generate" id="btn-generate-team" onclick="generateStep2Suggestion('team')">
-                        <svg class="icon-sparkle" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                        <svg class="icon-spinner" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-                        Generate with AI
-                    </button>
-                </div>
-                <div class="form-group">
-                    <label>What makes you different?</label>
-                    <div class="input-with-mic">
-                        <textarea id="field-advantages" placeholder="Your competitive advantages, unique selling points..." rows="3"></textarea>
-                        <button type="button" class="mic-btn" onclick="recordForField('advantages')" id="mic-advantages">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                        </button>
-                    </div>
-                    <button type="button" class="btn-generate" id="btn-generate-advantages" onclick="generateStep2Suggestion('advantages')">
-                        <svg class="icon-sparkle" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                        <svg class="icon-spinner" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-                        Generate with AI
-                    </button>
-                </div>
-                <div class="step-nav">
-                    <button type="button" class="btn btn-ghost" onclick="backToStep1()">Back</button>
-                    <button type="submit" class="btn btn-primary btn-full">Continue</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Celebration -->
-    <div id="celebrationSection" style="display:none">
-        <div class="celebration">
-            <div class="celebration-icon">
-                <div class="celebration-spinner" role="status" aria-label="Building your website configuration"></div>
-            </div>
-            <h2>Almost there</h2>
-            <p>Building your website configuration...</p>
-        </div>
-    </div>
-
-    <!-- Pre-deploy Summary -->
-    <div class="pre-deploy-summary" id="preDeploySummary">
-        <div class="section-label">your website brief</div>
-        <div class="answer-summary">
-            <div id="preDeploySummaryItems"></div>
-        </div>
-    </div>
-
-    <!-- Template Preview -->
-    <div class="template-preview" id="templatePreview">
-        <div class="section-label">choose your skin</div>
-        <div id="skinPickerContent">
-            <div class="skin-loading">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-                <div>Finding the best skins for your business...</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Included Features (static, always shown with results) -->
-    <div class="included-features" id="includedFeatures" style="display:none">
-        <div class="section-label">included features</div>
-        <div class="included-features-grid">
-            <div class="included-feature-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                Contact Form
-            </div>
-            <div class="included-feature-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                AI Blog Posts
-            </div>
-            <div class="included-feature-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                SEO Optimization
-            </div>
-            <div class="included-feature-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                Analytics
-            </div>
-        </div>
-    </div>
-
-    <!-- Domain Step (separate) -->
-    <div class="domain-step" id="domainStep">
-        <div class="section-label">domain (optional)</div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-sm);">
-            <input type="text" id="domainInput" placeholder="example.com" style="margin-bottom:10px;">
-            <input type="checkbox" id="registerNewDomain" style="display:none;">
-            <p class="input-hint">Enter a domain you already own to point it at your site. <strong>To register a new domain</strong>, complete onboarding first — you'll be able to buy one from <a href="/domains.html" style="color:var(--accent);">your dashboard</a>. Leave blank to use a free wts subdomain.</p>
-            <div class="step-nav">
-                <button class="btn btn-ghost" onclick="backFromDomain()">Back</button>
-            </div>
-            <button class="btn-launch" style="margin-top:16px;" onclick="confirmOnboarding()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                Launch My Website
-            </button>
-        </div>
-    </div>
-
-    <!-- Loading -->
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <p class="loading-text" id="loadingText">Creating your website...</p>
-        <p class="loading-sub">This usually takes 30-60 seconds</p>
-    </div>
-
-    <!-- Workflow Progress -->
-    <div class="workflow-progress" id="workflowProgress">
-        <div class="progress-card">
-            <div class="progress-steps" id="progressSteps"></div>
-        </div>
-    </div>
-
-    <!-- Result -->
-    <div class="result" id="result"></div>
-
-    <!-- Hidden API key for server fallback -->
-    <input type="hidden" id="apiKey" value="">
-</div>
-
+<script src="/assets/wts-platform.js"></script>
 <script>
     let selectedFlow = null;
     let interviewAnswers = {};
@@ -1640,37 +604,79 @@
         advantages: 'USPs',
     };
 
-    // --- Flow Selection (Accordion) ---
-    function selectFlow(flow) {
-        const isClosing = selectedFlow === flow;
+    // --- State machine ---
+    const STEPPERS = {
+        voice:   ['Choose path', 'Describe', 'Owner info', 'Configure', 'Review & publish'],
+        copy:    ['Choose path', 'Read site', 'Configure', 'Review & publish'],
+        default: ['Choose path', 'Describe', 'Configure', 'Review & publish'],
+    };
+    const STATE_INDEX = {
+        voice:   { path: 0, 'describe-voice': 1, details: 2, configure: 3, review: 4 },
+        copy:    { path: 0, 'describe-copy': 1, configure: 2, review: 3 },
+        default: { path: 0, 'describe-voice': 1, 'describe-copy': 1, details: 1, configure: 2, review: 3 },
+    };
 
-        if (isClosing) {
-            // Click same card again — collapse it
-            selectedFlow = null;
-            document.getElementById(flow === 'copy' ? 'flowCopy' : 'flowVoice').classList.remove('selected');
-            document.getElementById(flow === 'copy' ? 'copyAccordion' : 'voiceAccordion').classList.remove('open');
-        } else {
-            // Open new, close other
-            selectedFlow = flow;
-            document.querySelectorAll('.flow-card').forEach(c => c.classList.remove('selected'));
-            document.getElementById(flow === 'copy' ? 'flowCopy' : 'flowVoice').classList.add('selected');
-            document.getElementById('copyAccordion').classList.toggle('open', flow === 'copy');
-            document.getElementById('voiceAccordion').classList.toggle('open', flow === 'voice');
-        }
+    function activeFlow() {
+        return STEPPERS[selectedFlow] ? selectedFlow : 'default';
     }
 
-    // --- Website Analysis (Flow A) ---
+    function renderStepper(activeIndex) {
+        const labels = STEPPERS[activeFlow()];
+        const html = labels.map((label, i) => {
+            const cls = i < activeIndex ? 'done' : i === activeIndex ? 'active' : 'todo';
+            const glyph = cls === 'done' ? '✓' : String(i + 1);
+            const connector = i < labels.length - 1 ? '<div class="wts-step-connector"></div>' : '';
+            return `<div class="wts-step ${cls}" data-step-index="${i}"><div class="wts-step-circle">${glyph}</div><span class="wts-step-label">${label}</span></div>${connector}`;
+        }).join('');
+        document.getElementById('stepper').innerHTML = html;
+    }
+
+    let currentStateName = 'path';
+    function showState(name) {
+        currentStateName = name;
+        document.querySelectorAll('[data-state]').forEach(el => {
+            el.classList.toggle('active', el.dataset.state === name);
+            el.classList.remove('is-busy');
+        });
+        const idx = STATE_INDEX[activeFlow()][name];
+        renderStepper(idx ?? 0);
+    }
+
+    function setStateBusy(name, busy) {
+        const el = document.querySelector(`[data-state="${name}"]`);
+        if (el) el.classList.toggle('is-busy', !!busy);
+    }
+
+    function backToPath() {
+        selectedFlow = null;
+        document.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
+        showState('path');
+    }
+
+    function selectFlow(flow) {
+        selectedFlow = flow;
+        document.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById(flow === 'copy' ? 'flowCopy' : 'flowVoice').classList.add('selected');
+        renderStepper(STATE_INDEX[activeFlow()][currentStateName] ?? 0);
+    }
+
+    function proceedFromPath() {
+        if (!selectedFlow) return;
+        showState(selectedFlow === 'copy' ? 'describe-copy' : 'describe-voice');
+    }
+
+    // --- Website Analysis (Flow Copy) ---
     async function analyzeWebsite() {
         const url = document.getElementById('sourceUrl').value.trim();
         if (!url) return;
 
-        document.getElementById('flowSelection').style.display = 'none';
+        setStateBusy('describe-copy', true);
 
         const loading = document.getElementById('loading');
         const workflowProgress = document.getElementById('workflowProgress');
 
         loading.classList.add('active');
-        document.getElementById('loadingText').textContent = 'Analyzing your website...';
+        document.getElementById('loadingText').textContent = 'Analyzing your website…';
 
         const steps = [
             { id: 'analyzing_source', label: 'Scraping website content' },
@@ -1689,11 +695,15 @@
                 eventSource.close();
                 loading.classList.remove('active');
                 workflowProgress.classList.remove('active');
+                setStateBusy('describe-copy', false);
                 handleOnboardingResult(data.data);
             } else if (data.step === 'error') {
                 eventSource.close();
                 loading.classList.remove('active');
+                workflowProgress.classList.remove('active');
+                setStateBusy('describe-copy', false);
                 updateProgressStep(data.step, 'error');
+                showState('review');
                 displayError(data.error || data.message);
             } else {
                 updateProgressStep(data.step);
@@ -1703,6 +713,9 @@
         eventSource.onerror = () => {
             eventSource.close();
             loading.classList.remove('active');
+            workflowProgress.classList.remove('active');
+            setStateBusy('describe-copy', false);
+            showState('review');
             displayError('Connection lost during analysis.');
         };
     }
@@ -1744,12 +757,14 @@
         const container = document.getElementById(`chips-${fieldId}`);
         const config = QUICK_OPTIONS[fieldId];
         if (!container || !config) return;
+        const fieldValue = document.getElementById(`field-${fieldId}`)?.value || '';
         container.innerHTML = '';
         config.options.forEach(option => {
             const chip = document.createElement('button');
             chip.type = 'button';
             chip.className = 'quick-chip';
             chip.textContent = option;
+            if (fieldValue.includes(option)) chip.classList.add('selected');
             chip.addEventListener('click', () => toggleChip(fieldId, option, chip));
             container.appendChild(chip);
         });
@@ -1766,7 +781,6 @@
             field.value = value;
             field.dispatchEvent(new Event('input', { bubbles: true }));
 
-            // Update services chips when industry changes
             if (fieldId === 'industry') {
                 updateServicesChips(value);
             }
@@ -1784,13 +798,11 @@
     }
 
     function updateServicesChips(industry) {
-        const industryServices = SERVICES_BY_INDUSTRY[industry];
-        if (industryServices) {
-            QUICK_OPTIONS.services.options = industryServices;
-        } else {
-            QUICK_OPTIONS.services.options = ['Web Design', 'SEO', 'Branding', 'Social Media', 'Content Marketing', 'App Development', 'E-commerce', 'Photography', 'Video Production', 'Graphic Design', 'Copywriting', 'PPC Advertising'];
-        }
-        document.getElementById('field-services').value = '';
+        const base = SERVICES_BY_INDUSTRY[industry]
+            || ['Web Design', 'SEO', 'Branding', 'Social Media', 'Content Marketing', 'App Development', 'E-commerce', 'Photography', 'Video Production', 'Graphic Design', 'Copywriting', 'PPC Advertising'];
+        const cur = document.getElementById('field-services').value;
+        const userSelected = cur.split(',').map(s => s.trim()).filter(Boolean);
+        QUICK_OPTIONS.services.options = [...new Set([...userSelected, ...base])];
         renderChips('services');
     }
 
@@ -1802,7 +814,7 @@
 
     initQuickChips();
 
-    // --- AI-suggested chips for services & about ---
+    // --- AI-suggested chips ---
     let suggestTimer = null;
     let lastSuggestKey = '';
 
@@ -1838,13 +850,15 @@
             lastSuggestKey = key;
 
             if (data.services?.length) {
-                QUICK_OPTIONS.services.options = data.services;
-                document.getElementById('field-services').value = '';
+                const cur = document.getElementById('field-services').value;
+                const userSelected = cur.split(',').map(s => s.trim()).filter(Boolean);
+                QUICK_OPTIONS.services.options = [...new Set([...userSelected, ...data.services])];
                 renderChips('services');
             }
             if (data.about?.length) {
-                QUICK_OPTIONS.aboutUs.options = data.about;
-                document.getElementById('field-aboutUs').value = '';
+                const cur = document.getElementById('field-aboutUs').value;
+                const userSelected = cur.split('.').map(s => s.trim()).filter(Boolean);
+                QUICK_OPTIONS.aboutUs.options = [...new Set([...userSelected, ...data.about])];
                 renderChips('aboutUs');
             }
         } catch { /* keep existing chips */ }
@@ -1856,7 +870,6 @@
     function submitStep1(e) {
         e.preventDefault();
 
-        // Collect Step 1 answers
         interviewAnswers.email = document.getElementById('field-email').value.trim();
         interviewAnswers.companyName = document.getElementById('field-companyName').value.trim();
         interviewAnswers.industry = document.getElementById('field-industry').value.trim();
@@ -1867,21 +880,18 @@
             interviewAnswers.tagline = generatedTagline;
         }
 
-        // Hide flow selection, show Step 2
-        document.getElementById('flowSelection').style.display = 'none';
-        document.getElementById('onboardingStep2').classList.add('active');
+        showState('details');
         return false;
     }
 
     function backToStep1() {
-        document.getElementById('onboardingStep2').classList.remove('active');
-        document.getElementById('flowSelection').style.display = '';
+        showState('describe-voice');
     }
 
     // --- Phone number masking ---
     (function() {
         const phoneInput = document.getElementById('field-phone');
-        phoneInput.addEventListener('input', function(e) {
+        phoneInput.addEventListener('input', function() {
             let digits = this.value.replace(/\D/g, '');
             if (digits.length > 10) digits = digits.slice(0, 10);
             let formatted = '';
@@ -1904,7 +914,7 @@
         const services = interviewAnswers.services || document.getElementById('field-services').value.trim();
 
         if (!companyName || !industry) {
-            textarea.placeholder = 'Fill in company name and industry first...';
+            textarea.placeholder = 'Fill in company name and industry first…';
             return;
         }
 
@@ -1932,7 +942,6 @@
     function submitStep2(e) {
         e.preventDefault();
 
-        // Collect Step 2 answers (optional fields)
         const street = document.getElementById('field-street').value.trim();
         const city = document.getElementById('field-city').value.trim();
         const state = document.getElementById('field-state').value.trim().toUpperCase();
@@ -1947,13 +956,12 @@
         if (team) interviewAnswers.team = team;
         if (advantages) interviewAnswers.advantages = advantages;
 
-        // Hide Step 2, show celebration
-        document.getElementById('onboardingStep2').classList.remove('active');
         completeInterview();
         return false;
     }
 
     async function completeInterview() {
+        setStateBusy('details', true);
         const celebrationEl = document.getElementById('celebrationSection');
         celebrationEl.style.display = 'block';
 
@@ -1965,14 +973,22 @@
             });
             const data = await res.json();
             celebrationEl.style.display = 'none';
-            data.success ? handleOnboardingResult(data) : displayError(data.error);
+            setStateBusy('details', false);
+            if (data.success) {
+                handleOnboardingResult(data);
+            } else {
+                showState('review');
+                displayError(data.error);
+            }
         } catch (e) {
             celebrationEl.style.display = 'none';
+            setStateBusy('details', false);
+            showState('review');
             displayError('Failed: ' + e.message);
         }
     }
 
-    // --- Tagline Generation ---
+    // --- Tagline ---
     function setupTaglineAutoGenerate() {
         const companyInput = document.getElementById('field-companyName');
         const industryInput = document.getElementById('field-industry');
@@ -2027,7 +1043,7 @@
         if (company && industry) generateTagline(company, industry);
     }
 
-    // --- Per-field Voice Recording ---
+    // --- Voice Recording ---
     let recordingTimer = null;
     let recordingSeconds = 0;
     let audioContext = null;
@@ -2044,15 +1060,19 @@
         return document.getElementById(`field-${fieldId}`).closest('.input-with-mic');
     }
 
+    function getFieldGroup(fieldId) {
+        return document.getElementById(`field-${fieldId}`).closest('.wts-field');
+    }
+
     function removeStatusBar(fieldId) {
-        const wrapper = getWrapper(fieldId);
-        wrapper?.querySelectorAll('.voice-status').forEach(b => b.remove());
+        const group = getFieldGroup(fieldId);
+        group?.querySelectorAll('.voice-status').forEach(b => b.remove());
     }
 
     function dismissStatusBar(fieldId) {
-        const wrapper = getWrapper(fieldId);
-        if (!wrapper) return;
-        const bar = wrapper.querySelector('.voice-status:not(.is-exiting)');
+        const group = getFieldGroup(fieldId);
+        if (!group) return;
+        const bar = group.querySelector('.voice-status:not(.is-exiting)');
         if (!bar) return;
         bar.classList.add('is-exiting');
         bar.addEventListener('animationend', () => bar.remove(), { once: true });
@@ -2060,6 +1080,7 @@
 
     function showRecordingStatus(fieldId) {
         removeStatusBar(fieldId);
+        const group = getFieldGroup(fieldId);
         const wrapper = getWrapper(fieldId);
         wrapper.classList.add('is-recording');
         const bar = document.createElement('div');
@@ -2073,23 +1094,24 @@
                 <span class="voice-level-bar" style="height:4px"></span>
                 <span class="voice-level-bar" style="height:4px"></span>
             </span>
-            <span class="voice-status-text">Listening...</span>
+            <span class="voice-status-text">Listening…</span>
             <span class="voice-status-timer" id="voiceTimer-${fieldId}">0:00</span>
             <span class="voice-status-hint">tap mic to stop</span>
         `;
-        wrapper.appendChild(bar);
+        group.appendChild(bar);
     }
 
     function showTranscribingStatus(fieldId) {
+        const group = getFieldGroup(fieldId);
         const wrapper = getWrapper(fieldId);
-        if (!wrapper) return;
+        if (!group) return;
         wrapper.classList.remove('is-recording');
         wrapper.classList.add('is-transcribing');
         const transcribingHtml = `
             <span class="voice-status-spinner"></span>
-            <span class="voice-status-text">Transcribing audio...</span>
+            <span class="voice-status-text">Transcribing audio…</span>
         `;
-        const existing = wrapper.querySelector('.voice-status:not(.is-exiting)');
+        const existing = group.querySelector('.voice-status:not(.is-exiting)');
         if (existing) {
             existing.classList.remove('recording');
             existing.classList.add('transcribing');
@@ -2099,13 +1121,13 @@
         const bar = document.createElement('div');
         bar.className = 'voice-status transcribing';
         bar.innerHTML = transcribingHtml;
-        wrapper.appendChild(bar);
+        group.appendChild(bar);
     }
 
     function clearVoiceState(fieldId) {
         dismissStatusBar(fieldId);
         const wrapper = getWrapper(fieldId);
-        wrapper.classList.remove('is-recording', 'is-transcribing');
+        wrapper?.classList.remove('is-recording', 'is-transcribing');
         if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
         if (levelAnimFrame) { cancelAnimationFrame(levelAnimFrame); levelAnimFrame = null; }
         recordingSeconds = 0;
@@ -2122,7 +1144,6 @@
 
             function updateLevel() {
                 analyser.getByteFrequencyData(dataArray);
-                // Sample 5 frequency bands
                 const bands = [4, 8, 14, 22, 32];
                 const levelEl = document.getElementById(`voiceLevel-${fieldId}`);
                 if (!levelEl) return;
@@ -2135,7 +1156,7 @@
             }
             updateLevel();
         } catch {
-            // Web Audio not supported — visual level just won't animate
+            // Web Audio not supported
         }
     }
 
@@ -2149,7 +1170,6 @@
         const btn = document.getElementById(`mic-${fieldId}`);
         const targetEl = document.getElementById(`field-${fieldId}`);
 
-        // If already recording for this field, stop
         if (isRecording && recordingFieldId === fieldId) {
             mediaRecorder.stop();
             isRecording = false;
@@ -2159,7 +1179,6 @@
             return;
         }
 
-        // If recording for a different field, stop that first
         if (isRecording && mediaRecorder) {
             mediaRecorder.stop();
             const prevBtn = document.getElementById(`mic-${recordingFieldId}`);
@@ -2174,11 +1193,9 @@
             audioChunks = [];
             recordingFieldId = fieldId;
 
-            // Show recording UI
             showRecordingStatus(fieldId);
             startAudioLevel(stream, fieldId);
 
-            // Start timer
             recordingSeconds = 0;
             recordingTimer = setInterval(() => {
                 recordingSeconds++;
@@ -2200,13 +1217,12 @@
 
                 const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
 
-                // Show transcribing state
                 btn.classList.add('transcribing');
                 showTranscribingStatus(fieldId);
                 const prevPlaceholder = targetEl.placeholder;
                 const prevValue = targetEl.value;
                 targetEl.value = '';
-                targetEl.placeholder = 'Transcribing your voice...';
+                targetEl.placeholder = 'Transcribing your voice…';
 
                 try {
                     const formData = new FormData();
@@ -2230,7 +1246,6 @@
                     if (data.success && data.text) {
                         let finalText = data.text;
 
-                        // For industry field, match voice input to chip options
                         if (fieldId === 'industry') {
                             try {
                                 const matchRes = await fetch('/api/onboard/match-industry', {
@@ -2244,12 +1259,10 @@
                                 const matchData = await matchRes.json();
                                 if (matchData.success && matchData.matched) {
                                     finalText = matchData.matched;
-                                    // Auto-select matching chip
                                     const container = document.getElementById('chips-industry');
                                     container.querySelectorAll('.quick-chip').forEach(c => {
                                         c.classList.toggle('selected', c.textContent === finalText);
                                     });
-                                    // Update services if matched to a known industry
                                     if (QUICK_OPTIONS.industry.options.includes(finalText)) {
                                         updateServicesChips(finalText);
                                     }
@@ -2291,7 +1304,7 @@
         container.innerHTML = `
             <div class="skin-loading">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-                <div>Finding the best skins for your business...</div>
+                <div>Finding the best skins for your business…</div>
             </div>`;
 
         try {
@@ -2340,9 +1353,9 @@
                 <div class="skin-info">
                     <h4>${skin.title}</h4>
                     <p>${skin.reason || skin.category}</p>
-                    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
                         ${skin.confidence ? `<span class="skin-match">${Math.round(skin.confidence * 100)}% match</span>` : ''}
-                        ${skin.demo_url ? `<a href="${skin.demo_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:var(--accent);text-decoration:none;">Preview</a>` : ''}
+                        ${skin.demo_url ? `<a href="${skin.demo_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--accent);">Preview ↗</a>` : ''}
                     </div>
                 </div>`;
 
@@ -2359,7 +1372,6 @@
         document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected'));
         cardEl.classList.add('selected');
 
-        // Update the onboarding result with selected skin
         if (onboardingResult) {
             if (!onboardingResult.templateMatch) onboardingResult.templateMatch = {};
             onboardingResult.templateMatch.slug = slug;
@@ -2369,9 +1381,8 @@
     // --- Onboarding Result ---
     function handleOnboardingResult(data) {
         onboardingResult = data;
-        document.getElementById('flowSelection').style.display = 'none';
+        showState('configure');
 
-        // Show pre-deploy summary
         if (Object.keys(interviewAnswers).length > 0) {
             const summaryEl = document.getElementById('preDeploySummary');
             const itemsEl = document.getElementById('preDeploySummaryItems');
@@ -2379,33 +1390,29 @@
             for (const [key, value] of Object.entries(interviewAnswers)) {
                 if (key === 'tagline') continue;
                 const label = fieldLabels[key] || key;
-                const truncated = value.length > 80 ? value.slice(0, 77) + '...' : value;
+                const truncated = value.length > 80 ? value.slice(0, 77) + '…' : value;
                 const div = document.createElement('div');
                 div.className = 'summary-item';
                 div.innerHTML = `<span class="summary-label">${label}</span><span class="summary-value">${truncated}</span>`;
                 itemsEl.appendChild(div);
             }
-            summaryEl.classList.add('active');
+            summaryEl.style.display = '';
         }
 
-        // Show skin picker and load recommendations
-        document.getElementById('templatePreview').classList.add('active');
+        document.getElementById('templatePreview').style.display = '';
         loadRecommendedSkins();
-
-        // Show static features
-        document.getElementById('includedFeatures').style.display = 'block';
-
-        // Show domain step
-        document.getElementById('domainStep').classList.add('active');
+        document.getElementById('includedFeatures').style.display = '';
+        document.getElementById('domainStep').style.display = '';
     }
 
     function backFromDomain() {
-        document.getElementById('domainStep').classList.remove('active');
-        document.getElementById('includedFeatures').style.display = 'none';
-        document.getElementById('templatePreview').classList.remove('active');
-        document.getElementById('preDeploySummary').classList.remove('active');
-        // Go back to the flow selection
-        document.getElementById('flowSelection').style.display = '';
+        if (selectedFlow === 'voice') {
+            showState('details');
+        } else if (selectedFlow === 'copy') {
+            showState('describe-copy');
+        } else {
+            showState('path');
+        }
     }
 
     async function confirmOnboarding() {
@@ -2422,16 +1429,12 @@
         const registerNew = document.getElementById('registerNewDomain').checked;
         if (!domain || registerNew) return true;
 
+        showState('review');
         const loading = document.getElementById('loading');
         const resultEl = document.getElementById('result');
         const workflowProgress = document.getElementById('workflowProgress');
 
-        document.getElementById('loadingText').textContent = `Checking DNS for ${domain}...`;
-        document.getElementById('preDeploySummary').classList.remove('active');
-        document.getElementById('templatePreview').classList.remove('active');
-        document.getElementById('includedFeatures').style.display = 'none';
-        document.getElementById('domainStep').classList.remove('active');
-        resultEl.classList.remove('active');
+        document.getElementById('loadingText').textContent = `Checking DNS for ${domain}…`;
         resultEl.innerHTML = '';
         workflowProgress.classList.remove('active');
         loading.classList.add('active');
@@ -2455,20 +1458,15 @@
     }
 
     async function runDeploy() {
+        showState('review');
         const loading = document.getElementById('loading');
         const workflowProgress = document.getElementById('workflowProgress');
         const resultEl = document.getElementById('result');
 
-        resultEl.classList.remove('active');
         resultEl.innerHTML = '';
 
         loading.classList.add('active');
-        document.getElementById('loadingText').textContent = 'Deploying your website...';
-
-        document.getElementById('preDeploySummary').classList.remove('active');
-        document.getElementById('templatePreview').classList.remove('active');
-        document.getElementById('includedFeatures').style.display = 'none';
-        document.getElementById('domainStep').classList.remove('active');
+        document.getElementById('loadingText').textContent = 'Deploying your website…';
 
         const dc = onboardingResult.deploymentContext || {};
         dc.features = ['contact-form', 'ai-blog-posts', 'seo', 'analytics'];
@@ -2516,8 +1514,10 @@
                 workflowProgress.classList.remove('active');
                 if (data.data.needsConfirmation) {
                     displayOwnedDomainConfirmation(data.data.alreadyOwnedDomain || domain);
+                } else if (data.data.success) {
+                    displayWizardResult(data.data);
                 } else {
-                    data.data.success ? displayWizardResult(data.data) : displayDeployError(data.data.error || 'Deployment failed');
+                    displayDeployError(data.data.error || 'Deployment failed');
                 }
             } else if (data.step === 'error') {
                 eventSource.close();
@@ -2548,14 +1548,10 @@
         deployRetryCount = 0;
         acceptOwnedDomain = false;
         const resultEl = document.getElementById('result');
-        resultEl.classList.remove('active');
         resultEl.innerHTML = '';
         document.getElementById('loading').classList.remove('active');
         document.getElementById('workflowProgress').classList.remove('active');
-        document.getElementById('preDeploySummary').classList.add('active');
-        document.getElementById('templatePreview').classList.add('active');
-        document.getElementById('includedFeatures').style.display = '';
-        document.getElementById('domainStep').classList.add('active');
+        showState('configure');
     }
 
     async function fallbackConfirm(dc, domain, registerNewDomain) {
@@ -2586,8 +1582,10 @@
             workflowProgress.classList.remove('active');
             if (data.needsConfirmation) {
                 displayOwnedDomainConfirmation(data.alreadyOwnedDomain || domain);
+            } else if (data.success) {
+                displayWizardResult(data);
             } else {
-                data.success ? displayWizardResult(data) : displayDeployError(data.error || 'Deployment failed');
+                displayDeployError(data.error || 'Deployment failed');
             }
         } catch (e) {
             loading.classList.remove('active');
@@ -2596,9 +1594,6 @@
         }
     }
 
-    /**
-     * Normalize the site object since InstaWP returns different field names
-     */
     function normalizeSite(site) {
         if (!site) return null;
 
@@ -2631,7 +1626,6 @@
 
     function displayWizardResult(data) {
         const el = document.getElementById('result');
-        el.classList.add('active');
 
         const site = normalizeSite(data.site);
         const finalUrl = data.finalUrls?.site || data.finalUrls?.temporaryUrl || '';
@@ -2642,52 +1636,48 @@
         const password = site?.password || '';
         const magicLogin = site?.magicLoginUrl || '';
 
-        let h = `<div class="result-card success">`;
+        let h = '<div class="result-card success">';
         h += `<h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Website deployed</h3>`;
 
-        // Live status indicator
         if (siteUrl) {
-            h += `<div style="display:flex;align-items:center;gap:8px;margin:12px 0 4px;">`;
-            h += `<span id="siteStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--yellow);flex-shrink:0;"></span>`;
-            h += `<span id="siteStatusText" style="font-size:12px;color:var(--text-muted);">Checking site status...</span>`;
+            h += `<div style="display:flex; align-items:center; gap:8px; margin:12px 0 4px;">`;
+            h += `<span id="siteStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--warn);flex-shrink:0;"></span>`;
+            h += `<span id="siteStatusText" style="font-size:12px; color:var(--muted);">Checking site status…</span>`;
             h += `</div>`;
 
-            h += `<div class="site-url-prominent"><a href="${siteUrl}" target="_blank">${siteUrl} &nearr;</a></div>`;
+            h += `<div class="site-url-prominent"><a href="${siteUrl}" target="_blank">${siteUrl} ↗</a></div>`;
 
-            // Action buttons
-            h += `<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">`;
+            h += `<div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">`;
             const loginTarget = magicLogin || adminUrl;
-            h += `<a href="${loginTarget}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--accent-bright,#6c5ce7);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:opacity .15s;cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Open Admin Dashboard</a>`;
-            h += `<a href="${siteUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;text-decoration:none;font-weight:500;font-size:15px;transition:opacity .15s;cursor:pointer;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">View Site &nearr;</a>`;
+            h += `<a href="${loginTarget}" target="_blank" class="wts-btn accent lg" style="text-decoration:none;">Open admin →</a>`;
+            h += `<a href="${siteUrl}" target="_blank" class="wts-btn lg" style="text-decoration:none;">View site ↗</a>`;
+            h += `<a href="/dashboard.html" class="wts-btn ghost lg" style="text-decoration:none;">Back to sites</a>`;
             h += `</div>`;
         }
 
-        // Credentials section (collapsible)
         if (username || password || magicLogin) {
-            h += `<details style="margin-top:20px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">`;
-            h += `<summary style="padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-secondary);user-select:none;">Site Credentials & Magic Login</summary>`;
-            h += `<div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:10px;">`;
+            h += `<details style="margin-top:20px; background:var(--bg-2); border:1px solid var(--line); border-radius:var(--r-md); overflow:hidden;">`;
+            h += `<summary style="padding:12px 16px; cursor:pointer; font-size:13px; font-weight:500; user-select:none;">Site credentials &amp; magic login</summary>`;
+            h += `<div style="padding:0 16px 16px; display:flex; flex-direction:column; gap:10px;">`;
 
             if (magicLogin) {
                 const magicLoginFull = window.location.origin + magicLogin;
-                h += `<div style="display:flex;flex-direction:column;gap:4px;">`;
-                h += `<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Magic Login Link</span>`;
-                h += `<div style="display:flex;gap:8px;align-items:center;">`;
-                h += `<span style="flex:1;font-size:12px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${magicLoginFull}</span>`;
-                h += `<a href="${magicLoginFull}" target="_blank" rel="noopener" style="padding:8px 12px;background:var(--accent-dim);color:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;text-decoration:none;">Open</a>`;
+                h += `<div style="display:flex; flex-direction:column; gap:4px;">`;
+                h += `<span class="result-label">Magic login</span>`;
+                h += `<div style="display:flex; gap:8px; align-items:center;">`;
+                h += `<span style="flex:1; font-family:var(--mono); font-size:12px; padding:6px 10px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-sm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${magicLoginFull}</span>`;
+                h += `<a href="${magicLoginFull}" target="_blank" rel="noopener" class="wts-btn ghost" style="height:28px; padding:0 10px; font-size:12px;">Open</a>`;
                 h += `</div></div>`;
             }
 
             if (siteUrl) {
-                h += `<div style="display:flex;gap:16px;flex-wrap:wrap;">`;
-                h += `<div style="flex:1;min-width:120px;"><span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Admin URL</span><div style="font-size:12px;font-family:var(--mono);margin-top:4px;word-break:break-all;color:var(--text);">${adminUrl}</div></div>`;
-                h += `</div>`;
+                h += `<div><span class="result-label">Admin URL</span><div style="font-size:12px; font-family:var(--mono); margin-top:4px; word-break:break-all;">${adminUrl}</div></div>`;
             }
             if (username) {
-                h += `<div style="display:flex;gap:16px;flex-wrap:wrap;">`;
-                h += `<div><span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Username</span><div style="font-size:13px;font-family:var(--mono);margin-top:4px;color:var(--text);">${username}</div></div>`;
+                h += `<div style="display:flex; gap:16px; flex-wrap:wrap;">`;
+                h += `<div><span class="result-label">Username</span><div style="font-size:13px; font-family:var(--mono); margin-top:4px;">${username}</div></div>`;
                 if (password) {
-                    h += `<div><span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Password</span><div style="font-size:13px;font-family:var(--mono);margin-top:4px;color:var(--text);">${password}</div></div>`;
+                    h += `<div><span class="result-label">Password</span><div style="font-size:13px; font-family:var(--mono); margin-top:4px;">${password}</div></div>`;
                 }
                 h += `</div>`;
             }
@@ -2700,31 +1690,20 @@
         }
 
         if (data.editor) {
-            h += `<div class="result-note" style="margin-top:12px;">Editor: <a href="${data.editor.url}" target="_blank" style="color:var(--accent-bright);font-weight:500;">${data.editor.mode === 'light' ? 'Light Editor' : 'WP Admin'}</a>${data.editor.bounced ? ` (bounced: ${data.editor.reason})` : ''}</div>`;
+            h += `<div class="result-note">Editor: <a href="${data.editor.url}" target="_blank" style="color:var(--accent); font-weight:500;">${data.editor.mode === 'light' ? 'Light editor' : 'WP Admin'}</a>${data.editor.bounced ? ` (bounced: ${data.editor.reason})` : ''}</div>`;
         }
 
         const contentStep = (data.steps || []).find(s => s.step === 'content_generated' && s.success);
         if (contentStep) {
-            h += `<div class="result-note" style="margin-top:8px;">AI content generated and published to your site.</div>`;
+            h += `<div class="result-note">AI content generated and published to your site.</div>`;
         }
 
         h += '</div>';
         el.innerHTML = h;
 
-        // Check site live status
         if (siteUrl) {
             checkSiteStatus(siteUrl);
         }
-    }
-
-    function copyToClipboard(inputId) {
-        const input = document.getElementById(inputId);
-        input.select();
-        navigator.clipboard.writeText(input.value).then(() => {
-            const btn = input.nextElementSibling;
-            btn.textContent = 'Copied!';
-            setTimeout(() => btn.textContent = 'Copy', 2000);
-        });
     }
 
     async function checkSiteStatus(url) {
@@ -2737,20 +1716,20 @@
 
         async function ping() {
             try {
-                const res = await fetch(url, { mode: 'no-cors', cache: 'no-cache' });
-                dot.style.background = 'var(--green)';
+                await fetch(url, { mode: 'no-cors', cache: 'no-cache' });
+                dot.style.background = 'var(--success)';
                 text.textContent = 'Site is live';
-                text.style.color = 'var(--green)';
+                text.style.color = 'var(--success)';
             } catch {
                 attempts++;
                 if (attempts < maxAttempts) {
-                    dot.style.background = 'var(--yellow)';
-                    text.textContent = `Starting up... (${attempts}/${maxAttempts})`;
+                    dot.style.background = 'var(--warn)';
+                    text.textContent = `Starting up… (${attempts}/${maxAttempts})`;
                     setTimeout(ping, 5000);
                 } else {
-                    dot.style.background = 'var(--error)';
+                    dot.style.background = 'var(--danger)';
                     text.textContent = 'Could not reach site — it may still be provisioning';
-                    text.style.color = 'var(--error)';
+                    text.style.color = 'var(--danger)';
                 }
             }
         }
@@ -2776,13 +1755,17 @@
         steps.forEach((s, i) => {
             if (i === targetIndex) {
                 s.className = 'progress-step ' + status;
-                s.querySelector('.step-icon').innerHTML = status === 'completed' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>' : status === 'error' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>' : '';
+                s.querySelector('.step-icon').innerHTML = status === 'completed'
+                    ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>'
+                    : status === 'error'
+                        ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>'
+                        : '';
                 if (message && status === 'active') {
                     s.querySelector('.step-label').textContent = message;
                 }
             } else if (i < targetIndex && status !== 'error') {
                 s.className = 'progress-step completed';
-                s.querySelector('.step-icon').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>';
+                s.querySelector('.step-icon').innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>';
             }
         });
     }
@@ -2790,26 +1773,27 @@
     function displayError(msg) {
         const text = typeof msg === 'object' ? (msg.message || JSON.stringify(msg)) : msg;
         const el = document.getElementById('result');
-        el.classList.add('active');
         el.innerHTML = `<div class="result-card error">
             <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Something went wrong</h3>
-            <div class="error-detail"><p>${text}</p></div>
+            <div class="error-detail">${text}</div>
             <p class="error-subline">Check your configuration and try again.</p>
+            <div class="error-actions">
+                <button class="wts-btn" onclick="backToPath()">Start over</button>
+            </div>
         </div>`;
     }
 
     function displayOwnedDomainConfirmation(domain) {
         const el = document.getElementById('result');
-        el.classList.add('active');
         document.getElementById('loading').classList.remove('active');
         document.getElementById('workflowProgress').classList.remove('active');
         el.innerHTML = `<div class="result-card error">
             <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg> Domain already registered</h3>
-            <div class="error-detail"><p><strong>${domain}</strong> is already registered to your account from a previous deploy. Continue setting up its DNS and WordPress site?</p></div>
+            <div class="error-detail"><strong>${domain}</strong> is already registered to your account from a previous deploy. Continue setting up its DNS and WordPress site?</div>
             <p class="error-subline">A new WordPress site will be created and pointed at this domain.</p>
             <div class="error-actions">
-                <button class="btn btn-ghost" onclick="backToDomainFromError()">Cancel</button>
-                <button class="btn btn-primary" onclick="confirmOwnedDomainAndRetry()">Continue</button>
+                <button class="wts-btn" onclick="backToDomainFromError()">Cancel</button>
+                <button class="wts-btn primary" onclick="confirmOwnedDomainAndRetry()">Continue</button>
             </div>
         </div>`;
     }
@@ -2822,7 +1806,6 @@
 
     function displayDomainConfigError(domain, cnameTarget, hasAnyDns) {
         const el = document.getElementById('result');
-        el.classList.add('active');
         document.getElementById('loading').classList.remove('active');
         document.getElementById('workflowProgress').classList.remove('active');
 
@@ -2835,12 +1818,12 @@
             ? ''
             : `<p class="error-limit-note">Retry limit reached. Update your settings and try again.</p>`;
         const retryButton = canRetry
-            ? `<button class="btn btn-primary" onclick="retryDeploy()">Try again</button>`
+            ? `<button class="wts-btn primary" onclick="retryDeploy()">Try again</button>`
             : '';
 
         el.innerHTML = `<div class="result-card error">
             <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> DNS setup required</h3>
-            <div class="error-detail"><p>${lead} Add a CNAME record at your domain registrar so it points to our service, then click Try again.</p></div>
+            <div class="error-detail">${lead} Add a CNAME record at your domain registrar so it points to our service, then click Try again.</div>
             <div class="dns-instructions">
                 <div class="dns-instructions-label">CNAME record</div>
                 <div class="dns-instructions-row"><span class="dns-instructions-key">Name</span><code>${domain}</code></div>
@@ -2850,7 +1833,7 @@
             <p class="error-subline">Or check "Register new domain" on the previous screen — we'll register it and configure DNS for you.</p>
             ${limitNote}
             <div class="error-actions">
-                <button class="btn btn-ghost" onclick="backToDomainFromError()">Back to settings</button>
+                <button class="wts-btn" onclick="backToDomainFromError()">Back to settings</button>
                 ${retryButton}
             </div>
         </div>`;
@@ -2859,7 +1842,6 @@
     function displayDeployError(msg) {
         const text = typeof msg === 'object' ? (msg.message || JSON.stringify(msg)) : msg;
         const el = document.getElementById('result');
-        el.classList.add('active');
         const canRetry = deployRetryCount < MAX_DEPLOY_RETRIES;
         const subline = deployRetryCount > 0
             ? `Attempt ${deployRetryCount + 1} of ${MAX_DEPLOY_RETRIES + 1} failed.`
@@ -2868,55 +1850,77 @@
             ? ''
             : `<p class="error-limit-note">Retry limit reached. Adjust your settings and try again.</p>`;
         const retryButton = canRetry
-            ? `<button class="btn btn-primary" onclick="retryDeploy()">Try again</button>`
+            ? `<button class="wts-btn primary" onclick="retryDeploy()">Try again</button>`
             : '';
         el.innerHTML = `<div class="result-card error">
             <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Something went wrong</h3>
-            <div class="error-detail"><p>${text}</p></div>
+            <div class="error-detail">${text}</div>
             <p class="error-subline">${subline}</p>
             ${limitNote}
             <div class="error-actions">
-                <button class="btn btn-ghost" onclick="backToDomainFromError()">Back to settings</button>
+                <button class="wts-btn" onclick="backToDomainFromError()">Back to settings</button>
                 ${retryButton}
             </div>
         </div>`;
     }
 
-    // --- Initialize ---
+    // --- Init ---
     setupTaglineAutoGenerate();
+    showState('path');
+    selectFlow('voice');
 
-    // Auth gate — require login before using the wizard
+    // Auth gate — try with sidebar (full shell), fall back to gate if unauthed
     (async () => {
         const link = document.getElementById('authNavLink');
-        const mainEl = document.querySelector('.main');
+        const mainEl = document.getElementById('mainWizard');
         const authGate = document.getElementById('authGate');
 
         try {
             const res = await fetch('/api/auth/me');
             if (res.ok) {
                 const data = await res.json();
-                link.href = '/dashboard.html';
-                link.textContent = 'Dashboard';
-                link.style.display = '';
-                // Prefill email field if user is logged in
-                const emailField = document.getElementById('field-email');
-                if (emailField && data.user?.email) {
-                    emailField.value = data.user.email;
+                WtsPlatform.renderSidebar('create');
+                // Wire user UI from the returned user object
+                const user = data.user;
+                const inits = WtsPlatform.initials(user.displayName || user.email);
+                const name = user.displayName || (user.email || '').split('@')[0] || 'Account';
+                if (document.getElementById('userAvatar')) document.getElementById('userAvatar').textContent = inits;
+                if (document.getElementById('userName')) document.getElementById('userName').textContent = name;
+                if (document.getElementById('userEmail')) document.getElementById('userEmail').textContent = user.email || '';
+                if (document.getElementById('crumbUser')) document.getElementById('crumbUser').textContent = name;
+                const btn = document.getElementById('userMenuBtn');
+                const dd = document.getElementById('userDropdown');
+                if (btn && dd) {
+                    btn.addEventListener('click', e => { e.stopPropagation(); dd.classList.toggle('open'); });
+                    document.addEventListener('click', () => dd.classList.remove('open'));
                 }
-                // Show wizard
+                const logout = document.getElementById('logoutBtn');
+                if (logout) logout.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    await fetch('/api/auth/logout', { method: 'POST' });
+                    window.location.href = '/login.html';
+                });
+
+                const emailField = document.getElementById('field-email');
+                if (emailField && user?.email) {
+                    emailField.value = user.email;
+                }
                 mainEl.style.display = '';
                 if (authGate) authGate.style.display = 'none';
             } else {
-                // Not logged in — show auth gate
-                link.textContent = 'Log in';
                 link.style.display = '';
                 mainEl.style.display = 'none';
                 if (authGate) authGate.style.display = '';
+                // Remove sidebar mount placeholder so it doesn't show a broken aside
+                const mount = document.getElementById('wts-sidebar-mount');
+                if (mount) mount.style.display = 'none';
             }
         } catch {
             link.style.display = '';
             mainEl.style.display = 'none';
             if (authGate) authGate.style.display = '';
+            const mount = document.getElementById('wts-sidebar-mount');
+            if (mount) mount.style.display = 'none';
         }
     })();
 </script>

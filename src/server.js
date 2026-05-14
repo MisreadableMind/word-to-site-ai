@@ -112,6 +112,18 @@ if (billingService) {
       proxyService,
     }),
   }));
+} else {
+  const featureDisabled = (req, res) => {
+    res.status(404).json({
+      error: {
+        message: 'Billing & domain features require Stripe to be configured on this deployment.',
+        type: 'feature_disabled',
+        feature: req.baseUrl.replace('/api/', ''),
+      },
+    });
+  };
+  app.use('/api/billing', express.json(), featureDisabled);
+  app.use('/api/domains', express.json(), featureDisabled);
 }
 
 const noopMiddleware = (req, res, next) => next();

@@ -4,204 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <title>WordToSite | Pricing</title>
+    <title>word→site | Plans</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/wts.css?v=2">
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg: #FFFDF7;
-            --bg-subtle: #FFF8F0;
-            --surface: #FFFFFF;
-            --surface-hover: #FFF5EC;
-            --border: rgba(140, 120, 100, 0.18);
-            --border-hover: rgba(140, 120, 100, 0.30);
-            --text: #2D2926;
-            --text-secondary: #4A4540;
-            --text-muted: #8A8580;
-            --accent: #6C5CE7;
-            --accent-bright: #5A4BD1;
-            --accent-dim: rgba(108,92,231,0.10);
-            --green: #16A34A;
-            --error: #DC2626;
-            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
-            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
-            --radius: 12px;
-            --radius-sm: 8px;
-        }
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg); color: var(--text);
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
-        .grid-bg {
-            position: fixed; inset: 0;
-            background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
-            background-size: 64px 64px; pointer-events: none; z-index: 0;
-        }
-        .grid-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent); }
-        .nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(255,253,247,0.8);
-            backdrop-filter: blur(16px) saturate(1.2);
-            -webkit-backdrop-filter: blur(16px) saturate(1.2);
-            border-bottom: 1px solid var(--border);
-        }
-        .nav-inner {
-            max-width: 1080px; margin: 0 auto;
-            padding: 0 24px; height: 60px;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .nav-brand {
-            display: flex; align-items: center; gap: 10px;
-            text-decoration: none; color: var(--text);
-            font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
-        }
-        .nav-logo {
-            width: 28px; height: 28px;
-            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
-            border-radius: 7px; display: flex;
-            align-items: center; justify-content: center;
-            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
-        }
-        .nav-logo svg { width: 15px; height: 15px; }
-        .nav-right { display: flex; align-items: center; gap: 12px; }
-        .nav-link {
-            display: inline-flex; align-items: center; gap: 5px;
-            font-size: 13px; font-weight: 500;
-            color: var(--text-muted); padding: 6px 12px;
-            border-radius: 6px; transition: all 150ms;
-            text-decoration: none;
-        }
-        .nav-link:hover { color: var(--text-secondary); background: var(--accent-dim); }
-        .main {
-            position: relative; z-index: 1;
-            max-width: 1080px; margin: 0 auto;
-            padding: 92px 24px 60px;
-        }
-        .hero { text-align: center; margin-bottom: 48px; }
-        .hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
-        .hero p { font-size: 16px; color: var(--text-muted); max-width: 580px; margin: 0 auto; }
-        .plans {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-        .plan {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
-            padding: 24px;
-            display: flex; flex-direction: column;
-            position: relative;
-        }
-        .plan.featured { border-color: var(--accent); box-shadow: 0 4px 20px rgba(108,92,231,0.18); }
-        .plan-badge {
-            position: absolute; top: -10px; right: 16px;
-            background: var(--accent); color: #fff;
-            padding: 3px 10px; border-radius: 100px;
-            font-size: 10px; font-weight: 700;
-            letter-spacing: 0.4px; text-transform: uppercase;
-        }
-        .plan-name { font-size: 14px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
-        .plan-price { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
-        .plan-price .currency { font-size: 18px; font-weight: 600; color: var(--text-muted); }
-        .plan-price .period { font-size: 13px; font-weight: 500; color: var(--text-muted); }
-        .plan-features {
-            list-style: none; margin: 20px 0; padding: 0;
-            border-top: 1px solid var(--border);
-            padding-top: 16px;
-            flex: 1;
-        }
-        .plan-features li {
-            font-size: 13px; color: var(--text-secondary);
-            padding: 6px 0; display: flex; align-items: flex-start; gap: 8px;
-        }
-        .plan-features li::before {
-            content: ''; display: inline-block;
-            width: 14px; height: 14px;
-            background: var(--accent-dim);
-            border-radius: 50%;
-            position: relative; flex-shrink: 0;
-            margin-top: 2px;
-        }
-        .plan-features li::after {
-            content: ''; position: absolute;
-            margin-left: -11px; margin-top: 6px;
-            width: 6px; height: 3px;
-            border-left: 2px solid var(--accent);
-            border-bottom: 2px solid var(--accent);
-            transform: rotate(-45deg);
-        }
-        .plan-features li.muted { color: var(--text-muted); }
-        .btn-cta {
-            display: block; width: 100%;
-            padding: 12px 18px;
-            font-family: inherit; font-size: 13px; font-weight: 600;
-            border-radius: var(--radius-sm);
-            cursor: pointer; transition: all 150ms;
-            border: 1px solid var(--border);
-            background: var(--surface); color: var(--text);
-            text-align: center; text-decoration: none;
-        }
-        .btn-cta:hover { border-color: var(--border-hover); background: var(--surface-hover); }
-        .btn-cta.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .btn-cta.primary:hover { background: var(--accent-bright); }
-        .btn-cta:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        .footnote { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 24px; }
-        .footnote a { color: var(--accent); text-decoration: none; }
-
-        .msg {
-            padding: 10px 14px; border-radius: var(--radius-sm);
-            font-size: 13px; margin-bottom: 16px; display: none;
-            max-width: 480px; margin-left: auto; margin-right: auto;
-        }
-        .msg.error { display: block; background: rgba(220,38,38,0.06); color: var(--error); border: 1px solid rgba(220,38,38,0.15); }
-        .msg.info { display: block; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(108,92,231,0.15); }
+        .msg { padding: 12px 14px; border-radius: var(--r-md); font-size: 13px; margin-bottom: 20px; display: none; }
+        .msg.error { display: block; background: rgba(180,35,24,0.06); color: var(--danger); border: 1px solid rgba(180,35,24,0.2); }
+        .msg.info { display: block; background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(23,51,209,0.18); }
+        .plan-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0; position: relative; display: flex; flex-direction: column; }
+        .plan-card.selected { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+        .plan-tag { position: absolute; top: -1px; right: 20px; background: var(--ink); color: var(--bg); padding: 4px 10px; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--mono); border-radius: 0 0 4px 4px; }
+        .plan-tag.popular { background: var(--accent); color: #fff; }
+        .plan-head { padding: 24px 28px 18px; border-bottom: 1px solid var(--line); }
+        .plan-name { font-family: var(--serif); font-weight: 500; font-size: 26px; letter-spacing: -0.015em; }
+        .plan-tagline { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+        .plan-price-row { display: flex; align-items: baseline; gap: 6px; margin-top: 18px; }
+        .plan-price { font-family: var(--serif); font-weight: 500; font-size: 42px; line-height: 1; letter-spacing: -0.02em; }
+        .plan-price .currency { font-size: 22px; font-weight: 500; }
+        .plan-per { font-size: 12.5px; color: var(--muted); }
+        .plan-feats { padding: 20px 28px; flex: 1; }
+        .plan-feats ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+        .plan-feats li { display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; }
+        .plan-feats li svg { flex-shrink: 0; margin-top: 3px; }
+        .plan-cta { padding: 18px 28px 24px; }
     </style>
 </head>
-<body>
-<div class="grid-bg"></div>
+<body class="wts">
+<div class="wts-shell">
+    <div id="wts-sidebar-mount"></div>
 
-<nav class="nav">
-    <div class="nav-inner">
-        <a class="nav-brand" href="/">
-            <div class="nav-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <div class="wts-shell-main">
+        <div class="wts-top">
+            <div class="wts-crumbs">
+                <span id="crumbUser">Account</span>
+                <span class="sep">/</span>
+                <span>Account</span>
+                <span class="sep">/</span>
+                <b>Plans</b>
             </div>
-            <span>WordToSite</span>
-        </a>
-        <div class="nav-right">
-            <a class="nav-link" href="/app.html">Start building</a>
-            <a class="nav-link" href="/dashboard.html">Dashboard</a>
+        </div>
+
+        <div class="wts-content">
+            <div class="account-subnav">
+                <div class="account-subnav-inner">
+                    <a href="/profile.html">Profile</a>
+                    <a href="/billing.html">Billing</a>
+                    <a href="/usage.html">Usage</a>
+                    <a href="/pricing.html" class="active">Plans</a>
+                </div>
+            </div>
+
+            <div style="padding: 32px 36px 60px; max-width: 1280px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; gap:24px;">
+                    <div>
+                        <h1 class="wts-page-title">Plans</h1>
+                        <p class="wts-page-lede">Pay for what you ship. Switch or cancel any time — prorated to the day.</p>
+                    </div>
+                </div>
+
+                <div class="msg" id="msg"></div>
+
+                <div id="plans" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:32px;"></div>
+
+                <p style="font-size:12.5px; color:var(--muted-2); text-align:center;">
+                    Prices in USD, billed monthly. All paid plans include the customer portal — switch tiers or cancel anytime.
+                    Questions? See our <a href="/terms.html" style="color:var(--accent);">terms</a> or <a href="/docs.html" style="color:var(--accent);">docs</a>.
+                </p>
+            </div>
         </div>
     </div>
-</nav>
-
-<div class="main">
-    <div class="hero">
-        <h1>Pricing</h1>
-        <p>Pay for what you ship. Every plan includes voice editing, AI generation, and AEO/GEO optimization. Cancel anytime in the customer portal.</p>
-    </div>
-
-    <div class="msg" id="msg"></div>
-
-    <div class="plans" id="plans"></div>
-
-    <p class="footnote">
-        Questions? Read our <a href="/terms.html">terms</a> or <a href="/docs.html">docs</a>.
-        Prices in USD, billed monthly. All paid plans include the customer portal — switch tiers or cancel anytime.
-    </p>
 </div>
 
+<script src="/assets/wts-platform.js"></script>
 <script>
 const PLAN_ORDER = ['free', 'starter', 'pro', 'business'];
 const FEATURED = 'pro';
+let currentUser = null;
+
+WtsPlatform.init({ active: 'pricing' }).then(user => {
+    currentUser = user;
+    loadPlans();
+}).catch(() => {});
 
 function fmtNumber(n) {
     if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + 'M';
@@ -222,12 +107,13 @@ function featureLines(plan) {
     return lines;
 }
 
+function checkIcon(color) {
+    return `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="${color}" stroke-width="1.6"><path d="M3 8l3.5 3.5L13 5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
 async function loadPlans() {
     try {
-        const [plansRes, meRes] = await Promise.all([
-            fetch('/api/billing/plans'),
-            fetch('/api/auth/me').catch(() => ({ ok: false })),
-        ]);
+        const plansRes = await fetch('/api/billing/plans');
 
         if (!plansRes.ok) {
             const status = plansRes.status;
@@ -239,55 +125,59 @@ async function loadPlans() {
         }
 
         const { plans } = await plansRes.json();
-        const me = meRes.ok ? (await meRes.json()).user : null;
-
         const byTier = Object.fromEntries(plans.map(p => [p.tier, p]));
         const ordered = PLAN_ORDER.map(t => byTier[t]).filter(Boolean);
 
         const root = document.getElementById('plans');
         root.innerHTML = '';
         for (const plan of ordered) {
-            const isCurrent = me && me.planTier === plan.tier;
+            const isCurrent = currentUser && currentUser.planTier === plan.tier;
             const featured = plan.tier === FEATURED;
             const canSubscribe = plan.tier !== 'free' && plan.priceId && !isCurrent;
 
             const card = document.createElement('div');
-            card.className = 'plan' + (featured ? ' featured' : '');
-            const badge = featured ? '<span class="plan-badge">Most popular</span>' : '';
+            card.className = 'plan-card' + (isCurrent ? ' selected' : '');
+            const tag = isCurrent
+                ? '<span class="plan-tag">Your plan</span>'
+                : featured ? '<span class="plan-tag popular">Most popular</span>' : '';
             const cta = isCurrent
-                ? '<a class="btn-cta" href="/billing.html">Current plan</a>'
+                ? '<a class="wts-btn lg" href="/billing.html" style="width:100%; justify-content:center;">Current plan</a>'
                 : plan.tier === 'free'
-                    ? (me ? '<a class="btn-cta" href="/dashboard.html">Use free plan</a>' : '<a class="btn-cta" href="/register.html">Sign up free</a>')
+                    ? '<a class="wts-btn lg" href="/dashboard.html" style="width:100%; justify-content:center;">Use free plan</a>'
                     : canSubscribe
-                        ? `<button class="btn-cta primary" data-tier="${plan.tier}">Subscribe</button>`
-                        : '<button class="btn-cta" disabled>Unavailable</button>';
-            const features = featureLines(plan).map(f => `<li>${f}</li>`).join('');
+                        ? `<button class="wts-btn primary lg" data-tier="${plan.tier}" style="width:100%; justify-content:center;">Subscribe →</button>`
+                        : '<button class="wts-btn lg" disabled style="width:100%; justify-content:center;">Unavailable</button>';
+
+            const checkColor = isCurrent ? 'var(--accent)' : 'var(--ink)';
+            const features = featureLines(plan).map(f =>
+                `<li>${checkIcon(checkColor)}<span>${f}</span></li>`
+            ).join('');
 
             card.innerHTML = `
-                ${badge}
-                <div class="plan-name">${plan.label}</div>
-                <div class="plan-price">
-                    <span class="currency">$</span>${plan.monthlyPriceUsd}<span class="period">/mo</span>
+                ${tag}
+                <div class="plan-head">
+                    <div class="plan-name">${plan.label}</div>
+                    <div class="plan-tagline">${plan.tagline || plan.description || (plan.tier === 'free' ? 'For trying things out' : '')}</div>
+                    <div class="plan-price-row">
+                        <div class="plan-price"><span class="currency">$</span>${plan.monthlyPriceUsd}</div>
+                        <div class="plan-per">per month</div>
+                    </div>
                 </div>
-                <ul class="plan-features">${features}</ul>
-                ${cta}
+                <div class="plan-feats"><ul>${features}</ul></div>
+                <div class="plan-cta">${cta}</div>
             `;
             root.appendChild(card);
         }
 
         root.querySelectorAll('button[data-tier]').forEach(btn => {
-            btn.addEventListener('click', () => subscribe(btn.dataset.tier, btn, me));
+            btn.addEventListener('click', () => subscribe(btn.dataset.tier, btn));
         });
     } catch (err) {
         showError(err.message || 'Failed to load pricing.');
     }
 }
 
-async function subscribe(planTier, btn, me) {
-    if (!me) {
-        window.location.href = '/register.html?next=/pricing.html';
-        return;
-    }
+async function subscribe(planTier, btn) {
     btn.disabled = true;
     btn.textContent = 'Redirecting…';
     try {
@@ -302,7 +192,7 @@ async function subscribe(planTier, btn, me) {
     } catch (err) {
         showError(err.message);
         btn.disabled = false;
-        btn.textContent = 'Subscribe';
+        btn.textContent = 'Subscribe →';
     }
 }
 
@@ -317,8 +207,6 @@ function showInfo(text) {
     el.className = 'msg info';
     el.textContent = text;
 }
-
-loadPlans();
 </script>
 </body>
 </html>

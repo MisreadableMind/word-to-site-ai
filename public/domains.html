@@ -4,117 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <title>WordToSite | Domains</title>
+    <title>word→site | Domains</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/wts.css?v=2">
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg: #FFFDF7; --bg-subtle: #FFF8F0;
-            --surface: #FFFFFF; --surface-hover: #FFF5EC;
-            --border: rgba(140, 120, 100, 0.18); --border-hover: rgba(140, 120, 100, 0.30);
-            --text: #2D2926; --text-secondary: #4A4540; --text-muted: #8A8580;
-            --accent: #6C5CE7; --accent-bright: #5A4BD1; --accent-dim: rgba(108,92,231,0.10);
-            --green: #16A34A; --green-dim: rgba(22,163,74,0.12);
-            --warn: #B45309; --warn-dim: rgba(180,83,9,0.08);
-            --error: #DC2626; --error-dim: rgba(220,38,38,0.06);
-            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
-            --radius: 12px; --radius-sm: 8px;
-        }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
-        .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px); background-size: 64px 64px; pointer-events: none; z-index: 0; }
-        .grid-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent); }
-        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,253,247,0.8); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); border-bottom: 1px solid var(--border); }
-        .nav-inner { max-width: 880px; margin: 0 auto; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
-        .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 700; font-size: 15px; }
-        .nav-logo { width: 28px; height: 28px; background: linear-gradient(135deg, #6C5CE7, #5A4BD1); border-radius: 7px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(108,92,231,0.3); }
-        .nav-logo svg { width: 15px; height: 15px; }
-        .nav-right { display: flex; align-items: center; gap: 12px; }
-        .nav-link { font-size: 13px; font-weight: 500; color: var(--text-muted); padding: 6px 12px; border-radius: 6px; transition: all 150ms; text-decoration: none; }
-        .nav-link:hover { color: var(--text-secondary); background: var(--accent-dim); }
-        .main { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 92px 24px 60px; }
-        .main h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-        .subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 28px; }
-        .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 24px; margin-bottom: 20px; }
-        .section h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
-        .row { display: flex; gap: 10px; }
-        .form-input { flex: 1; padding: 10px 14px; font-family: inherit; font-size: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); outline: none; transition: border-color 150ms; }
-        .form-input:focus { border-color: var(--accent); }
-        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-family: inherit; font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; transition: all 150ms; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); text-decoration: none; }
-        .btn:hover { border-color: var(--border-hover); background: var(--surface-hover); }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .btn-primary:hover { background: var(--accent-bright); }
-        .quote { margin-top: 16px; padding: 16px; border-radius: var(--radius-sm); background: var(--bg-subtle); border: 1px solid var(--border); display: none; }
+        .quote { margin-top: 16px; padding: 16px; border-radius: var(--r-md); background: var(--bg-2); border: 1px solid var(--line); display: none; }
         .quote.shown { display: block; }
-        .quote-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
-        .quote-row.total { font-weight: 700; border-top: 1px solid var(--border); margin-top: 8px; padding-top: 10px; }
-        .quote-row .muted { color: var(--text-muted); }
-        .banner { padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 16px; display: none; }
+        .quote-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
+        .quote-row.total { font-weight: 500; border-top: 1px solid var(--line); margin-top: 8px; padding-top: 10px; font-family: var(--serif); font-size: 16px; }
+        .quote-row .muted { color: var(--muted); }
+        .banner { padding: 12px 14px; border-radius: var(--r-md); font-size: 13px; margin-bottom: 16px; display: none; }
         .banner.shown { display: block; }
-        .banner.success { background: var(--green-dim); color: var(--green); border: 1px solid rgba(22,163,74,0.15); }
-        .banner.warn { background: var(--warn-dim); color: var(--warn); border: 1px solid rgba(180,83,9,0.15); }
-        .banner.error { background: var(--error-dim); color: var(--error); border: 1px solid rgba(220,38,38,0.15); }
-        .banner.info { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(108,92,231,0.15); }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        table th, table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
-        table th { font-weight: 600; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
-        .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
-        .badge-registered { background: var(--green-dim); color: var(--green); }
-        .badge-awaiting_payment, .badge-registering { background: var(--accent-dim); color: var(--accent); }
-        .badge-failed { background: var(--error-dim); color: var(--error); }
-        .muted { color: var(--text-muted); font-size: 13px; }
+        .banner.success { background: rgba(26,127,63,0.08); color: var(--success); border: 1px solid rgba(26,127,63,0.2); }
+        .banner.warn { background: rgba(184,110,0,0.08); color: var(--warn); border: 1px solid rgba(184,110,0,0.2); }
+        .banner.error { background: rgba(180,35,24,0.06); color: var(--danger); border: 1px solid rgba(180,35,24,0.2); }
+        .banner.info { background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(23,51,209,0.18); }
     </style>
 </head>
-<body>
-<div class="grid-bg"></div>
+<body class="wts">
+<div class="wts-shell">
+    <div id="wts-sidebar-mount"></div>
 
-<nav class="nav">
-    <div class="nav-inner">
-        <a class="nav-brand" href="/">
-            <div class="nav-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <div class="wts-shell-main">
+        <div class="wts-top">
+            <div class="wts-crumbs">
+                <span id="crumbUser">Account</span>
+                <span class="sep">/</span>
+                <b>Domains</b>
             </div>
-            <span>WordToSite</span>
-        </a>
-        <div class="nav-right">
-            <a class="nav-link" href="/dashboard.html">Dashboard</a>
-            <a class="nav-link" href="/billing.html">Billing</a>
         </div>
-    </div>
-</nav>
 
-<div class="main">
-    <h1>Domains</h1>
-    <p class="subtitle">Register a custom domain for your site. You pay Namecheap's wholesale price plus a 20% service fee — no recurring platform charge for the domain itself.</p>
+        <div class="wts-content">
+            <div style="padding: 32px 36px 60px; max-width: 1080px;">
+                <div style="margin-bottom: 28px;">
+                    <h1 class="wts-page-title">Domains</h1>
+                    <p class="wts-page-lede">Register a custom domain for your site. You pay Namecheap's wholesale price plus a 20% service fee — no recurring platform charge for the domain itself.</p>
+                </div>
 
-    <div class="banner" id="banner"></div>
+                <div class="banner" id="banner"></div>
 
-    <div class="section">
-        <h2>Add a custom domain</h2>
-        <div class="row">
-            <input class="form-input" id="domainInput" placeholder="example.com" autocomplete="off" spellcheck="false">
-            <button class="btn" id="quoteBtn">Check price</button>
+                <div class="wts-card" style="margin-bottom:16px;">
+                    <div class="wts-card-head">
+                        <span class="wts-card-title">Add a custom domain</span>
+                    </div>
+                    <div class="wts-card-body">
+                        <div class="wts-field">
+                            <label class="wts-field-label">Domain</label>
+                            <div style="display:flex; gap:8px;">
+                                <input class="wts-input" id="domainInput" placeholder="example.com" autocomplete="off" spellcheck="false" style="flex:1;">
+                                <button class="wts-btn primary" id="quoteBtn">Check price</button>
+                            </div>
+                        </div>
+                        <div class="quote" id="quote"></div>
+                    </div>
+                </div>
+
+                <div class="wts-card">
+                    <div class="wts-card-head">
+                        <span class="wts-card-title">Your domains</span>
+                    </div>
+                    <div id="domainsList" style="padding:18px; color:var(--muted); font-size:13px;">Loading…</div>
+                </div>
+            </div>
         </div>
-        <div class="quote" id="quote"></div>
-    </div>
-
-    <div class="section">
-        <h2>Your domains</h2>
-        <div id="domainsList" class="muted">Loading…</div>
     </div>
 </div>
 
+<script src="/assets/wts-platform.js"></script>
 <script>
-let currentUser = null;
 let currentQuote = null;
 
-async function checkAuth() {
-    const res = await fetch('/api/auth/me');
-    if (!res.ok) { location.href = '/login.html'; return false; }
-    currentUser = (await res.json()).user;
-    return true;
+WtsPlatform.init({ active: 'domains' }).then(init).catch(() => {});
+
+async function readJson(res) {
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+        throw new Error(
+            res.status === 404
+                ? 'Domain features are not configured on this deployment.'
+                : `Server returned an unexpected response (${res.status}).`
+        );
+    }
+    return res.json();
 }
 
 function showBanner(type, text) {
@@ -135,7 +108,7 @@ async function showSessionResult(sessionId) {
             setTimeout(() => showSessionResult(sessionId), 2000);
             return;
         }
-        const { domain } = await res.json();
+        const { domain } = await readJson(res);
         if (domain.status === 'awaiting_payment' || domain.status === 'registering') {
             showBanner('info', `Setting up ${domain.domain} — refreshing in a few seconds…`);
             setTimeout(() => showSessionResult(sessionId), 3000);
@@ -169,15 +142,15 @@ async function getQuote() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ domain }),
         });
-        const data = await res.json();
+        const data = await readJson(res);
         if (!res.ok) throw new Error(data.error?.message || 'Quote failed');
 
         if (!data.available) {
             quoteEl.className = 'quote shown';
             if (data.premium) {
-                quoteEl.innerHTML = `<div class="quote-row"><span>${data.domain}</span><span class="muted">Premium domain ($${data.premiumPrice || '???'}) — contact support to register</span></div>`;
+                quoteEl.innerHTML = `<div class="quote-row"><span>${escapeHtml(data.domain)}</span><span class="muted">Premium domain ($${data.premiumPrice || '???'}) — contact support to register</span></div>`;
             } else {
-                quoteEl.innerHTML = `<div class="quote-row"><span>${data.domain}</span><span class="muted">Not available — try a different name</span></div>`;
+                quoteEl.innerHTML = `<div class="quote-row"><span>${escapeHtml(data.domain)}</span><span class="muted">Not available — try a different name</span></div>`;
             }
             return;
         }
@@ -185,12 +158,12 @@ async function getQuote() {
         currentQuote = data;
         quoteEl.className = 'quote shown';
         quoteEl.innerHTML = `
-            <div class="quote-row"><span>${data.domain} (1 year)</span><span class="muted">Available</span></div>
-            <div class="quote-row"><span class="muted">Namecheap wholesale</span><span>$${data.wholesalePriceUsd.toFixed(2)}</span></div>
-            <div class="quote-row"><span class="muted">WordToSite service fee (${data.markupPercent}%)</span><span>$${data.markupUsd.toFixed(2)}</span></div>
+            <div class="quote-row"><span>${escapeHtml(data.domain)} (1 year)</span><span class="muted">Available</span></div>
+            <div class="quote-row"><span class="muted">Namecheap wholesale</span><span class="wts-mono">$${data.wholesalePriceUsd.toFixed(2)}</span></div>
+            <div class="quote-row"><span class="muted">word→site service fee (${data.markupPercent}%)</span><span class="wts-mono">$${data.markupUsd.toFixed(2)}</span></div>
             <div class="quote-row total"><span>Total today</span><span>$${data.totalPriceUsd.toFixed(2)}</span></div>
-            <div style="margin-top:14px"><button class="btn btn-primary" id="payBtn">Pay $${data.totalPriceUsd.toFixed(2)} and register</button></div>
-            <p class="muted" style="margin-top:10px">You'll be redirected to Stripe Checkout. If domain registration fails after payment, you're refunded automatically.</p>
+            <div style="margin-top:14px;"><button class="wts-btn accent" id="payBtn">Pay $${data.totalPriceUsd.toFixed(2)} and register →</button></div>
+            <p style="margin-top:10px; font-size:12.5px; color:var(--muted);">You'll be redirected to Stripe Checkout. If domain registration fails after payment, you're refunded automatically.</p>
         `;
         document.getElementById('payBtn').addEventListener('click', purchase);
     } catch (err) {
@@ -211,12 +184,12 @@ async function purchase() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ domain: currentQuote.domain }),
         });
-        const data = await res.json();
+        const data = await readJson(res);
         if (!res.ok) {
             if (data.error?.upgradeRequired) {
                 showBanner('warn', `${data.error.message} `);
                 btn.disabled = false;
-                btn.textContent = `Pay $${currentQuote.totalPriceUsd.toFixed(2)} and register`;
+                btn.textContent = `Pay $${currentQuote.totalPriceUsd.toFixed(2)} and register →`;
                 return;
             }
             throw new Error(data.error?.message || 'Purchase failed');
@@ -225,8 +198,15 @@ async function purchase() {
     } catch (err) {
         showBanner('error', err.message);
         btn.disabled = false;
-        btn.textContent = `Pay $${currentQuote.totalPriceUsd.toFixed(2)} and register`;
+        btn.textContent = `Pay $${currentQuote.totalPriceUsd.toFixed(2)} and register →`;
     }
+}
+
+function statusBadge(status) {
+    if (status === 'registered') return '<span class="wts-badge live"><span class="dot"></span>Registered</span>';
+    if (status === 'awaiting_payment' || status === 'registering') return `<span class="wts-badge accent"><span class="dot"></span>${escapeHtml(status.replace('_', ' '))}</span>`;
+    if (status === 'failed') return '<span class="wts-badge draft" style="color:var(--danger); border-color:rgba(180,35,24,0.2); background:rgba(180,35,24,0.06);"><span class="dot" style="background:var(--danger);"></span>Failed</span>';
+    return `<span class="wts-badge archived"><span class="dot"></span>${escapeHtml(status)}</span>`;
 }
 
 async function loadDomains() {
@@ -234,32 +214,37 @@ async function loadDomains() {
     try {
         const res = await fetch('/api/domains');
         if (!res.ok) throw new Error('Failed to load domains');
-        const { domains } = await res.json();
+        const { domains } = await readJson(res);
         if (!domains.length) {
             el.textContent = 'No domains yet. Search above to register one.';
             return;
         }
         const rows = domains.map(d => {
-            const expires = d.expiresAt ? new Date(d.expiresAt).toLocaleDateString() : '—';
+            const expires = d.expiresAt ? new Date(d.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
             const charged = d.totalChargedCents != null ? `$${(d.totalChargedCents / 100).toFixed(2)}` : '—';
             return `<tr>
-                <td>${d.domain}</td>
-                <td><span class="badge badge-${d.status}">${d.status.replace('_', ' ')}</span></td>
-                <td>${charged}</td>
-                <td>${expires}</td>
+                <td style="font-weight:500;">${escapeHtml(d.domain)}</td>
+                <td>${statusBadge(d.status)}</td>
+                <td class="num" style="text-align:right;">${charged}</td>
+                <td style="color:var(--muted);">${expires}</td>
             </tr>`;
         }).join('');
-        el.innerHTML = `<table>
-            <thead><tr><th>Domain</th><th>Status</th><th>Paid</th><th>Expires</th></tr></thead>
+        el.innerHTML = `<table class="wts-table">
+            <thead><tr><th>Domain</th><th>Status</th><th style="text-align:right;">Paid</th><th>Expires</th></tr></thead>
             <tbody>${rows}</tbody>
         </table>`;
+        el.style.padding = '0';
     } catch (err) {
         el.textContent = err.message;
     }
 }
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 async function init() {
-    if (!(await checkAuth())) return;
     const params = new URLSearchParams(location.search);
     if (params.get('status') === 'cancelled') {
         showBanner('warn', 'Domain purchase cancelled. No charges were made.');
@@ -276,8 +261,6 @@ document.getElementById('quoteBtn').addEventListener('click', getQuote);
 document.getElementById('domainInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') getQuote();
 });
-
-init();
 </script>
 </body>
 </html>

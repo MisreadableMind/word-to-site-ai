@@ -4,174 +4,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <title>WordToSite | Sign up</title>
+    <title>word→site | Create account</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/wts.css?v=2">
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --bg: #FFFDF7;
-            --bg-subtle: #FFF8F0;
-            --surface: #FFFFFF;
-            --border: rgba(140, 120, 100, 0.18);
-            --border-hover: rgba(140, 120, 100, 0.30);
-            --text: #2D2926;
-            --text-secondary: #4A4540;
-            --text-muted: #8A8580;
-            --accent: #6C5CE7;
-            --accent-bright: #5A4BD1;
-            --accent-dim: rgba(108,92,231,0.10);
-            --error: #DC2626;
-            --error-dim: rgba(220,38,38,0.06);
-            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
-            --radius: 12px;
-            --radius-sm: 8px;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg); color: var(--text);
-            min-height: 100vh; display: flex;
-            align-items: center; justify-content: center;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .grid-bg {
-            position: fixed; inset: 0;
-            background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
-            background-size: 64px 64px; pointer-events: none; z-index: 0;
-        }
-        .grid-bg::after {
-            content: ''; position: absolute; inset: 0;
-            background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent);
-        }
-
-        .auth-card {
-            position: relative; z-index: 1;
-            width: 100%; max-width: 400px;
-            background: #FFFFFF;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-md);
-            padding: 40px 32px; margin: 24px;
-        }
-
-        .auth-brand {
-            display: flex; align-items: center; gap: 10px;
-            justify-content: center; margin-bottom: 32px;
-            text-decoration: none; color: var(--text);
-            font-weight: 700; font-size: 18px;
-        }
-        .auth-logo {
-            width: 32px; height: 32px;
-            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
-            border-radius: 8px; display: flex;
-            align-items: center; justify-content: center;
-            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
-        }
-        .auth-logo svg { width: 17px; height: 17px; }
-
-        h1 { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 8px; }
-        .subtitle { font-size: 14px; color: var(--text-muted); text-align: center; margin-bottom: 28px; }
-
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
-        .form-input {
-            width: 100%; padding: 10px 14px;
-            font-family: inherit; font-size: 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: var(--bg); color: var(--text);
-            outline: none; transition: border-color 150ms;
-        }
-        .form-input:focus { border-color: var(--accent); }
-
+        html, body { height: 100%; }
+        body { margin: 0; }
+        .auth-grid { height: 100vh; display: grid; grid-template-columns: 1fr 1.05fr; }
+        .auth-left { padding: 36px 56px 32px; display: flex; flex-direction: column; border-right: 1px solid var(--line); overflow: auto; }
+        .auth-left-form { flex: 1; display: flex; flex-direction: column; justify-content: center; max-width: 440px; width: 100%; padding: 32px 0; }
+        .auth-foot { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted-2); }
+        .auth-foot a { color: var(--muted-2); }
+        .auth-right { background: var(--bg-2); position: relative; overflow: hidden; padding: 36px 56px; display: flex; flex-direction: column; justify-content: space-between; }
+        .auth-brand-row { display: flex; align-items: center; gap: 10px; }
+        .auth-error { display: none; margin-top: 14px; padding: 10px 14px; background: rgba(180,35,24,0.06); border: 1px solid rgba(180,35,24,0.2); border-radius: var(--r-md); color: var(--danger); font-size: 13px; }
+        .auth-error.visible { display: block; }
         .password-wrapper { position: relative; }
-        .password-wrapper .form-input { padding-right: 42px; }
-        .password-toggle {
-            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-            background: none; border: none; cursor: pointer; padding: 4px;
-            color: var(--text-muted); display: flex; align-items: center;
-            transition: color 150ms;
+        .password-wrapper .wts-input { padding-right: 40px; }
+        .password-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; display: grid; place-items: center; color: var(--muted-2); background: none; border: 0; cursor: pointer; padding: 0; }
+        .password-toggle:hover { color: var(--ink); }
+        .password-toggle svg { width: 16px; height: 16px; }
+        @media (max-width: 900px) {
+            .auth-grid { grid-template-columns: 1fr; }
+            .auth-right { display: none; }
+            .auth-left { padding: 24px; }
         }
-        .password-toggle:hover { color: var(--text-secondary); }
-        .password-toggle svg { width: 18px; height: 18px; }
-
-        .btn-primary {
-            width: 100%; padding: 12px;
-            font-family: inherit; font-size: 14px; font-weight: 600;
-            background: var(--accent); color: #fff;
-            border: none; border-radius: var(--radius-sm);
-            cursor: pointer; transition: all 150ms; margin-top: 8px;
-        }
-        .btn-primary:hover { background: var(--accent-bright); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(108,92,231,0.3); }
-        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        .error-msg {
-            background: var(--error-dim); border: 1px solid rgba(220,38,38,0.15);
-            color: var(--error); border-radius: var(--radius-sm);
-            padding: 10px 14px; font-size: 13px;
-            margin-bottom: 16px; display: none;
-        }
-        .error-msg.visible { display: block; }
-
-        .auth-footer { text-align: center; margin-top: 24px; font-size: 13px; color: var(--text-muted); }
-        .auth-footer a { color: var(--accent); font-weight: 600; text-decoration: none; }
-        .auth-footer a:hover { text-decoration: underline; }
     </style>
 </head>
-<body>
-<div class="grid-bg"></div>
+<body class="wts">
+<div class="auth-grid">
+    <div class="auth-left">
+        <a class="auth-brand-row" href="/" style="text-decoration:none">
+            <div class="wts-mark">w</div>
+            <span class="wts-wordmark">word<span class="arrow">→</span>site</span>
+        </a>
 
-<div class="auth-card">
-    <a class="auth-brand" href="/">
-        <div class="auth-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <div class="auth-left-form">
+            <h1 class="wts-page-title">Create account.</h1>
+            <p class="wts-page-lede" style="margin-top:8px">Free to start. No card needed.</p>
+
+            <div class="auth-error" id="errorMsg"></div>
+
+            <form id="registerForm" style="margin-top:32px; display:flex; flex-direction:column; gap:14px;">
+                <div class="wts-field">
+                    <label class="wts-field-label" for="displayName">Full name</label>
+                    <input class="wts-input" type="text" id="displayName" name="displayName" placeholder="Anna Mota" autocomplete="name">
+                </div>
+                <div class="wts-field">
+                    <label class="wts-field-label" for="email">Email</label>
+                    <input class="wts-input" type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div class="wts-field">
+                        <label class="wts-field-label" for="password">Password</label>
+                        <div class="password-wrapper">
+                            <input class="wts-input" type="password" id="password" name="password" required autocomplete="new-password" placeholder="8+ characters" minlength="8">
+                            <button type="button" class="password-toggle" aria-label="Show password">
+                                <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="wts-field">
+                        <label class="wts-field-label" for="confirmPassword">Confirm</label>
+                        <div class="password-wrapper">
+                            <input class="wts-input" type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password" placeholder="Repeat">
+                            <button type="button" class="password-toggle" aria-label="Show password">
+                                <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <label style="display:flex; align-items:flex-start; gap:10px; font-size:12.5px; color:var(--muted); line-height:1.5; margin-top:4px;">
+                    <input type="checkbox" required style="margin-top:2px; width:14px; height:14px; accent-color:var(--accent);">
+                    <span>I agree to the <a href="/terms.html" style="color:var(--accent);">Terms</a> and <a href="/privacy.html" style="color:var(--accent);">Privacy Policy</a>.</span>
+                </label>
+
+                <button class="wts-btn primary lg" type="submit" id="submitBtn" style="margin-top:8px; justify-content:center;">Create account</button>
+            </form>
+
+            <p style="margin-top:28px; font-size:13.5px; color:var(--muted);">
+                Already have an account? <a href="/login.html" style="color:var(--accent); font-weight:500;">Sign in →</a>
+            </p>
         </div>
-        <span>WordToSite</span>
-    </a>
 
-    <h1>Create your account</h1>
-    <p class="subtitle">Start building websites in seconds</p>
-
-    <div class="error-msg" id="errorMsg"></div>
-
-    <form id="registerForm">
-        <div class="form-group">
-            <label class="form-label" for="displayName">Display name</label>
-            <input class="form-input" type="text" id="displayName" name="displayName" placeholder="Jane Smith" autocomplete="name">
+        <div class="auth-foot">
+            <span>© 2026 word→site</span>
+            <span style="display:flex; gap:18px;">
+                <a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a>
+            </span>
         </div>
-        <div class="form-group">
-            <label class="form-label" for="email">Email</label>
-            <input class="form-input" type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com">
+    </div>
+
+    <div class="auth-right">
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <span class="wts-badge accent"><span class="dot"></span>v2 · platform</span>
         </div>
-        <div class="form-group">
-            <label class="form-label" for="password">Password</label>
-            <div class="password-wrapper">
-                <input class="form-input" type="password" id="password" name="password" required autocomplete="new-password" placeholder="At least 8 characters" minlength="8">
-                <button type="button" class="password-toggle" aria-label="Show password">
-                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                </button>
+
+        <div>
+            <h2 class="wts-serif" style="font-size:38px; line-height:1.08; letter-spacing:-0.022em; max-width:22ch;">
+                A website is one conversation away.
+            </h2>
+            <p style="font-size:14px; color:var(--muted); margin-top:14px; max-width:44ch; line-height:1.55;">
+                Describe what you want — a portfolio, a bakery, a band. We draft pages, copy and a skin. You tune everything by voice.
+            </p>
+        </div>
+
+        <div class="wts-card" style="padding:18px; box-shadow:var(--shadow-md);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:22px; height:22px; background:var(--ink); border-radius:4px; color:var(--bg); display:grid; place-items:center; font-size:10px; font-weight:600;">CB</div>
+                    <span style="font-weight:500;">Casa Bom Pão</span>
+                </div>
+                <span class="wts-badge live"><span class="dot"></span>Live</span>
+            </div>
+            <div class="wts-voice-bar" style="padding:10px 12px; background:var(--bg);">
+                <div class="wts-voice-mic" style="width:28px; height:28px;">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5v2M5.5 14.5h5"/></svg>
+                </div>
+                <div class="wts-voice-waveform active">
+                    <svg viewBox="0 0 240 28" preserveAspectRatio="none">
+                        <path d="M0,14 Q15,14 30,11 T60,14 T90,9 T120,14 T150,12 T180,15 T210,11 T240,14"/>
+                    </svg>
+                </div>
+            </div>
+            <div style="margin-top:10px; font-size:12.5px; color:var(--muted); font-style:italic;">
+                "Make the headline quieter — italicise Sunday."
             </div>
         </div>
-        <div class="form-group">
-            <label class="form-label" for="confirmPassword">Confirm password</label>
-            <div class="password-wrapper">
-                <input class="form-input" type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password" placeholder="Repeat your password">
-                <button type="button" class="password-toggle" aria-label="Show password">
-                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                </button>
-            </div>
-        </div>
-        <button class="btn-primary" type="submit" id="submitBtn">Create account</button>
-    </form>
 
-    <div class="auth-footer">
-        Already have an account? <a href="/login.html">Log in</a>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted-2);">
+            <span>500 voice min/mo · unlimited drafts</span>
+            <span>14-day free trial</span>
+        </div>
     </div>
 </div>
 
@@ -194,7 +163,7 @@ form.addEventListener('submit', async (e) => {
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating account...';
+    submitBtn.textContent = 'Creating account…';
 
     try {
         const res = await fetch('/api/auth/register', {
@@ -234,7 +203,6 @@ document.querySelectorAll('.password-toggle').forEach(btn => {
     });
 });
 
-// Redirect if already logged in
 const _redirect = new URLSearchParams(window.location.search).get('redirect');
 fetch('/api/auth/me').then(r => { if (r.ok) window.location.href = _redirect || '/dashboard.html'; });
 </script>
