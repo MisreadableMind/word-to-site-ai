@@ -95,6 +95,21 @@ export const config = {
     bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 12,
   },
 
+  // Stripe Billing Configuration
+  stripe: {
+    enabled: process.env.ENABLE_BILLING === 'true',
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    prices: {
+      starter: process.env.STRIPE_PRICE_STARTER || '',
+      pro: process.env.STRIPE_PRICE_PRO || '',
+      business: process.env.STRIPE_PRICE_BUSINESS || '',
+    },
+    successUrl: process.env.STRIPE_SUCCESS_URL || 'http://localhost:3000/billing.html?status=success',
+    cancelUrl: process.env.STRIPE_CANCEL_URL || 'http://localhost:3000/pricing.html?status=cancelled',
+    portalReturnUrl: process.env.STRIPE_PORTAL_RETURN_URL || 'http://localhost:3000/billing.html',
+  },
+
   // Base Site Configuration (TRXWaaSWizard plugin)
   baseSite: {
     url: process.env.BASE_SITE_URL || 'https://waas-site.at.wordtosite.ai',

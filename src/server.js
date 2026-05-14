@@ -28,10 +28,14 @@ import ProxyService from './services/proxy-service.js';
 import createProxyRouter from './routes/proxy-routes.js';
 import AuthService from './services/auth-service.js';
 import SiteService from './services/site-service.js';
+import BillingService from './services/billing-service.js';
 import createAuthRouter from './routes/auth-routes.js';
 import createSiteRouter from './routes/site-routes.js';
 import createEditorRouter from './routes/editor-routes.js';
+import createBillingRouter, { createBillingWebhookRouter } from './routes/billing-routes.js';
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth.js';
+import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement.js';
+import { getEntitlements as getPlanEntitlements } from './billing/entitlements.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,6 +82,7 @@ if (proxyService) {
 // User Auth & Sites routes (mounted BEFORE basic auth - uses its own session auth)
 const authService = new AuthService();
 const siteService = new SiteService();
+const billingService = config.stripe?.enabled ? new BillingService({ proxyService }) : null;
 const aiService = new AIService({ openaiApiKey: config.openai?.apiKey, geminiApiKey: config.gemini?.apiKey });
 const editorService = new EditorService({ aiService, siteService });
 if (config.auth?.enabled !== false) {
@@ -85,6 +90,18 @@ if (config.auth?.enabled !== false) {
   app.use('/api/sites', express.json(), createSiteRouter(siteService, authService, proxyService));
   app.use('/api/editor/chat', express.json(), createEditorRouter(editorService, authService));
 }
+
+// Stripe webhook MUST be mounted before the global express.json() parser below — signature
+// verification requires the raw request body.
+if (billingService) {
+  app.use('/api/billing', createBillingWebhookRouter(billingService));
+  app.use('/api/billing', express.json(), createBillingRouter(billingService, authService));
+}
+
+const noopMiddleware = (req, res, next) => next();
+const requireAuthForBilling = billingService ? createUserAuth(authService) : noopMiddleware;
+const siteCreateGate = billingService ? requireSiteCreate(billingService) : noopMiddleware;
+const customDomainGate = billingService ? requireCustomDomain(billingService) : noopMiddleware;
 
 // Basic auth middleware (skipped when NODE_ENV=development or user auth is enabled)
 const BASIC_AUTH_PASSWORD = process.env.BASIC_AUTH_PASSWORD || 'WAAS';
@@ -123,8 +140,11 @@ async function autoRegisterProxyKey(wpUrl, siteName, req) {
   try {
     const domain = new URL(wpUrl).hostname;
     const existing = await proxyService.getSiteByDomain(domain);
+    const monthlyTokenLimit = billingService && req?.user
+      ? getPlanEntitlements(req.user.planTier).monthlyTokens
+      : undefined;
     const site = existing
-      || await proxyService.registerSite(domain, siteName || domain, wpUrl);
+      || await proxyService.registerSite(domain, siteName || domain, wpUrl, { monthlyTokenLimit });
 
     if (existing) {
       console.log(`Proxy key already exists for ${domain}, re-pushing existing key`);
@@ -256,7 +276,7 @@ app.post('/api/skins/recommend', async (req, res) => {
 });
 
 // Existing: Simple site creation (no domain)
-app.post('/api/create-site', async (req, res) => {
+app.post('/api/create-site', requireAuthForBilling, siteCreateGate, async (req, res) => {
   try {
     const { apiKey, siteName, isShared, isReserved } = req.body;
 
@@ -346,7 +366,7 @@ app.post('/api/check-domain', async (req, res) => {
 });
 
 // New: Create site with full domain workflow
-app.post('/api/create-site-with-domain', async (req, res) => {
+app.post('/api/create-site-with-domain', requireAuthForBilling, siteCreateGate, customDomainGate, async (req, res) => {
   try {
     const {
       apiKey,
@@ -408,7 +428,7 @@ app.post('/api/create-site-with-domain', async (req, res) => {
 });
 
 // New: Server-Sent Events for real-time progress
-app.get('/api/create-site-with-domain/stream', async (req, res) => {
+app.get('/api/create-site-with-domain/stream', requireAuthForBilling, siteCreateGate, customDomainGate, async (req, res) => {
   // Set headers for SSE
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -555,24 +575,28 @@ app.get('/api/health', requireAdminKey, (req, res) => {
 // VOICE TRANSCRIPTION ENDPOINT
 // ==========================================
 
-// --- Voice rate limiter (15 requests per hour per user) ---
+// --- Voice rate limiter (per-day, limit derived from the user's plan tier) ---
 const voiceRateLimit = new Map();
-const VOICE_RATE_LIMIT = 15;
-const VOICE_RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+const VOICE_RATE_WINDOW = 24 * 60 * 60 * 1000; // 24 hours
+const VOICE_DEFAULT_LIMIT = 15;
 
-function checkVoiceRateLimit(userId) {
+function resolveVoiceLimit(planTier) {
+  return billingService ? getVoiceLimit(planTier || 'free') : VOICE_DEFAULT_LIMIT;
+}
+
+function checkVoiceRateLimit(userId, limit) {
   const now = Date.now();
   const entry = voiceRateLimit.get(userId);
   if (!entry || now > entry.windowStart + VOICE_RATE_WINDOW) {
     voiceRateLimit.set(userId, { windowStart: now, count: 1 });
-    return { allowed: true, remaining: VOICE_RATE_LIMIT - 1 };
+    return { allowed: true, remaining: limit - 1 };
   }
-  if (entry.count >= VOICE_RATE_LIMIT) {
+  if (entry.count >= limit) {
     const resetIn = Math.ceil((entry.windowStart + VOICE_RATE_WINDOW - now) / 60000);
     return { allowed: false, remaining: 0, resetIn };
   }
   entry.count++;
-  return { allowed: true, remaining: VOICE_RATE_LIMIT - entry.count };
+  return { allowed: true, remaining: limit - entry.count };
 }
 
 // Auth middleware for voice
@@ -580,13 +604,14 @@ const requireAuth = createUserAuth(authService);
 
 // POST /api/voice/transcribe - Transcribe uploaded audio file (requires login, rate-limited)
 app.post('/api/voice/transcribe', requireAuth, upload.single('audio'), async (req, res) => {
-  // Rate limit check
-  const rateCheck = checkVoiceRateLimit(req.user.id);
+  const voiceLimit = resolveVoiceLimit(req.user.planTier);
+  const rateCheck = checkVoiceRateLimit(req.user.id, voiceLimit);
   res.set('X-RateLimit-Remaining', String(rateCheck.remaining));
   if (!rateCheck.allowed) {
     return res.status(429).json({
       success: false,
-      error: `Voice limit reached (${VOICE_RATE_LIMIT}/hour). Resets in ${rateCheck.resetIn} minutes. You can still type your answers.`,
+      error: `Voice limit reached (${voiceLimit}/day). Resets in ${rateCheck.resetIn} minutes. You can still type your answers.`,
+      upgradeUrl: '/pricing.html',
     });
   }
   try {
@@ -972,7 +997,8 @@ app.get('/api/onboard/steps', (req, res) => {
 const optionalAuth = createOptionalUserAuth(authService);
 
 // Confirm and proceed with deployment (full pipeline)
-app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
+const confirmAuth = billingService ? requireAuth : optionalAuth;
+app.post('/api/onboard/confirm', confirmAuth, siteCreateGate, customDomainGate, async (req, res) => {
   try {
     const {
       sessionId,
@@ -1240,7 +1266,7 @@ app.post('/api/onboard/confirm', optionalAuth, async (req, res) => {
 });
 
 // SSE streaming confirm endpoint for real-time deploy progress
-app.get('/api/onboard/confirm/stream', optionalAuth, async (req, res) => {
+app.get('/api/onboard/confirm/stream', confirmAuth, siteCreateGate, customDomainGate, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
