@@ -64,9 +64,19 @@ class NamecheapAPI {
   }
 
   async registerDomain(domainName, years = 1, contacts = null) {
+    if (
+      process.env.NODE_ENV === 'development'
+      && !config.namecheap.sandbox
+      && process.env.ALLOW_REAL_NAMECHEAP_IN_DEV !== 'true'
+    ) {
+      throw new Error(
+        'Refusing to register a real domain via Namecheap in development mode. '
+        + 'Set NAMECHEAP_SANDBOX=true (recommended) or ALLOW_REAL_NAMECHEAP_IN_DEV=true to override.'
+      );
+    }
+
     console.log(`Registering domain: ${domainName} for ${years} year(s)`);
 
-    // Use provided contacts or default from config
     const contactInfo = contacts || config.domain.defaultContacts;
 
     const params = {
@@ -185,6 +195,32 @@ class NamecheapAPI {
     return {
       domain: result.Domain,
       success: result.Update === 'true',
+    };
+  }
+
+  async getRegistrationPrice(tld, years = 1) {
+    const response = await this.makeRequest('namecheap.users.getPricing', {
+      ProductType: 'DOMAIN',
+      ProductCategory: 'REGISTER',
+      ActionName: 'REGISTER',
+      ProductName: tld,
+    });
+
+    const productType = response.CommandResponse?.[0]?.UserGetPricingResult?.[0]?.ProductType?.[0];
+    const category = productType?.ProductCategory?.[0];
+    const product = category?.Product?.find((p) => p.$.Name?.toLowerCase() === tld.toLowerCase());
+    const price = product?.Price?.find((p) => parseInt(p.$.Duration, 10) === years);
+
+    if (!price) {
+      throw new Error(`No registration price found for .${tld} (${years} year${years > 1 ? 's' : ''})`);
+    }
+
+    return {
+      tld,
+      years,
+      priceUsd: parseFloat(price.$.Price),
+      regularPriceUsd: parseFloat(price.$.RegularPrice),
+      currency: price.$.Currency || 'USD',
     };
   }
 

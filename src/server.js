@@ -1901,7 +1901,19 @@ function startServer(port) {
   });
 
   server.listen(port, () => {
-    // Hourly cleanup of expired sessions
+    if (
+      process.env.NODE_ENV === 'development'
+      && config.namecheap.apiKey
+      && !config.namecheap.sandbox
+      && !config.namecheap.allowRealInDev
+    ) {
+      console.warn(
+        '\n⚠️  Real Namecheap credentials detected in development mode.\n'
+        + '   Domain registration is blocked at runtime to prevent accidental charges.\n'
+        + '   Set NAMECHEAP_SANDBOX=true (recommended) or ALLOW_REAL_NAMECHEAP_IN_DEV=true to enable.\n'
+      );
+    }
+
     if (config.auth?.enabled !== false) {
       setInterval(async () => {
         try {
