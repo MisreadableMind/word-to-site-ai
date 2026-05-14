@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <title>WordToSite | Pricing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #FFFDF7;
+            --bg-subtle: #FFF8F0;
+            --surface: #FFFFFF;
+            --surface-hover: #FFF5EC;
+            --border: rgba(140, 120, 100, 0.18);
+            --border-hover: rgba(140, 120, 100, 0.30);
+            --text: #2D2926;
+            --text-secondary: #4A4540;
+            --text-muted: #8A8580;
+            --accent: #6C5CE7;
+            --accent-bright: #5A4BD1;
+            --accent-dim: rgba(108,92,231,0.10);
+            --green: #16A34A;
+            --error: #DC2626;
+            --shadow-sm: 0 1px 3px rgba(140,120,100,0.08), 0 1px 2px rgba(140,120,100,0.06);
+            --shadow-md: 0 4px 12px rgba(140,120,100,0.08), 0 2px 4px rgba(140,120,100,0.06);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .grid-bg {
+            position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+            background-size: 64px 64px; pointer-events: none; z-index: 0;
+        }
+        .grid-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(108,92,231,0.08), transparent); }
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(255,253,247,0.8);
+            backdrop-filter: blur(16px) saturate(1.2);
+            -webkit-backdrop-filter: blur(16px) saturate(1.2);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            max-width: 1080px; margin: 0 auto;
+            padding: 0 24px; height: 60px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: var(--text);
+            font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
+        }
+        .nav-logo {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #6C5CE7, #5A4BD1);
+            border-radius: 7px; display: flex;
+            align-items: center; justify-content: center;
+            box-shadow: 0 2px 12px rgba(108,92,231,0.3);
+        }
+        .nav-logo svg { width: 15px; height: 15px; }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-link {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 13px; font-weight: 500;
+            color: var(--text-muted); padding: 6px 12px;
+            border-radius: 6px; transition: all 150ms;
+            text-decoration: none;
+        }
+        .nav-link:hover { color: var(--text-secondary); background: var(--accent-dim); }
+        .main {
+            position: relative; z-index: 1;
+            max-width: 1080px; margin: 0 auto;
+            padding: 92px 24px 60px;
+        }
+        .hero { text-align: center; margin-bottom: 48px; }
+        .hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+        .hero p { font-size: 16px; color: var(--text-muted); max-width: 580px; margin: 0 auto; }
+        .plans {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .plan {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 24px;
+            display: flex; flex-direction: column;
+            position: relative;
+        }
+        .plan.featured { border-color: var(--accent); box-shadow: 0 4px 20px rgba(108,92,231,0.18); }
+        .plan-badge {
+            position: absolute; top: -10px; right: 16px;
+            background: var(--accent); color: #fff;
+            padding: 3px 10px; border-radius: 100px;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 0.4px; text-transform: uppercase;
+        }
+        .plan-name { font-size: 14px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+        .plan-price { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
+        .plan-price .currency { font-size: 18px; font-weight: 600; color: var(--text-muted); }
+        .plan-price .period { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+        .plan-features {
+            list-style: none; margin: 20px 0; padding: 0;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+            flex: 1;
+        }
+        .plan-features li {
+            font-size: 13px; color: var(--text-secondary);
+            padding: 6px 0; display: flex; align-items: flex-start; gap: 8px;
+        }
+        .plan-features li::before {
+            content: ''; display: inline-block;
+            width: 14px; height: 14px;
+            background: var(--accent-dim);
+            border-radius: 50%;
+            position: relative; flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .plan-features li::after {
+            content: ''; position: absolute;
+            margin-left: -11px; margin-top: 6px;
+            width: 6px; height: 3px;
+            border-left: 2px solid var(--accent);
+            border-bottom: 2px solid var(--accent);
+            transform: rotate(-45deg);
+        }
+        .plan-features li.muted { color: var(--text-muted); }
+        .btn-cta {
+            display: block; width: 100%;
+            padding: 12px 18px;
+            font-family: inherit; font-size: 13px; font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer; transition: all 150ms;
+            border: 1px solid var(--border);
+            background: var(--surface); color: var(--text);
+            text-align: center; text-decoration: none;
+        }
+        .btn-cta:hover { border-color: var(--border-hover); background: var(--surface-hover); }
+        .btn-cta.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn-cta.primary:hover { background: var(--accent-bright); }
+        .btn-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .footnote { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 24px; }
+        .footnote a { color: var(--accent); text-decoration: none; }
+
+        .msg {
+            padding: 10px 14px; border-radius: var(--radius-sm);
+            font-size: 13px; margin-bottom: 16px; display: none;
+            max-width: 480px; margin-left: auto; margin-right: auto;
+        }
+        .msg.error { display: block; background: rgba(220,38,38,0.06); color: var(--error); border: 1px solid rgba(220,38,38,0.15); }
+        .msg.info { display: block; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(108,92,231,0.15); }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="/">
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <span>WordToSite</span>
+        </a>
+        <div class="nav-right">
+            <a class="nav-link" href="/app.html">Start building</a>
+            <a class="nav-link" href="/dashboard.html">Dashboard</a>
+        </div>
+    </div>
+</nav>
+
+<div class="main">
+    <div class="hero">
+        <h1>Pricing</h1>
+        <p>Pay for what you ship. Every plan includes voice editing, AI generation, and AEO/GEO optimization. Cancel anytime in the customer portal.</p>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <div class="plans" id="plans"></div>
+
+    <p class="footnote">
+        Questions? Read our <a href="/terms.html">terms</a> or <a href="/docs.html">docs</a>.
+        Prices in USD, billed monthly. All paid plans include the customer portal — switch tiers or cancel anytime.
+    </p>
+</div>
+
+<script>
+const PLAN_ORDER = ['free', 'starter', 'pro', 'business'];
+const FEATURED = 'pro';
+
+function fmtNumber(n) {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + 'M';
+    if (n >= 1_000) return (n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1) + 'K';
+    return String(n);
+}
+
+function featureLines(plan) {
+    const lines = [];
+    lines.push(`${plan.maxSites} site${plan.maxSites > 1 ? 's' : ''}`);
+    if (plan.customDomain === false) lines.push('Subdomain on wts.ai only');
+    else if (plan.customDomain === 'byod') lines.push('Bring your own domain');
+    else lines.push('Buy custom domains (wholesale + 20%)');
+    lines.push(`${fmtNumber(plan.monthlyTokens)} AI tokens / month`);
+    lines.push(`${plan.voicePerDay} voice / day`);
+    if (plan.watermark) lines.push('WordToSite badge in footer');
+    else lines.push('No platform branding');
+    return lines;
+}
+
+async function loadPlans() {
+    try {
+        const [plansRes, meRes] = await Promise.all([
+            fetch('/api/billing/plans'),
+            fetch('/api/auth/me').catch(() => ({ ok: false })),
+        ]);
+
+        if (!plansRes.ok) {
+            const status = plansRes.status;
+            if (status === 404) {
+                showInfo('Billing is not enabled on this deployment. Set STRIPE_SECRET_KEY in .env to activate.');
+                return;
+            }
+            throw new Error('Failed to load plans');
+        }
+
+        const { plans } = await plansRes.json();
+        const me = meRes.ok ? (await meRes.json()).user : null;
+
+        const byTier = Object.fromEntries(plans.map(p => [p.tier, p]));
+        const ordered = PLAN_ORDER.map(t => byTier[t]).filter(Boolean);
+
+        const root = document.getElementById('plans');
+        root.innerHTML = '';
+        for (const plan of ordered) {
+            const isCurrent = me && me.planTier === plan.tier;
+            const featured = plan.tier === FEATURED;
+            const canSubscribe = plan.tier !== 'free' && plan.priceId && !isCurrent;
+
+            const card = document.createElement('div');
+            card.className = 'plan' + (featured ? ' featured' : '');
+            const badge = featured ? '<span class="plan-badge">Most popular</span>' : '';
+            const cta = isCurrent
+                ? '<a class="btn-cta" href="/billing.html">Current plan</a>'
+                : plan.tier === 'free'
+                    ? (me ? '<a class="btn-cta" href="/dashboard.html">Use free plan</a>' : '<a class="btn-cta" href="/register.html">Sign up free</a>')
+                    : canSubscribe
+                        ? `<button class="btn-cta primary" data-tier="${plan.tier}">Subscribe</button>`
+                        : '<button class="btn-cta" disabled>Unavailable</button>';
+            const features = featureLines(plan).map(f => `<li>${f}</li>`).join('');
+
+            card.innerHTML = `
+                ${badge}
+                <div class="plan-name">${plan.label}</div>
+                <div class="plan-price">
+                    <span class="currency">$</span>${plan.monthlyPriceUsd}<span class="period">/mo</span>
+                </div>
+                <ul class="plan-features">${features}</ul>
+                ${cta}
+            `;
+            root.appendChild(card);
+        }
+
+        root.querySelectorAll('button[data-tier]').forEach(btn => {
+            btn.addEventListener('click', () => subscribe(btn.dataset.tier, btn, me));
+        });
+    } catch (err) {
+        showError(err.message || 'Failed to load pricing.');
+    }
+}
+
+async function subscribe(planTier, btn, me) {
+    if (!me) {
+        window.location.href = '/register.html?next=/pricing.html';
+        return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Redirecting…';
+    try {
+        const res = await fetch('/api/billing/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planTier }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Checkout failed');
+        window.location.href = data.url;
+    } catch (err) {
+        showError(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Subscribe';
+    }
+}
+
+function showError(text) {
+    const el = document.getElementById('msg');
+    el.className = 'msg error';
+    el.textContent = text;
+}
+
+function showInfo(text) {
+    const el = document.getElementById('msg');
+    el.className = 'msg info';
+    el.textContent = text;
+}
+
+loadPlans();
+</script>
+</body>
+</html>

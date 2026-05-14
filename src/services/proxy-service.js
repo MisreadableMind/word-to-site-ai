@@ -46,10 +46,21 @@ export default class ProxyService {
     return key;
   }
 
-  async registerSite(domain, label, wpUrl) {
+  async registerSite(domain, label, wpUrl, options = {}) {
     await this.initialize();
 
     const apiKey = this.generateApiKey();
+    const tokenLimit = options.monthlyTokenLimit;
+
+    if (tokenLimit != null) {
+      const result = await pool.query(
+        `INSERT INTO proxy_sites (domain, api_key, label, wp_url, monthly_token_limit)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [domain, apiKey, label || domain, wpUrl || null, tokenLimit]
+      );
+      return result.rows[0];
+    }
 
     const result = await pool.query(
       `INSERT INTO proxy_sites (domain, api_key, label, wp_url)
@@ -57,7 +68,6 @@ export default class ProxyService {
        RETURNING *`,
       [domain, apiKey, label || domain, wpUrl || null]
     );
-
     return result.rows[0];
   }
 

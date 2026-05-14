@@ -1583,10 +1583,8 @@
         <div class="section-label">domain (optional)</div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-sm);">
             <input type="text" id="domainInput" placeholder="example.com" style="margin-bottom:10px;">
-            <label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:13px;color:var(--text-secondary);cursor:pointer;">
-                <input type="checkbox" id="registerNewDomain" style="accent-color:var(--accent);"> Register new domain
-            </label>
-            <p class="input-hint">Leave blank for a free temporary InstaWP URL.</p>
+            <input type="checkbox" id="registerNewDomain" style="display:none;">
+            <p class="input-hint">Enter a domain you already own to point it at your site. <strong>To register a new domain</strong>, complete onboarding first — you'll be able to buy one from <a href="/domains.html" style="color:var(--accent);">your dashboard</a>. Leave blank to use a free wts subdomain.</p>
             <div class="step-nav">
                 <button class="btn btn-ghost" onclick="backFromDomain()">Back</button>
             </div>

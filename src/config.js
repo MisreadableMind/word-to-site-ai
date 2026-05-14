@@ -47,6 +47,7 @@ export const config = {
     username: process.env.NAMECHEAP_USERNAME,
     clientIp: process.env.NAMECHEAP_CLIENT_IP,
     sandbox: process.env.NAMECHEAP_SANDBOX === 'true',
+    allowRealInDev: process.env.ALLOW_REAL_NAMECHEAP_IN_DEV === 'true',
   },
 
   // Cloudflare Configuration (for DNS management)
@@ -93,6 +94,14 @@ export const config = {
     enabled: process.env.ENABLE_USER_AUTH !== 'false',
     sessionMaxAge: parseInt(process.env.SESSION_MAX_AGE) || 7 * 24 * 60 * 60 * 1000,
     bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 12,
+  },
+
+  // Stripe Billing Configuration — feature is enabled iff secretKey is set.
+  // Per-plan Price IDs are resolved at runtime via Stripe lookup_keys (wts_starter, wts_pro, wts_business).
+  // Redirect URLs are derived from the request origin (trust proxy is set on the Express app).
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
   },
 
   // Base Site Configuration (TRXWaaSWizard plugin)
