@@ -82,7 +82,7 @@ if (proxyService) {
 // User Auth & Sites routes (mounted BEFORE basic auth - uses its own session auth)
 const authService = new AuthService();
 const siteService = new SiteService();
-const billingService = config.stripe?.enabled ? new BillingService({ proxyService }) : null;
+const billingService = config.stripe?.secretKey ? new BillingService({ proxyService }) : null;
 const aiService = new AIService({ openaiApiKey: config.openai?.apiKey, geminiApiKey: config.gemini?.apiKey });
 const editorService = new EditorService({ aiService, siteService });
 if (config.auth?.enabled !== false) {

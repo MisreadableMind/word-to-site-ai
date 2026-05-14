@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import pool from '../db.js';
-import { getStripe } from '../billing/stripe-client.js';
-import { planForPriceId, getEntitlements, PLAN_TIERS } from '../billing/entitlements.js';
+import { getStripe, planForPriceId, invalidatePriceCache } from '../billing/stripe-client.js';
+import { getEntitlements, PLAN_TIERS } from '../billing/entitlements.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -195,6 +195,12 @@ export default class BillingService {
         return this._handleInvoicePaymentFailed(event.data.object);
       case 'invoice.paid':
         return this._handleInvoicePaid(event.data.object);
+      case 'price.created':
+      case 'price.updated':
+      case 'price.deleted':
+      case 'product.updated':
+        invalidatePriceCache();
+        return { processed: true, reason: 'price cache invalidated', type: event.type };
       default:
         return { processed: true, reason: 'noop', type: event.type };
     }
@@ -223,7 +229,7 @@ export default class BillingService {
 
     const item = subscription.items?.data?.[0];
     const priceId = item?.price?.id || null;
-    const planTier = planForPriceId(priceId);
+    const planTier = await planForPriceId(priceId);
 
     if (!planTier) {
       console.warn('Subscription with unrecognized price id:', priceId);

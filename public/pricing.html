@@ -232,7 +232,7 @@ async function loadPlans() {
         if (!plansRes.ok) {
             const status = plansRes.status;
             if (status === 404) {
-                showInfo('Billing is not enabled on this deployment. Set ENABLE_BILLING=true and STRIPE_SECRET_KEY in .env.');
+                showInfo('Billing is not enabled on this deployment. Set STRIPE_SECRET_KEY in .env to activate.');
                 return;
             }
             throw new Error('Failed to load plans');

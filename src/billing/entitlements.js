@@ -1,5 +1,3 @@
-import { config } from '../config.js';
-
 export const PLAN_TIERS = {
   FREE: 'free',
   STARTER: 'starter',
@@ -11,6 +9,7 @@ export const PLAN_ENTITLEMENTS = {
   free: {
     label: 'Free',
     monthlyPriceUsd: 0,
+    lookupKey: null,
     maxSites: 1,
     customDomain: false,
     includedDomains: 0,
@@ -21,6 +20,7 @@ export const PLAN_ENTITLEMENTS = {
   starter: {
     label: 'Starter',
     monthlyPriceUsd: 19,
+    lookupKey: 'wts_starter',
     maxSites: 1,
     customDomain: 'byod',
     includedDomains: 0,
@@ -31,6 +31,7 @@ export const PLAN_ENTITLEMENTS = {
   pro: {
     label: 'Pro',
     monthlyPriceUsd: 49,
+    lookupKey: 'wts_pro',
     maxSites: 3,
     customDomain: 'managed',
     includedDomains: 1,
@@ -41,6 +42,7 @@ export const PLAN_ENTITLEMENTS = {
   business: {
     label: 'Business',
     monthlyPriceUsd: 99,
+    lookupKey: 'wts_business',
     maxSites: 10,
     customDomain: 'managed',
     includedDomains: 5,
@@ -50,29 +52,28 @@ export const PLAN_ENTITLEMENTS = {
   },
 };
 
+export const PAID_LOOKUP_KEYS = Object.values(PLAN_ENTITLEMENTS)
+  .map((p) => p.lookupKey)
+  .filter(Boolean);
+
 export function getEntitlements(planTier) {
   return PLAN_ENTITLEMENTS[planTier] || PLAN_ENTITLEMENTS.free;
 }
 
-export function planForPriceId(priceId) {
-  const prices = config.stripe.prices;
-  if (priceId === prices.starter) return PLAN_TIERS.STARTER;
-  if (priceId === prices.pro) return PLAN_TIERS.PRO;
-  if (priceId === prices.business) return PLAN_TIERS.BUSINESS;
-  return null;
+export function lookupKeyForPlan(planTier) {
+  return PLAN_ENTITLEMENTS[planTier]?.lookupKey || null;
 }
 
-export function priceIdForPlan(planTier) {
-  const prices = config.stripe.prices;
-  if (planTier === PLAN_TIERS.STARTER) return prices.starter;
-  if (planTier === PLAN_TIERS.PRO) return prices.pro;
-  if (planTier === PLAN_TIERS.BUSINESS) return prices.business;
+export function planForLookupKey(lookupKey) {
+  if (!lookupKey) return null;
+  for (const [tier, ent] of Object.entries(PLAN_ENTITLEMENTS)) {
+    if (ent.lookupKey === lookupKey) return tier;
+  }
   return null;
 }
 
 export function allowsCustomDomainRegistration(planTier) {
-  const ent = getEntitlements(planTier);
-  return ent.customDomain === 'managed';
+  return getEntitlements(planTier).customDomain === 'managed';
 }
 
 export function allowsCustomDomain(planTier) {

@@ -1,9 +1,15 @@
 import { Router } from 'express';
 import express from 'express';
 import { createUserAuth } from '../middleware/user-auth.js';
-import { getStripe, verifyWebhookSignature } from '../billing/stripe-client.js';
-import { PLAN_ENTITLEMENTS, PLAN_TIERS, priceIdForPlan, getEntitlements } from '../billing/entitlements.js';
-import { config } from '../config.js';
+import {
+  getStripe,
+  verifyWebhookSignature,
+  priceIdForPlan,
+  listResolvedPrices,
+} from '../billing/stripe-client.js';
+import { PLAN_ENTITLEMENTS, PLAN_TIERS, getEntitlements } from '../billing/entitlements.js';
+
+const origin = (req) => `${req.protocol}://${req.get('host')}`;
 
 export function createBillingWebhookRouter(billingService) {
   const router = Router();
@@ -42,13 +48,19 @@ export default function createBillingRouter(billingService, authService) {
   const router = Router();
   const auth = createUserAuth(authService);
 
-  router.get('/plans', (req, res) => {
-    const plans = Object.entries(PLAN_ENTITLEMENTS).map(([tier, ent]) => ({
-      tier,
-      ...ent,
-      priceId: priceIdForPlan(tier),
-    }));
-    res.json({ success: true, plans });
+  router.get('/plans', async (req, res) => {
+    try {
+      const resolved = await listResolvedPrices();
+      const plans = Object.entries(PLAN_ENTITLEMENTS).map(([tier, ent]) => ({
+        tier,
+        ...ent,
+        priceId: resolved[tier] || null,
+      }));
+      res.json({ success: true, plans });
+    } catch (err) {
+      console.error('List plans error:', err);
+      res.status(500).json({ error: { message: 'Failed to load plans', type: 'server_error' } });
+    }
   });
 
   router.use(auth);
@@ -89,22 +101,26 @@ export default function createBillingRouter(billingService, authService) {
   router.post('/checkout', async (req, res) => {
     try {
       const { planTier } = req.body || {};
-      const priceId = priceIdForPlan(planTier);
+      const priceId = await priceIdForPlan(planTier);
       if (!priceId) {
         return res.status(400).json({
-          error: { message: `Invalid plan: ${planTier}`, type: 'validation_error' },
+          error: {
+            message: `No active Stripe price found for plan "${planTier}". Ensure the Price has lookup_key set in the Stripe dashboard.`,
+            type: 'validation_error',
+          },
         });
       }
 
       const customerId = await billingService.getOrCreateStripeCustomer(req.user);
       const stripe = getStripe();
+      const base = origin(req);
 
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
-        success_url: config.stripe.successUrl,
-        cancel_url: config.stripe.cancelUrl,
+        success_url: `${base}/billing.html?status=success`,
+        cancel_url: `${base}/pricing.html?status=cancelled`,
         allow_promotion_codes: true,
         client_reference_id: req.user.id,
         metadata: { user_id: req.user.id, plan_tier: planTier },
@@ -123,7 +139,7 @@ export default function createBillingRouter(billingService, authService) {
       const stripe = getStripe();
       const session = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: config.stripe.portalReturnUrl,
+        return_url: `${origin(req)}/billing.html`,
       });
       res.json({ success: true, url: session.url });
     } catch (err) {
