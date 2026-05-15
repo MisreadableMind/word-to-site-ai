@@ -10,6 +10,7 @@ export const DOMAIN_MARKUP_PERCENT = 0.20;
 export const PLAN_ENTITLEMENTS = {
   free: {
     label: 'Free',
+    tagline: 'Try the basics',
     monthlyPriceUsd: 0,
     lookupKey: null,
     maxSites: 1,
@@ -20,6 +21,7 @@ export const PLAN_ENTITLEMENTS = {
   },
   starter: {
     label: 'Starter',
+    tagline: 'For your first real site',
     monthlyPriceUsd: 19,
     lookupKey: 'wts_starter',
     maxSites: 1,
@@ -30,6 +32,7 @@ export const PLAN_ENTITLEMENTS = {
   },
   pro: {
     label: 'Pro',
+    tagline: 'Best for growing teams',
     monthlyPriceUsd: 49,
     lookupKey: 'wts_pro',
     maxSites: 3,
@@ -40,6 +43,7 @@ export const PLAN_ENTITLEMENTS = {
   },
   business: {
     label: 'Business',
+    tagline: 'For agencies and publishers',
     monthlyPriceUsd: 99,
     lookupKey: 'wts_business',
     maxSites: 10,
