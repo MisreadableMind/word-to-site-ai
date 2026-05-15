@@ -1,3 +1,4 @@
+import pool from '../db.js';
 import { getEntitlements, allowsCustomDomain, allowsCustomDomainRegistration } from '../billing/entitlements.js';
 
 function paymentRequired(res, body) {
@@ -7,10 +8,30 @@ function paymentRequired(res, body) {
       type: 'payment_required',
       upgradeRequired: true,
       currentPlan: body.currentPlan,
+      currentPlanLabel: body.currentPlanLabel,
+      currentPlanLimit: body.currentPlanLimit,
+      blockingSiteName: body.blockingSiteName,
       requiredFor: body.requiredFor,
       upgradeUrl: '/pricing.html',
     },
   });
+}
+
+async function getMostRecentSiteName(userId) {
+  const result = await pool.query(
+    `SELECT site_name, domain, wp_url
+     FROM user_sites
+     WHERE user_id = $1 AND status != 'deleted'
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId]
+  );
+  const row = result.rows[0];
+  if (!row) return null;
+  if (row.site_name) return row.site_name;
+  if (row.domain) return row.domain;
+  if (row.wp_url) return row.wp_url.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  return null;
 }
 
 export function requireSiteCreate(billingService) {
@@ -22,9 +43,13 @@ export function requireSiteCreate(billingService) {
     const ent = getEntitlements(planTier);
     const used = await billingService.getSiteCount(req.user.id);
     if (used >= ent.maxSites) {
+      const blockingSiteName = await getMostRecentSiteName(req.user.id);
       return paymentRequired(res, {
         message: `Site limit reached for ${ent.label} plan (${ent.maxSites}). Upgrade to create more sites.`,
         currentPlan: planTier,
+        currentPlanLabel: ent.label,
+        currentPlanLimit: ent.maxSites,
+        blockingSiteName,
         requiredFor: 'siteCreate',
       });
     }

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/wts.css?v=2">
+    <link rel="stylesheet" href="/assets/wts.css?v=3">
     <style>
         /* Stepper */
         .wts-stepper { display: flex; align-items: center; gap: 0; }
@@ -1516,7 +1516,7 @@
                     displayOwnedDomainConfirmation(data.data.alreadyOwnedDomain || domain);
                 } else if (data.data.success) {
                     displayWizardResult(data.data);
-                } else {
+                } else if (!tryShowPaywall(data.data.error)) {
                     displayDeployError(data.data.error || 'Deployment failed');
                 }
             } else if (data.step === 'error') {
@@ -1524,7 +1524,9 @@
                 loading.classList.remove('active');
                 workflowProgress.classList.remove('active');
                 updateProgressStep(data.step, 'error');
-                displayDeployError(data.message || data.error);
+                if (!tryShowPaywall(data.error || data)) {
+                    displayDeployError(data.message || data.error);
+                }
             } else {
                 updateProgressStep(data.step, 'active', data.message);
             }
@@ -1584,7 +1586,7 @@
                 displayOwnedDomainConfirmation(data.alreadyOwnedDomain || domain);
             } else if (data.success) {
                 displayWizardResult(data);
-            } else {
+            } else if (!tryShowPaywall(data.error)) {
                 displayDeployError(data.error || 'Deployment failed');
             }
         } catch (e) {
@@ -1839,6 +1841,157 @@
         </div>`;
     }
 
+    const PLAN_ORDER = ['free', 'starter', 'pro', 'business'];
+    let paywallPlansCache = null;
+
+    async function loadPaywallPlans() {
+        if (paywallPlansCache) return paywallPlansCache;
+        const res = await fetch('/api/billing/plans');
+        const data = await res.json();
+        paywallPlansCache = (data.plans || []).filter((p) => p.tier !== 'free');
+        return paywallPlansCache;
+    }
+
+    function paywallFeaturesFor(plan) {
+        const out = [];
+        out.push(plan.maxSites === 1 ? '1 site' : `${plan.maxSites} sites`);
+        const tokens = plan.monthlyTokens >= 1_000_000
+            ? `${(plan.monthlyTokens / 1_000_000).toFixed(plan.monthlyTokens % 1_000_000 === 0 ? 0 : 1)}M tokens / mo`
+            : `${Math.round(plan.monthlyTokens / 1000)}k tokens / mo`;
+        out.push(tokens);
+        out.push(`${plan.voicePerDay} voice / day`);
+        if (plan.customDomain === 'managed') out.push('Custom domain included');
+        else if (plan.customDomain === 'byod') out.push('Bring your own domain');
+        return out;
+    }
+
+    function checkSvg() {
+        return '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5L5.5 10.5L11.5 4"/></svg>';
+    }
+
+    function renderPaywallCards(plansToShow) {
+        return plansToShow.map((plan, i) => {
+            const recommended = i === plansToShow.length - 1 && plansToShow.length > 1;
+            const features = paywallFeaturesFor(plan).map((f) => `<li>${checkSvg()} ${f}</li>`).join('');
+            const cls = recommended ? 'wts-paywall-card recommended' : 'wts-paywall-card';
+            const btnCls = recommended ? 'wts-btn primary' : 'wts-btn';
+            const rcPill = recommended ? '<div class="wts-paywall-rc">Recommended</div>' : '';
+            return `
+                <div class="${cls}">
+                    ${rcPill}
+                    <div class="wts-paywall-card-head">
+                        <div>
+                            <div class="wts-paywall-card-name">${plan.label}</div>
+                            <div class="wts-paywall-card-tag">${plan.tagline || ''}</div>
+                        </div>
+                        <div class="wts-paywall-card-price">
+                            <span class="amount">$${plan.monthlyPriceUsd}</span><span class="per">/ month</span>
+                        </div>
+                    </div>
+                    <ul class="wts-paywall-features">${features}</ul>
+                    <div class="wts-paywall-card-cta">
+                        <button class="${btnCls}" data-paywall-checkout="${plan.tier}">Upgrade to ${plan.label}</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function paywallCheckout(planTier, btn) {
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Redirecting…';
+        try {
+            const res = await fetch('/api/billing/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planTier }),
+            });
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+                return;
+            }
+            throw new Error(data.error?.message || 'Checkout failed');
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = original;
+            alert(e.message || 'Could not start checkout. Try again.');
+        }
+    }
+
+    async function showPaywall({ currentPlan, currentPlanLabel, currentPlanLimit, blockingSiteName, attemptedSiteName }) {
+        const scrim = document.getElementById('paywallScrim');
+        const eyebrow = document.getElementById('paywallEyebrow');
+        const body = document.getElementById('paywallBody');
+        const plansEl = document.getElementById('paywallPlans');
+
+        eyebrow.textContent = 'Plan limit reached';
+
+        const planLabel = currentPlanLabel || (currentPlan ? currentPlan[0].toUpperCase() + currentPlan.slice(1) : 'Free');
+        const limit = currentPlanLimit ?? 1;
+        const siteWord = limit === 1 ? 'site' : 'sites';
+        if (blockingSiteName && attemptedSiteName) {
+            body.innerHTML = `Your <strong>${planLabel}</strong> plan includes ${limit} published ${siteWord}. You're trying to publish <strong>${attemptedSiteName}</strong>, but <strong>${blockingSiteName}</strong> already takes that slot.`;
+        } else if (attemptedSiteName) {
+            body.innerHTML = `Your <strong>${planLabel}</strong> plan includes ${limit} published ${siteWord}. You're trying to publish <strong>${attemptedSiteName}</strong>, but you've already reached that limit.`;
+        } else {
+            body.innerHTML = `Your <strong>${planLabel}</strong> plan includes ${limit} published ${siteWord}. You've reached that limit.`;
+        }
+
+        plansEl.innerHTML = '<div class="wts-muted" style="grid-column: 1 / -1; padding: 8px 0; font-size: 13px;">Loading plans…</div>';
+
+        let plans;
+        try {
+            plans = await loadPaywallPlans();
+        } catch {
+            plansEl.innerHTML = `<div class="wts-muted" style="grid-column: 1 / -1; padding: 8px 0; font-size: 13px;">Couldn't load plans. <a href="/pricing.html">See pricing →</a></div>`;
+            scrim.hidden = false;
+            document.body.style.overflow = 'hidden';
+            return;
+        }
+
+        const currentIdx = PLAN_ORDER.indexOf(currentPlan || 'free');
+        const above = plans
+            .filter((p) => PLAN_ORDER.indexOf(p.tier) > currentIdx)
+            .sort((a, b) => PLAN_ORDER.indexOf(a.tier) - PLAN_ORDER.indexOf(b.tier));
+        const shown = above.slice(0, 2);
+        if (shown.length === 0) {
+            plansEl.innerHTML = `<div class="wts-muted" style="grid-column: 1 / -1; padding: 8px 0; font-size: 13px;">You're already on the highest plan.</div>`;
+        } else {
+            plansEl.innerHTML = renderPaywallCards(shown);
+            plansEl.querySelectorAll('[data-paywall-checkout]').forEach((btn) => {
+                btn.addEventListener('click', () => paywallCheckout(btn.dataset.paywallCheckout, btn));
+            });
+        }
+
+        scrim.hidden = false;
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hidePaywall() {
+        const scrim = document.getElementById('paywallScrim');
+        if (!scrim) return;
+        scrim.hidden = true;
+        document.body.style.overflow = '';
+    }
+
+    function tryShowPaywall(errLike) {
+        const err = (errLike && typeof errLike === 'object') ? errLike : null;
+        if (!err || err.upgradeRequired !== true || err.requiredFor !== 'siteCreate') return false;
+        const attemptedSiteName = onboardingResult?.contentContext?.business?.name
+            || document.getElementById('domainInput')?.value
+            || '';
+        showPaywall({
+            currentPlan: err.currentPlan,
+            currentPlanLabel: err.currentPlanLabel,
+            currentPlanLimit: err.currentPlanLimit,
+            blockingSiteName: err.blockingSiteName,
+            attemptedSiteName,
+        });
+        return true;
+    }
+
     function displayDeployError(msg) {
         const text = typeof msg === 'object' ? (msg.message || JSON.stringify(msg)) : msg;
         const el = document.getElementById('result');
@@ -1923,6 +2076,49 @@
             if (mount) mount.style.display = 'none';
         }
     })();
+
+    (function wirePaywallDismiss() {
+        const scrim = document.getElementById('paywallScrim');
+        if (!scrim) return;
+        scrim.addEventListener('click', (e) => {
+            if (e.target === scrim) hidePaywall();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !scrim.hidden) hidePaywall();
+        });
+        const closeBtn = scrim.querySelector('.wts-paywall-close');
+        if (closeBtn) closeBtn.addEventListener('click', hidePaywall);
+    })();
 </script>
+
+<div id="paywallScrim" class="wts-paywall-scrim" hidden>
+    <div class="wts-paywall" role="dialog" aria-modal="true" aria-labelledby="paywallTitle">
+        <button class="wts-paywall-close" type="button" aria-label="Close">
+            <svg viewBox="0 0 14 14" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+        </button>
+        <div class="wts-paywall-head">
+            <div class="wts-paywall-eyebrow">
+                <svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="currentColor"/></svg>
+                <span id="paywallEyebrow">Plan limit reached</span>
+            </div>
+            <h2 id="paywallTitle" class="wts-page-title">One more step — pick a plan.</h2>
+            <p id="paywallBody" class="wts-paywall-body"></p>
+        </div>
+        <div id="paywallPlans" class="wts-paywall-plans"></div>
+        <div class="wts-paywall-trust">
+            <div class="wts-paywall-trust-item">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5L5.5 10.5L11.5 4"/></svg>
+                Prorated to the day
+            </div>
+            <div class="wts-paywall-trust-item">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5L5.5 10.5L11.5 4"/></svg>
+                Cancel anytime
+            </div>
+        </div>
+        <div class="wts-paywall-footer">
+            <a href="/pricing.html">Compare all plans →</a>
+        </div>
+    </div>
+</div>
 </body>
 </html>
