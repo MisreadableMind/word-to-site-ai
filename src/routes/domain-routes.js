@@ -3,15 +3,15 @@ import { createUserAuth } from '../middleware/user-auth.js';
 import { requireCustomDomain, requireDomainPurchase } from '../middleware/entitlement.js';
 import { DOMAIN_MARKUP_PERCENT } from '../billing/entitlements.js';
 import { getStripe } from '../billing/stripe-client.js';
+import { classify } from '../lib/domain-classifier.js';
 
 const origin = (req) => `${req.protocol}://${req.get('host')}`;
-const DOMAIN_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z][a-zA-Z0-9.-]*$/;
 
 let pricingCache = { at: 0, data: new Map() };
 const PRICING_TTL_MS = 60 * 60 * 1000;
 
-async function quoteWholesale(namecheap, domain) {
-  const tld = domain.split('.').slice(1).join('.');
+async function quoteWholesale(namecheap, classification) {
+  const { tld } = classification;
   const now = Date.now();
   if (now - pricingCache.at > PRICING_TTL_MS) {
     pricingCache = { at: now, data: new Map() };
@@ -22,6 +22,22 @@ async function quoteWholesale(namecheap, domain) {
   const price = await namecheap.getRegistrationPrice(tld, 1);
   pricingCache.data.set(tld, price);
   return price;
+}
+
+function classificationError(c) {
+  if (c.kind === 'invalid') {
+    return { status: 400, body: { error: { type: 'invalid_domain', reason: c.reason, message: 'Invalid domain format.' } } };
+  }
+  if (c.kind === 'platform_subdomain') {
+    return { status: 409, body: { error: { type: 'platform_subdomain', message: 'This is already your free WordToSite subdomain — no registration needed.' } } };
+  }
+  if (c.kind === 'reserved') {
+    return { status: 400, body: { error: { type: 'reserved_domain', reason: c.reason, message: 'This TLD isn’t available for public registration.' } } };
+  }
+  if (c.kind === 'subdomain') {
+    return { status: 400, body: { error: { type: 'subdomain', apex: c.apex, message: `Subdomains aren’t registerable. Try ${c.apex} instead.` } } };
+  }
+  return null;
 }
 
 function computeQuote(wholesale) {
@@ -44,36 +60,32 @@ export default function createDomainRouter({ authService, namecheap, billingServ
   const router = Router();
   router.use(createUserAuth(authService));
 
+  router.get('/classify', (req, res) => {
+    const c = classify(typeof req.query.domain === 'string' ? req.query.domain : '');
+    res.json({ success: true, classification: c });
+  });
+
   router.post('/quote', requireCustomDomain(), async (req, res) => {
     try {
       const { domain } = req.body || {};
-      if (!domain || !DOMAIN_REGEX.test(domain)) {
-        return res.status(400).json({ error: { message: 'Invalid domain format', type: 'validation_error' } });
-      }
-      const availability = await namecheap.checkDomain(domain);
-      if (!availability.available) {
+      const c = classify(domain);
+      const reject = classificationError(c);
+      if (reject) return res.status(reject.status).json(reject.body);
+
+      const availability = await namecheap.checkDomain(c.apex);
+      if (!availability.available || availability.premium) {
         return res.json({
           success: true,
-          domain,
+          domain: c.apex,
           available: false,
           premium: availability.premium,
           premiumPrice: availability.premiumPrice,
           reason: availability.premium ? 'premium' : 'taken',
         });
       }
-      if (availability.premium) {
-        return res.json({
-          success: true,
-          domain,
-          available: false,
-          premium: true,
-          premiumPrice: availability.premiumPrice,
-          reason: 'premium',
-        });
-      }
-      const wholesale = await quoteWholesale(namecheap, domain);
+      const wholesale = await quoteWholesale(namecheap, c);
       const quote = computeQuote(wholesale);
-      res.json({ success: true, domain, available: true, premium: false, ...quote });
+      res.json({ success: true, domain: c.apex, available: true, premium: false, ...quote });
     } catch (err) {
       console.error('Domain quote error:', err);
       res.status(500).json({ error: { message: err.message || 'Quote failed', type: 'server_error' } });
@@ -83,23 +95,23 @@ export default function createDomainRouter({ authService, namecheap, billingServ
   router.post('/purchase', requireDomainPurchase(), async (req, res) => {
     try {
       const { domain } = req.body || {};
-      if (!domain || !DOMAIN_REGEX.test(domain)) {
-        return res.status(400).json({ error: { message: 'Invalid domain format', type: 'validation_error' } });
-      }
+      const c = classify(domain);
+      const reject = classificationError(c);
+      if (reject) return res.status(reject.status).json(reject.body);
 
-      const availability = await namecheap.checkDomain(domain);
+      const availability = await namecheap.checkDomain(c.apex);
       if (!availability.available || availability.premium) {
         return res.status(400).json({
           error: {
             message: availability.premium
               ? 'Premium domains require manual support.'
-              : `${domain} is not available.`,
+              : `${c.apex} is not available.`,
             type: 'validation_error',
           },
         });
       }
 
-      const wholesale = await quoteWholesale(namecheap, domain);
+      const wholesale = await quoteWholesale(namecheap, c);
       const quote = computeQuote(wholesale);
 
       const customerId = await billingService.getOrCreateStripeCustomer(req.user);
@@ -112,7 +124,7 @@ export default function createDomainRouter({ authService, namecheap, billingServ
         line_items: [{
           price_data: {
             currency: quote.currency.toLowerCase(),
-            product_data: { name: `Domain registration — ${domain} (1 year)` },
+            product_data: { name: `Domain registration — ${c.apex} (1 year)` },
             unit_amount: quote.totalCents,
           },
           quantity: 1,
@@ -123,7 +135,7 @@ export default function createDomainRouter({ authService, namecheap, billingServ
         metadata: {
           intent: 'domain_purchase',
           user_id: req.user.id,
-          domain,
+          domain: c.apex,
           expected_wholesale_cents: String(quote.wholesaleCents),
           expected_total_cents: String(quote.totalCents),
         },
@@ -131,7 +143,7 @@ export default function createDomainRouter({ authService, namecheap, billingServ
 
       await domainService.createPending({
         userId: req.user.id,
-        domain,
+        domain: c.apex,
         totalChargedCents: quote.totalCents,
         wholesaleCents: quote.wholesaleCents,
         stripeCheckoutSessionId: session.id,

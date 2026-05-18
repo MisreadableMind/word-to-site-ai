@@ -35,6 +35,7 @@ import createSiteRouter from './routes/site-routes.js';
 import createEditorRouter from './routes/editor-routes.js';
 import createBillingRouter, { createBillingWebhookRouter } from './routes/billing-routes.js';
 import createDomainRouter from './routes/domain-routes.js';
+import { PLATFORM_HOSTS, PRIMARY_PLATFORM_HOST, classify as classifyDomain } from './lib/domain-classifier.js';
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth.js';
 import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement.js';
 import { getEntitlements as getPlanEntitlements } from './billing/entitlements.js';
@@ -707,12 +708,16 @@ app.get('/api/onboard/flows', (req, res) => {
 
 app.get('/api/onboard/check-domain-dns', async (req, res) => {
   const domain = (req.query.domain || '').toString().trim().toLowerCase();
-  if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+  const c = classifyDomain(domain);
+  if (c.kind === 'invalid' || c.kind === 'reserved') {
     return res.status(400).json({ error: 'Valid domain is required' });
   }
 
-  const baseHostMatcher = /\.at\.wordtosite\.ai$|\.wordtosite\.ai$|\.instawp\.xyz$|\.instawp\.com$/i;
-  const expectedCnameTarget = `${domain.replace(/\./g, '-')}.at.wordtosite.ai`;
+  const baseHostMatcher = new RegExp(
+    `(?:^|\\.)(?:${PLATFORM_HOSTS.map((h) => h.replace(/\./g, '\\.')).join('|')})$`,
+    'i',
+  );
+  const expectedCnameTarget = `${domain.replace(/\./g, '-')}.${PRIMARY_PLATFORM_HOST}`;
 
   const result = {
     domain,

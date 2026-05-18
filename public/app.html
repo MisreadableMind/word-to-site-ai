@@ -521,7 +521,7 @@
                                             <label class="wts-field-label">Custom domain</label>
                                             <input class="wts-input" type="text" id="domainInput" placeholder="example.com">
                                             <input type="checkbox" id="registerNewDomain" style="display:none;">
-                                            <div class="wts-field-hint">Enter a domain you already own to point at your site. To register a new domain, complete onboarding first — you can buy one from <a href="/domains.html" style="color:var(--accent);">your domains</a>. Leave blank to use a free wts subdomain.</div>
+                                            <div class="wts-field-hint" id="domainInputHint">Enter a domain you already own to point at your site. To register a new domain, complete onboarding first — you can buy one from <a href="/domains.html" style="color:var(--accent);">your domains</a>. Leave blank to use a free wts subdomain.</div>
                                         </div>
                                         <div class="step-nav" style="margin-top:18px; padding-top:0; border-top:0;">
                                             <button class="wts-btn" onclick="backFromDomain()">← Back</button>
@@ -1429,6 +1429,23 @@
         const registerNew = document.getElementById('registerNewDomain').checked;
         if (!domain || registerNew) return true;
 
+        try {
+            const cRes = await fetch(`/api/domains/classify?domain=${encodeURIComponent(domain)}`);
+            const cData = await cRes.json();
+            const c = cData?.classification;
+            if (c && (c.kind === 'invalid' || c.kind === 'reserved' || c.kind === 'platform_subdomain')) {
+                const hint = document.getElementById('domainInputHint');
+                if (hint) {
+                    hint.style.color = 'var(--danger)';
+                    hint.textContent = c.kind === 'platform_subdomain'
+                        ? 'This is a WordToSite-managed subdomain — you can’t BYOD it.'
+                        : (c.kind === 'reserved' ? 'This TLD isn’t available.' : 'Invalid domain format.');
+                }
+                return false;
+            }
+        } catch (e) {
+        }
+
         showState('review');
         const loading = document.getElementById('loading');
         const resultEl = document.getElementById('result');
@@ -1452,7 +1469,11 @@
 
         if (data && data.pointsHere) return true;
 
-        const target = (data && data.expectedCnameTarget) || `${domain.replace(/\./g, '-')}.at.wordtosite.ai`;
+        const target = data && data.expectedCnameTarget;
+        if (!target) {
+            displayDomainConfigError(domain, '', false);
+            return false;
+        }
         displayDomainConfigError(domain, target, !!(data && data.resolves));
         return false;
     }

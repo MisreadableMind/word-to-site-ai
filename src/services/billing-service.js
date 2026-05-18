@@ -5,6 +5,7 @@ import pool from '../db.js';
 import { getStripe, planForPriceId, invalidatePriceCache } from '../billing/stripe-client.js';
 import { getEntitlements, PLAN_TIERS } from '../billing/entitlements.js';
 import { DomainStatus } from './domain-service.js';
+import { classify } from '../lib/domain-classifier.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -228,6 +229,21 @@ export default class BillingService {
     }
     if (row.status === DomainStatus.Registered) {
       return { processed: true, reason: 'already registered' };
+    }
+
+    const c = classify(domain);
+    if (c.kind !== 'registerable') {
+      const errorMessage = `Refusing to register non-registerable domain "${domain}" (${c.kind}${c.reason ? `:${c.reason}` : ''})`;
+      console.error(errorMessage);
+      try {
+        if (paymentIntentId) {
+          await getStripe().refunds.create({ payment_intent: paymentIntentId });
+        }
+      } catch (refundErr) {
+        console.error('Refund creation failed:', refundErr.message);
+      }
+      await this.domainService.markFailed({ sessionId, errorMessage });
+      return { processed: true, reason: 'invalid-domain-refunded', error: errorMessage };
     }
 
     await this.domainService.markRegistering(sessionId);

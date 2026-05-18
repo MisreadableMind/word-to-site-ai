@@ -930,6 +930,18 @@ supports-color@^5.5.0:
   dependencies:
     has-flag "^3.0.0"
 
+tldts-core@^7.0.30:
+  version "7.0.30"
+  resolved "https://registry.npmjs.org/tldts-core/-/tldts-core-7.0.30.tgz"
+  integrity sha512-uiHN8PIB1VmWyS98eZYja4xzlYqeFZVjb4OuYlJQnZAuJhMw4PbKQOKgHKhBdJR3FE/t5mUQ1Kd80++B+qhD1Q==
+
+tldts@^7.0.30:
+  version "7.0.30"
+  resolved "https://registry.npmjs.org/tldts/-/tldts-7.0.30.tgz"
+  integrity sha512-ELrFxuqsDdHUwoh0XxDbxuLD3Wnz49Z57IFvTtvWy1hJdcMZjXLIuonjilCiWHlT2GbE4Wlv1wKVTzDFnXH1aw==
+  dependencies:
+    tldts-core "^7.0.30"
+
 to-regex-range@^5.0.1:
   version "5.0.1"
   resolved "https://registry.npmjs.org/to-regex-range/-/to-regex-range-5.0.1.tgz"

@@ -7,6 +7,7 @@ import EditorService from './services/editor-service.js';
 import AIService from './services/ai-service.js';
 import WordPressService from './services/wordpress-service.js';
 import { prepareWizardData } from './services/business-structurer.js';
+import { classify } from './lib/domain-classifier.js';
 import pRetry from 'p-retry';
 
 const CRITICAL_ONBOARDING_STEPS = [
@@ -106,6 +107,17 @@ class DomainWorkflow {
         message: 'Validating configuration...',
       });
       validateDomainConfig(registerNewDomain);
+
+      const classification = classify(domain);
+      if (classification.kind === 'platform_subdomain') {
+        throw new Error(`Cannot run domain workflow on platform subdomain "${domain}".`);
+      }
+      if (classification.kind === 'reserved' || classification.kind === 'invalid') {
+        throw new Error(`Invalid domain "${domain}" (${classification.kind}${classification.reason ? `:${classification.reason}` : ''}).`);
+      }
+      if (registerNewDomain && classification.kind !== 'registerable') {
+        throw new Error(`Only registerable apex domains can be registered. "${domain}" is a ${classification.kind}; try ${classification.apex || 'the apex'} instead.`);
+      }
       result.steps.push({ step: 'config_validated', success: true });
 
       // Step 2: Check domain availability (if registering new domain)

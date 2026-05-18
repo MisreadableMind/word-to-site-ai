@@ -1,9 +1,19 @@
 import axios from 'axios';
 import { parseString } from 'xml2js';
 import { promisify } from 'util';
+import { parse as parseHost } from 'tldts';
 import { config } from './config.js';
+import { assertRegisterable } from './lib/domain-classifier.js';
 
 const parseXml = promisify(parseString);
+
+function splitSldTld(domainName) {
+  const parsed = parseHost(domainName);
+  if (!parsed?.domainWithoutSuffix || !parsed?.publicSuffix) {
+    throw new Error(`Cannot parse SLD/TLD from "${domainName}"`);
+  }
+  return { sld: parsed.domainWithoutSuffix, tld: parsed.publicSuffix };
+}
 
 class NamecheapAPI {
   constructor() {
@@ -47,6 +57,7 @@ class NamecheapAPI {
   }
 
   async checkDomain(domainName) {
+    assertRegisterable(domainName);
     console.log(`Checking availability for domain: ${domainName}`);
 
     const response = await this.makeRequest('namecheap.domains.check', {
@@ -64,6 +75,7 @@ class NamecheapAPI {
   }
 
   async registerDomain(domainName, years = 1, contacts = null) {
+    assertRegisterable(domainName);
     if (
       process.env.NODE_ENV === 'development'
       && !config.namecheap.sandbox
@@ -144,10 +156,8 @@ class NamecheapAPI {
   async setDnsHosts(domainName, hosts) {
     console.log(`Setting DNS hosts for domain: ${domainName}`);
 
-    const params = {
-      SLD: domainName.split('.')[0], // Second Level Domain
-      TLD: domainName.split('.').slice(1).join('.'), // Top Level Domain
-    };
+    const { sld, tld } = splitSldTld(domainName);
+    const params = { SLD: sld, TLD: tld };
 
     // Add hosts to params
     hosts.forEach((host, index) => {
@@ -181,9 +191,10 @@ class NamecheapAPI {
     console.log(`Setting custom nameservers for: ${domainName}`);
     console.log(`Nameservers: ${nameservers.join(', ')}`);
 
+    const { sld, tld } = splitSldTld(domainName);
     const params = {
-      SLD: domainName.split('.')[0], // Second Level Domain
-      TLD: domainName.split('.').slice(1).join('.'), // Top Level Domain
+      SLD: sld,
+      TLD: tld,
       Nameservers: nameservers.join(','),
     };
 
