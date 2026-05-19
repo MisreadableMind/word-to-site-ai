@@ -1836,30 +1836,201 @@
             ? `<strong>${domain}</strong> resolves, but it isn't pointing to our service yet.`
             : `<strong>${domain}</strong> doesn't have any DNS records set up yet.`;
 
-        const canRetry = deployRetryCount < MAX_DEPLOY_RETRIES;
-        const limitNote = canRetry
-            ? ''
-            : `<p class="error-limit-note">Retry limit reached. Update your settings and try again.</p>`;
-        const retryButton = canRetry
-            ? `<button class="wts-btn primary" onclick="retryDeploy()">Try again</button>`
-            : '';
-
         el.innerHTML = `<div class="result-card error">
             <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> DNS setup required</h3>
-            <div class="error-detail">${lead} Add a CNAME record at your domain registrar so it points to our service, then click Try again.</div>
+            <div class="error-detail">${lead} You can either point a CNAME record at our service yourself, or let us register and configure it for you.</div>
             <div class="dns-instructions">
                 <div class="dns-instructions-label">CNAME record</div>
                 <div class="dns-instructions-row"><span class="dns-instructions-key">Name</span><code>${domain}</code></div>
                 <div class="dns-instructions-row"><span class="dns-instructions-key">Value</span><code>${cnameTarget}</code></div>
                 <div class="dns-instructions-row"><span class="dns-instructions-key">TTL</span><code>Auto / 300</code></div>
             </div>
-            <p class="error-subline">Or check "Register new domain" on the previous screen — we'll register it and configure DNS for you.</p>
-            ${limitNote}
             <div class="error-actions">
                 <button class="wts-btn" onclick="backToDomainFromError()">Back to settings</button>
-                ${retryButton}
+                <button class="wts-btn" onclick="continueWithoutDomain()">Continue without a domain</button>
+                <button class="wts-btn primary" id="buyDomainBtn" disabled>Buy ${domain} for —</button>
             </div>
         </div>`;
+
+        loadDomainQuote(domain);
+    }
+
+    async function loadDomainQuote(domain) {
+        const btn = document.getElementById('buyDomainBtn');
+        if (!btn) return;
+        try {
+            const res = await fetch('/api/domains/quote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domain }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data || data.success === false) {
+                btn.textContent = `Couldn't fetch price`;
+                return;
+            }
+            if (data.premium) {
+                btn.textContent = `Premium domain — buy via Domains page`;
+                return;
+            }
+            if (!data.available) {
+                btn.textContent = `Domain unavailable`;
+                return;
+            }
+            const price = Number(data.totalPriceUsd).toFixed(2);
+            btn.textContent = `Buy ${domain} for $${price} and continue`;
+            btn.disabled = false;
+            btn.onclick = () => buyDomainAndContinue(domain, btn);
+        } catch (e) {
+            btn.textContent = `Couldn't fetch price`;
+        }
+    }
+
+    function snapshotWizardForResume(domain) {
+        return {
+            version: 1,
+            savedAt: Date.now(),
+            domain,
+            selectedSkin,
+            selectedEditor,
+            apiKey: document.getElementById('apiKey')?.value || '',
+            onboardingResult,
+        };
+    }
+
+    async function redirectToStripeCheckout(endpoint, payload, btn) {
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Redirecting…';
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+                return true;
+            }
+            throw new Error(data.error?.message || 'Checkout failed');
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = original;
+            alert(e.message || 'Could not start checkout. Try again.');
+            return false;
+        }
+    }
+
+    async function buyDomainAndContinue(domain, btn) {
+        try {
+            localStorage.setItem('wts.wizardResume', JSON.stringify(snapshotWizardForResume(domain)));
+        } catch {
+            alert('Could not save your wizard progress. Free up browser storage and try again.');
+            return;
+        }
+        const ok = await redirectToStripeCheckout('/api/domains/purchase', { domain, fromWizard: true }, btn);
+        if (!ok) localStorage.removeItem('wts.wizardResume');
+    }
+
+    function continueWithoutDomain() {
+        document.getElementById('domainInput').value = '';
+        const registerCheckbox = document.getElementById('registerNewDomain');
+        if (registerCheckbox) registerCheckbox.checked = false;
+        deployRetryCount = 0;
+        acceptOwnedDomain = false;
+        runDeploy();
+    }
+
+    const RESUME_TTL_MS = 30 * 60 * 1000;
+    const RESUME_POLL_INTERVAL_MS = 3000;
+    const RESUME_POLL_MAX_ATTEMPTS = 30;
+
+    function readResumeSnapshot() {
+        try {
+            const raw = localStorage.getItem('wts.wizardResume');
+            if (!raw) return null;
+            const snap = JSON.parse(raw);
+            if (snap.version !== 1) return null;
+            if (Date.now() - snap.savedAt > RESUME_TTL_MS) return null;
+            return snap;
+        } catch {
+            return null;
+        }
+    }
+
+    function clearResumeState(sessionId) {
+        localStorage.removeItem('wts.wizardResume');
+        if (sessionId) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('resumeFromPurchase');
+            history.replaceState({}, '', url.toString());
+        }
+    }
+
+    function renderResumeMessage(html) {
+        const el = document.getElementById('result');
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('workflowProgress').classList.remove('active');
+        showState('review');
+        el.innerHTML = html;
+    }
+
+    async function resumeAfterDomainPurchase(sessionId) {
+        const snap = readResumeSnapshot();
+        if (!snap) {
+            window.location.href = `/domains.html?session_id=${encodeURIComponent(sessionId)}`;
+            return;
+        }
+
+        renderResumeMessage(`<div class="result-card">
+            <h3>Registering your domain…</h3>
+            <div class="error-detail">Just a moment — finishing up <strong>${snap.domain}</strong> and getting your site ready.</div>
+        </div>`);
+
+        for (let attempt = 0; attempt < RESUME_POLL_MAX_ATTEMPTS; attempt++) {
+            try {
+                const res = await fetch(`/api/domains/by-session/${encodeURIComponent(sessionId)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const status = data?.domain?.status;
+                    if (status === 'registered') {
+                        onboardingResult = snap.onboardingResult;
+                        selectedSkin = snap.selectedSkin || selectedSkin;
+                        selectedEditor = snap.selectedEditor || selectedEditor;
+                        const apiKeyEl = document.getElementById('apiKey');
+                        if (apiKeyEl && snap.apiKey) apiKeyEl.value = snap.apiKey;
+                        document.getElementById('domainInput').value = snap.domain;
+                        const regCheckbox = document.getElementById('registerNewDomain');
+                        if (regCheckbox) regCheckbox.checked = false;
+                        acceptOwnedDomain = true;
+                        deployRetryCount = 0;
+                        clearResumeState(sessionId);
+                        await runDeploy();
+                        return;
+                    }
+                    if (status === 'failed') {
+                        clearResumeState(sessionId);
+                        const msg = data?.domain?.errorMessage || 'Registration failed.';
+                        renderResumeMessage(`<div class="result-card error">
+                            <h3>Domain registration failed</h3>
+                            <div class="error-detail">${msg} If you were charged, the payment was refunded automatically.</div>
+                            <div class="error-actions"><a class="wts-btn" href="/domains.html">Go to Domains</a></div>
+                        </div>`);
+                        return;
+                    }
+                }
+            } catch {
+            }
+            await new Promise((r) => setTimeout(r, RESUME_POLL_INTERVAL_MS));
+        }
+
+        clearResumeState(sessionId);
+        renderResumeMessage(`<div class="result-card error">
+            <h3>Taking longer than expected</h3>
+            <div class="error-detail">Your domain is still being set up. You can finish from the Domains page once it's ready.</div>
+            <div class="error-actions"><a class="wts-btn" href="/domains.html">Go to Domains</a></div>
+        </div>`);
     }
 
     const PLAN_ORDER = ['free', 'starter', 'pro', 'business'];
@@ -1919,26 +2090,7 @@
     }
 
     async function paywallCheckout(planTier, btn) {
-        const original = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Redirecting…';
-        try {
-            const res = await fetch('/api/billing/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ planTier }),
-            });
-            const data = await res.json();
-            if (data.url) {
-                window.location.href = data.url;
-                return;
-            }
-            throw new Error(data.error?.message || 'Checkout failed');
-        } catch (e) {
-            btn.disabled = false;
-            btn.textContent = original;
-            alert(e.message || 'Could not start checkout. Try again.');
-        }
+        await redirectToStripeCheckout('/api/billing/checkout', { planTier }, btn);
     }
 
     async function showPaywall({ currentPlan, currentPlanLabel, currentPlanLimit, blockingSiteName, attemptedSiteName }) {
@@ -2081,6 +2233,11 @@
                 }
                 mainEl.style.display = '';
                 if (authGate) authGate.style.display = 'none';
+
+                const resumeSid = new URLSearchParams(window.location.search).get('resumeFromPurchase');
+                if (resumeSid) {
+                    await resumeAfterDomainPurchase(resumeSid);
+                }
             } else {
                 link.style.display = '';
                 mainEl.style.display = 'none';
