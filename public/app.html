@@ -140,11 +140,6 @@
         .error-subline { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
         .error-limit-note { margin-top: 8px; font-size: 12px; color: var(--danger); }
         .error-actions { margin-top: 16px; display: flex; gap: 8px; }
-        .dns-instructions { margin-top: 12px; padding: 14px 16px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-md); }
-        .dns-instructions-label { font-family: var(--mono); font-size: 11px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
-        .dns-instructions-row { display: grid; grid-template-columns: 80px 1fr; gap: 12px; padding: 4px 0; font-size: 12.5px; }
-        .dns-instructions-key { color: var(--muted); }
-        .dns-instructions-row code { font-family: var(--mono); font-size: 12px; color: var(--ink); }
 
         /* Loading + celebration */
         .loading-block { display: none; padding: 24px; text-align: center; }
@@ -188,6 +183,75 @@
         .right-rail-section { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
 
         .step-nav { display: flex; gap: 8px; justify-content: space-between; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+
+        /* — Domain-decision sub-state (handoff_domain_setup spec) — */
+        [data-substate="domain-decision"] { padding-bottom: 32px; }
+        .dd-header { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: flex-end; margin-top: 32px; margin-bottom: 24px; }
+        .dd-eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; background: var(--accent-bg); border-radius: 100px; font-family: var(--mono); font-size: 11.5px; font-weight: 500; color: var(--accent); letter-spacing: 0.02em; text-transform: uppercase; }
+        .dd-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+        [data-substate="domain-decision"] .wts-page-title { margin-top: 14px; }
+        .dd-title-domain { font-style: italic; }
+        [data-substate="domain-decision"] .wts-page-lede { margin-top: 8px; max-width: 640px; }
+        [data-substate="domain-decision"] .wts-page-lede b { color: var(--ink); font-weight: 500; }
+        .dd-chip { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; min-width: 220px; }
+        .dd-chip-label { font-size: 11px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.04em; }
+        .dd-chip-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+        .dd-chip-initials { width: 26px; height: 26px; background: #8B5A2B; border-radius: 5px; color: var(--bg); display: grid; place-items: center; font-size: 10.5px; font-weight: 600; }
+        .dd-chip-name { font-size: 13px; font-weight: 500; line-height: 1.1; }
+        .dd-chip-domain { font-family: var(--mono); font-size: 11px; color: var(--muted-2); margin-top: 2px; }
+        .dd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 880px) { .dd-grid { grid-template-columns: 1fr; } }
+        .dd-card { background: var(--surface); border-radius: 10px; display: flex; flex-direction: column; position: relative; }
+        .dd-card-a { border: 2px solid var(--ink); }
+        .dd-card-b { border: 1px solid #D2D2CC; }
+        .dd-card-pill { position: absolute; top: -1px; right: 22px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 0 0 4px 4px; }
+        .dd-card-head { padding: 24px 26px 16px; border-bottom: 1px solid var(--line); }
+        .dd-card-head-row { display: flex; align-items: center; gap: 10px; }
+        .dd-card-icon { width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; flex-shrink: 0; }
+        .dd-card-a .dd-card-icon { background: var(--ink); color: var(--bg); }
+        .dd-card-b .dd-card-icon { background: var(--bg-3); color: var(--ink); }
+        .dd-card-eyebrow { font-size: 11.5px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.04em; text-transform: uppercase; }
+        .dd-card-title { font-family: var(--serif); font-weight: 500; letter-spacing: -0.015em; font-size: 24px; margin-top: 1px; color: var(--ink); }
+        .dd-card-desc { font-size: 13.5px; color: var(--muted); margin-top: 10px; line-height: 1.55; }
+        .dd-card-desc b { color: var(--ink); font-weight: 500; }
+        .dd-features { list-style: none; padding: 18px 26px 0; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+        .dd-features li { display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; }
+        .dd-features svg { flex-shrink: 0; margin-top: 3px; }
+        .dd-features li.strong span { color: var(--ink); font-weight: 500; }
+        .dd-features li.weak span { color: var(--muted); font-weight: 400; }
+        .dd-price-block { padding: 20px 26px 24px; margin-top: 8px; }
+        .dd-price-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+        .dd-price-big { display: flex; align-items: baseline; gap: 6px; }
+        .dd-price-big .amount { font-family: var(--serif); font-size: 32px; line-height: 1; color: var(--ink); font-weight: 500; }
+        .dd-price-big .per { font-size: 12.5px; color: var(--muted); }
+        .dd-price-sub { font-size: 11.5px; color: var(--muted-2); margin-top: 4px; }
+        .dd-card-b-body { padding: 18px 26px 0; flex: 1; }
+        .dd-cname-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .dd-cname-label { font-size: 11.5px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.04em; text-transform: uppercase; }
+        .dd-cname { background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+        .dd-cname-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 14px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+        .dd-cname-row:last-child { border-bottom: none; }
+        .dd-cname-row .k { font-size: 11.5px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.04em; text-transform: uppercase; }
+        .dd-cname-row .v { font-family: var(--mono); font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dd-cname-row .wts-btn.ghost { height: 22px; padding: 0 8px; font-size: 11.5px; }
+        .dd-copy-all { height: 22px; padding: 0 8px; font-size: 11.5px; }
+        .dd-details { margin-top: 14px; }
+        .dd-details summary { cursor: pointer; font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; list-style: none; }
+        .dd-details summary::-webkit-details-marker { display: none; }
+        .dd-details summary svg { transition: transform 120ms ease; }
+        .dd-details[open] summary svg { transform: rotate(90deg); }
+        .dd-details ol { list-style: decimal; padding: 10px 0 0 22px; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+        .dd-details ol .dd-mono { font-family: var(--mono); font-size: 12px; }
+        .dd-card-b-cta { padding: 18px 26px 24px; margin-top: 8px; }
+        .dd-hint { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted-2); margin-bottom: 12px; }
+        .dd-footer { margin-top: 18px; background: var(--bg-2); border: 1px dashed #D2D2CC; border-radius: 8px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .dd-footer-info { display: flex; align-items: center; gap: 14px; }
+        .dd-footer-icon { width: 32px; height: 32px; background: var(--bg-3); border-radius: 6px; display: grid; place-items: center; color: var(--muted); flex-shrink: 0; }
+        .dd-footer-head { font-size: 13.5px; font-weight: 500; }
+        .dd-footer-body { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+        .dd-footer-body .dd-mono { font-family: var(--mono); color: var(--ink); }
+        .dd-bottom-nav { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+        .dd-bottom-note { font-size: 12px; color: var(--muted-2); }
     </style>
 </head>
 <body class="wts">
@@ -544,11 +608,12 @@
 
                 <!-- State 4: Review (deploy header + result) -->
                 <div data-state="review">
-                    <div style="margin-top:32px; margin-bottom:24px;">
+                    <div id="publishHeader" style="margin-top:32px; margin-bottom:24px;">
                         <h1 class="wts-page-title">Publishing.</h1>
                         <p class="wts-page-lede">Hang tight — usually 30–60 seconds.</p>
                     </div>
                     <div id="result" style="margin-top:16px;"></div>
+                    <div id="domainDecision" data-substate="domain-decision" hidden></div>
                 </div>
 
                 <!-- Shared transient processing surfaces (sit alongside states; shown over the active state when needed) -->
@@ -1470,16 +1535,16 @@
         if (data && data.pointsHere) return true;
 
         const target = data && data.expectedCnameTarget;
-        if (!target) {
-            displayDomainConfigError(domain, '', false);
-            return false;
-        }
-        displayDomainConfigError(domain, target, !!(data && data.resolves));
+        displayDomainDecision(domain, target || '');
         return false;
     }
 
     async function runDeploy() {
         showState('review');
+        const dd = document.getElementById('domainDecision');
+        if (dd) { dd.hidden = true; dd.innerHTML = ''; }
+        const header = document.getElementById('publishHeader');
+        if (header) header.hidden = false;
         const loading = document.getElementById('loading');
         const workflowProgress = document.getElementById('workflowProgress');
         const resultEl = document.getElementById('result');
@@ -1568,12 +1633,17 @@
     }
 
     function backToDomainFromError() {
+        cancelVerifyCname();
         deployRetryCount = 0;
         acceptOwnedDomain = false;
         const resultEl = document.getElementById('result');
         resultEl.innerHTML = '';
         document.getElementById('loading').classList.remove('active');
         document.getElementById('workflowProgress').classList.remove('active');
+        const dd = document.getElementById('domainDecision');
+        if (dd) { dd.hidden = true; dd.innerHTML = ''; }
+        const header = document.getElementById('publishHeader');
+        if (header) header.hidden = false;
         showState('configure');
     }
 
@@ -1827,37 +1897,196 @@
         await runDeploy();
     }
 
-    function displayDomainConfigError(domain, cnameTarget, hasAnyDns) {
-        const el = document.getElementById('result');
+    function siteChipData(domain) {
+        const companyEl = document.getElementById('field-companyName');
+        const company = (typeof interviewAnswers !== 'undefined' && interviewAnswers.companyName)
+            || (companyEl && companyEl.value.trim())
+            || '';
+        const name = company || domain;
+        let initials = '··';
+        try {
+            if (window.WtsPlatform && typeof WtsPlatform.initials === 'function') {
+                initials = WtsPlatform.initials(name) || initials;
+            } else {
+                initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join('') || initials;
+            }
+        } catch {}
+        return { name, initials };
+    }
+
+    function displayDomainDecision(domain, cnameTarget) {
+        cancelVerifyCname();
+        const dd = document.getElementById('domainDecision');
         document.getElementById('loading').classList.remove('active');
         document.getElementById('workflowProgress').classList.remove('active');
+        document.getElementById('result').innerHTML = '';
+        document.getElementById('publishHeader').hidden = true;
 
-        const lead = hasAnyDns
-            ? `<strong>${domain}</strong> resolves, but it isn't pointing to our service yet.`
-            : `<strong>${domain}</strong> doesn't have any DNS records set up yet.`;
+        const esc = WtsPlatform.escapeHtml;
+        const chip = siteChipData(domain);
+        const dEsc = esc(domain);
+        const tEsc = esc(cnameTarget || '');
+        const nEsc = esc(chip.name);
+        const iEsc = esc(chip.initials);
 
-        el.innerHTML = `<div class="result-card error">
-            <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> DNS setup required</h3>
-            <div class="error-detail">${lead} You can either point a CNAME record at our service yourself, or let us register and configure it for you.</div>
-            <div class="dns-instructions">
-                <div class="dns-instructions-label">CNAME record</div>
-                <div class="dns-instructions-row"><span class="dns-instructions-key">Name</span><code>${domain}</code></div>
-                <div class="dns-instructions-row"><span class="dns-instructions-key">Value</span><code>${cnameTarget}</code></div>
-                <div class="dns-instructions-row"><span class="dns-instructions-key">TTL</span><code>Auto / 300</code></div>
+        const checkSvg = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.6"><path d="M3 8l3.5 3.5L13 5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        const featuresHtml = [
+            ['Domain registered in your name', true],
+            ['DNS configured automatically', true],
+            ['SSL certificate (auto-renews)', true],
+            ['Whois privacy included', true],
+            ['One yearly renewal, no surprises', false],
+        ].map(([txt, strong]) => `<li class="${strong ? 'strong' : 'weak'}">${checkSvg}<span>${txt}</span></li>`).join('');
+
+        dd.innerHTML = `
+            <div class="dd-header">
+                <div>
+                    <div class="dd-eyebrow">Almost there · one more step</div>
+                    <h1 class="wts-page-title">How should we connect <span class="dd-title-domain">${dEsc}</span>?</h1>
+                    <p class="wts-page-lede">Your site is ready to publish. It just needs <b>${dEsc}</b> pointed at our service. Pick how you'd like to handle it.</p>
+                </div>
+                <div class="dd-chip">
+                    <div class="dd-chip-label">Publishing</div>
+                    <div class="dd-chip-row">
+                        <div class="dd-chip-initials">${iEsc}</div>
+                        <div>
+                            <div class="dd-chip-name">${nEsc}</div>
+                            <div class="dd-chip-domain">${dEsc}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="error-actions">
-                <button class="wts-btn" onclick="backToDomainFromError()">Back to settings</button>
-                <button class="wts-btn" onclick="continueWithoutDomain()">Continue without a domain</button>
-                <button class="wts-btn primary" id="buyDomainBtn" disabled>Buy ${domain} for —</button>
+            <div class="dd-grid">
+                <div class="dd-card dd-card-a">
+                    <div class="dd-card-pill">Recommended</div>
+                    <div class="dd-card-head">
+                        <div class="dd-card-head-row">
+                            <div class="dd-card-icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/></svg>
+                            </div>
+                            <div>
+                                <div class="dd-card-eyebrow">Option A</div>
+                                <h3 class="dd-card-title">Let us handle it</h3>
+                            </div>
+                        </div>
+                        <p class="dd-card-desc">We register the domain in your name, configure DNS, and issue an SSL certificate. Live in about two minutes.</p>
+                    </div>
+                    <ul class="dd-features">${featuresHtml}</ul>
+                    <div class="dd-price-block">
+                        <div class="dd-price-row">
+                            <div>
+                                <div class="dd-price-big"><span class="amount" id="ddPriceAmount">—</span><span class="per">/ year</span></div>
+                                <div class="dd-price-sub" id="ddPriceSub">Charged once. Renews next year, you'll get a reminder first.</div>
+                            </div>
+                        </div>
+                        <button class="wts-btn primary lg" id="ddRegisterBtn" style="width:100%; justify-content:center;" disabled>Register &amp; publish —</button>
+                    </div>
+                </div>
+                <div class="dd-card dd-card-b">
+                    <div class="dd-card-head">
+                        <div class="dd-card-head-row">
+                            <div class="dd-card-icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7l3-3 3 3M8 4v8M3 12h10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                            <div>
+                                <div class="dd-card-eyebrow">Option B</div>
+                                <h3 class="dd-card-title">I'll set up DNS myself</h3>
+                            </div>
+                        </div>
+                        <p class="dd-card-desc">If you've already registered <b>${dEsc}</b> elsewhere — Namecheap, Cloudflare, GoDaddy — add this CNAME record at your registrar.</p>
+                    </div>
+                    <div class="dd-card-b-body">
+                        <div class="dd-cname-head">
+                            <div class="dd-cname-label">CNAME record</div>
+                            <button class="wts-btn ghost dd-copy-all" id="ddCopyAllBtn" type="button">Copy all</button>
+                        </div>
+                        <div class="dd-cname">
+                            <div class="dd-cname-row">
+                                <div class="k">Name</div>
+                                <div class="v" id="ddCnameName">${dEsc}</div>
+                                <button class="wts-btn ghost" type="button" data-copy="name">Copy</button>
+                            </div>
+                            <div class="dd-cname-row">
+                                <div class="k">Value</div>
+                                <div class="v" id="ddCnameValue">${tEsc || '—'}</div>
+                                <button class="wts-btn ghost" type="button" data-copy="value">Copy</button>
+                            </div>
+                            <div class="dd-cname-row">
+                                <div class="k">TTL</div>
+                                <div class="v">Auto / 300</div>
+                                <span></span>
+                            </div>
+                        </div>
+                        <details class="dd-details">
+                            <summary>
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2l3 3-3 3"/></svg>
+                                Step-by-step instructions
+                            </summary>
+                            <ol>
+                                <li>Sign in to your domain registrar.</li>
+                                <li>Find the DNS settings for <span class="dd-mono">${dEsc}</span>.</li>
+                                <li>Add a new CNAME record using the values above.</li>
+                                <li>Save and return here.</li>
+                            </ol>
+                        </details>
+                    </div>
+                    <div class="dd-card-b-cta">
+                        <div class="dd-hint">
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5L10 10" stroke-linecap="round"/></svg>
+                            DNS usually propagates in 5–60 minutes.
+                        </div>
+                        <button class="wts-btn lg" id="ddVerifyBtn" type="button" style="width:100%; justify-content:center;">I've added the record — verify &amp; publish</button>
+                    </div>
+                </div>
             </div>
-        </div>`;
+            <div class="dd-footer">
+                <div class="dd-footer-info">
+                    <div class="dd-footer-icon">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div>
+                        <div class="dd-footer-head">Not ready for a custom domain?</div>
+                        <div class="dd-footer-body">Publish on your free WordToSite subdomain now — you can add a domain anytime from Settings.</div>
+                    </div>
+                </div>
+                <button class="wts-btn" id="ddSubdomainBtn" type="button">Continue with subdomain →</button>
+            </div>
+            <div class="dd-bottom-nav">
+                <button class="wts-btn ghost" type="button" onclick="backToDomainFromError()">← Back to settings</button>
+                <div class="dd-bottom-note">You can change the domain later, before or after publishing.</div>
+            </div>
+        `;
+
+        dd.hidden = false;
+
+        document.getElementById('ddRegisterBtn').addEventListener('click', (e) => buyDomainAndContinue(domain, e.currentTarget));
+        document.getElementById('ddVerifyBtn').addEventListener('click', () => verifyCnameAndPublish(domain));
+        document.getElementById('ddSubdomainBtn').addEventListener('click', () => continueWithoutDomain());
+        document.getElementById('ddCopyAllBtn').addEventListener('click', (e) => {
+            copyToClipboard(`Name: ${domain}\nValue: ${cnameTarget || ''}\nTTL: Auto / 300`, e.currentTarget, '✓ Copied');
+        });
+        dd.querySelectorAll('[data-copy]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                const which = e.currentTarget.dataset.copy;
+                const text = which === 'name' ? domain : (cnameTarget || '');
+                copyToClipboard(text, e.currentTarget, '✓');
+            });
+        });
 
         loadDomainQuote(domain);
     }
 
     async function loadDomainQuote(domain) {
-        const btn = document.getElementById('buyDomainBtn');
-        if (!btn) return;
+        const amount = document.getElementById('ddPriceAmount');
+        const sub = document.getElementById('ddPriceSub');
+        const btn = document.getElementById('ddRegisterBtn');
+        if (!amount || !sub || !btn) return;
+
+        const setDisabled = (label) => {
+            btn.textContent = label;
+            btn.disabled = true;
+        };
+
         try {
             const res = await fetch('/api/domains/quote', {
                 method: 'POST',
@@ -1866,24 +2095,90 @@
             });
             const data = await res.json();
             if (!res.ok || !data || data.success === false) {
-                btn.textContent = `Couldn't fetch price`;
+                amount.textContent = '—';
+                sub.textContent = "Couldn't fetch the price right now.";
+                setDisabled('Register & publish');
                 return;
             }
             if (data.premium) {
-                btn.textContent = `Premium domain — buy via Domains page`;
+                amount.textContent = '—';
+                sub.textContent = 'Premium domain — buy via the Domains page.';
+                setDisabled('Premium domain');
                 return;
             }
             if (!data.available) {
-                btn.textContent = `Domain unavailable`;
+                amount.textContent = '—';
+                sub.textContent = `${domain} isn't available for registration.`;
+                setDisabled('Domain unavailable');
                 return;
             }
             const price = Number(data.totalPriceUsd).toFixed(2);
-            btn.textContent = `Buy ${domain} for $${price} and continue`;
+            amount.textContent = `$${price}`;
+            sub.textContent = "Charged once. Renews next year, you'll get a reminder first.";
+            btn.textContent = `Register & publish — $${price}`;
             btn.disabled = false;
-            btn.onclick = () => buyDomainAndContinue(domain, btn);
-        } catch (e) {
-            btn.textContent = `Couldn't fetch price`;
+        } catch {
+            amount.textContent = '—';
+            sub.textContent = "Couldn't fetch the price right now.";
+            setDisabled('Register & publish');
         }
+    }
+
+    let verifyCnameToken = 0;
+    function cancelVerifyCname() { verifyCnameToken++; }
+
+    async function verifyCnameAndPublish(domain) {
+        const btn = document.getElementById('ddVerifyBtn');
+        if (!btn || btn.disabled) return;
+        const myToken = ++verifyCnameToken;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Checking DNS…';
+        let pointsHere = false;
+        let reachable = true;
+        try {
+            const res = await fetch(`/api/onboard/check-domain-dns?domain=${encodeURIComponent(domain)}`);
+            if (!res.ok) {
+                reachable = false;
+            } else {
+                const data = await res.json();
+                pointsHere = !!(data && data.pointsHere);
+            }
+        } catch {
+            reachable = false;
+        }
+        if (myToken !== verifyCnameToken) return;
+        if (pointsHere) {
+            document.getElementById('domainDecision').hidden = true;
+            document.getElementById('publishHeader').hidden = false;
+            acceptOwnedDomain = true;
+            deployRetryCount = 0;
+            await runDeploy();
+            return;
+        }
+        btn.textContent = reachable
+            ? 'Still propagating — try again in a moment'
+            : "Couldn't reach our DNS checker — try again";
+        setTimeout(() => {
+            if (myToken !== verifyCnameToken) return;
+            btn.textContent = original;
+            btn.disabled = false;
+        }, 6000);
+    }
+
+    async function copyToClipboard(text, btn, successLabel) {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            return;
+        }
+        if (!btn.dataset.copyOriginal) btn.dataset.copyOriginal = btn.textContent;
+        btn.textContent = successLabel;
+        clearTimeout(btn._copyTimer);
+        btn._copyTimer = setTimeout(() => {
+            btn.textContent = btn.dataset.copyOriginal;
+            delete btn.dataset.copyOriginal;
+        }, 1400);
     }
 
     function snapshotWizardForResume(domain) {
@@ -1923,6 +2218,7 @@
     }
 
     async function buyDomainAndContinue(domain, btn) {
+        cancelVerifyCname();
         try {
             localStorage.setItem('wts.wizardResume', JSON.stringify(snapshotWizardForResume(domain)));
         } catch {
@@ -1934,6 +2230,7 @@
     }
 
     function continueWithoutDomain() {
+        cancelVerifyCname();
         document.getElementById('domainInput').value = '';
         const registerCheckbox = document.getElementById('registerNewDomain');
         if (registerCheckbox) registerCheckbox.checked = false;
