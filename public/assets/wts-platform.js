@@ -164,6 +164,10 @@
         mount.replaceWith(wrapper.firstElementChild);
     }
 
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
     window.WtsPlatform = {
         ICONS,
         renderSidebar,
@@ -174,5 +178,6 @@
             return user;
         },
         initials,
+        escapeHtml,
     };
 })();
