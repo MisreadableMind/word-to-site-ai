@@ -48,6 +48,7 @@ export const config = {
     clientIp: process.env.NAMECHEAP_CLIENT_IP,
     sandbox: process.env.NAMECHEAP_SANDBOX === 'true',
     allowRealInDev: process.env.ALLOW_REAL_NAMECHEAP_IN_DEV === 'true',
+    proxyUrl: process.env.NAMECHEAP_PROXY_URL || null,
   },
 
   // Cloudflare Configuration (for DNS management)

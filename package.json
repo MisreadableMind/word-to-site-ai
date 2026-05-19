@@ -25,6 +25,7 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "https-proxy-agent": "^9.0.0",
     "multer": "^2.0.2",
     "openai": "^6.25.0",
     "p-retry": "^8.0.0",

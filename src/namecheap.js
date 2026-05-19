@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { parseString } from 'xml2js';
 import { promisify } from 'util';
 import { parse as parseHost } from 'tldts';
@@ -21,6 +22,13 @@ class NamecheapAPI {
     this.apiKey = config.namecheap.apiKey;
     this.username = config.namecheap.username;
     this.clientIp = config.namecheap.clientIp;
+
+    const proxyUrl = config.namecheap.proxyUrl;
+    this.client = axios.create({
+      httpsAgent: proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined,
+      // Disable axios's built-in proxy agent in favor of https-proxy-agent
+      proxy: false,
+    });
   }
 
   async makeRequest(command, params = {}) {
@@ -34,7 +42,7 @@ class NamecheapAPI {
     };
 
     try {
-      const response = await axios.get(this.apiUrl, {
+      const response = await this.client.get(this.apiUrl, {
         params: requestParams,
       });
 
