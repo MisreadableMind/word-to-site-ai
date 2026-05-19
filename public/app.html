@@ -185,7 +185,7 @@
         .step-nav { display: flex; gap: 8px; justify-content: space-between; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
 
         /* — Domain-decision sub-state (handoff_domain_setup spec) — */
-        [data-substate="domain-decision"] { --line-2: #D2D2CC; padding-bottom: 32px; }
+        [data-substate="domain-decision"] { padding-bottom: 32px; }
         .dd-header { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: flex-end; margin-top: 32px; margin-bottom: 24px; }
         .dd-eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; background: var(--accent-bg); border-radius: 100px; font-family: var(--mono); font-size: 11.5px; font-weight: 500; color: var(--accent); letter-spacing: 0.02em; text-transform: uppercase; }
         .dd-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
@@ -203,7 +203,7 @@
         @media (max-width: 880px) { .dd-grid { grid-template-columns: 1fr; } }
         .dd-card { background: var(--surface); border-radius: 10px; display: flex; flex-direction: column; position: relative; }
         .dd-card-a { border: 2px solid var(--ink); }
-        .dd-card-b { border: 1px solid var(--line-2); }
+        .dd-card-b { border: 1px solid #D2D2CC; }
         .dd-card-pill { position: absolute; top: -1px; right: 22px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 0 0 4px 4px; }
         .dd-card-head { padding: 24px 26px 16px; border-bottom: 1px solid var(--line); }
         .dd-card-head-row { display: flex; align-items: center; gap: 10px; }
@@ -244,7 +244,7 @@
         .dd-details ol .dd-mono { font-family: var(--mono); font-size: 12px; }
         .dd-card-b-cta { padding: 18px 26px 24px; margin-top: 8px; }
         .dd-hint { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted-2); margin-bottom: 12px; }
-        .dd-footer { margin-top: 18px; background: var(--bg-2); border: 1px dashed var(--line-2); border-radius: 8px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .dd-footer { margin-top: 18px; background: var(--bg-2); border: 1px dashed #D2D2CC; border-radius: 8px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .dd-footer-info { display: flex; align-items: center; gap: 14px; }
         .dd-footer-icon { width: 32px; height: 32px; background: var(--bg-3); border-radius: 6px; display: grid; place-items: center; color: var(--muted); flex-shrink: 0; }
         .dd-footer-head { font-size: 13.5px; font-weight: 500; }
@@ -252,7 +252,6 @@
         .dd-footer-body .dd-mono { font-family: var(--mono); color: var(--ink); }
         .dd-bottom-nav { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
         .dd-bottom-note { font-size: 12px; color: var(--muted-2); }
-        .wts-btn.lg { height: 38px; padding: 0 18px; font-size: 13.5px; }
     </style>
 </head>
 <body class="wts">
@@ -1634,6 +1633,7 @@
     }
 
     function backToDomainFromError() {
+        cancelVerifyCname();
         deployRetryCount = 0;
         acceptOwnedDomain = false;
         const resultEl = document.getElementById('result');
@@ -1897,14 +1897,6 @@
         await runDeploy();
     }
 
-    function deriveAutoSubdomain(cnameTarget, companyName) {
-        if (cnameTarget && cnameTarget.includes('.at.wordtosite.ai')) {
-            return cnameTarget.replace('.at.wordtosite.ai', '.wordtosite.ai');
-        }
-        const slug = (companyName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        return slug ? `${slug}.wordtosite.ai` : '';
-    }
-
     function siteChipData(domain) {
         const companyEl = document.getElementById('field-companyName');
         const company = (typeof interviewAnswers !== 'undefined' && interviewAnswers.companyName)
@@ -1923,6 +1915,7 @@
     }
 
     function displayDomainDecision(domain, cnameTarget) {
+        cancelVerifyCname();
         const dd = document.getElementById('domainDecision');
         document.getElementById('loading').classList.remove('active');
         document.getElementById('workflowProgress').classList.remove('active');
@@ -1931,10 +1924,8 @@
 
         const esc = WtsPlatform.escapeHtml;
         const chip = siteChipData(domain);
-        const autoSub = deriveAutoSubdomain(cnameTarget, chip.name);
         const dEsc = esc(domain);
         const tEsc = esc(cnameTarget || '');
-        const aEsc = esc(autoSub);
         const nEsc = esc(chip.name);
         const iEsc = esc(chip.initials);
 
@@ -2055,9 +2046,7 @@
                     </div>
                     <div>
                         <div class="dd-footer-head">Not ready for a custom domain?</div>
-                        <div class="dd-footer-body">${aEsc
-                            ? `Publish on <span class="dd-mono">${aEsc}</span> now — you can add a domain anytime from Settings.`
-                            : `Publish on your free WordToSite subdomain now — you can add a domain anytime from Settings.`}</div>
+                        <div class="dd-footer-body">Publish on your free WordToSite subdomain now — you can add a domain anytime from Settings.</div>
                     </div>
                 </div>
                 <button class="wts-btn" id="ddSubdomainBtn" type="button">Continue with subdomain →</button>
@@ -2135,20 +2124,30 @@
         }
     }
 
+    let verifyCnameToken = 0;
+    function cancelVerifyCname() { verifyCnameToken++; }
+
     async function verifyCnameAndPublish(domain) {
         const btn = document.getElementById('ddVerifyBtn');
         if (!btn || btn.disabled) return;
+        const myToken = ++verifyCnameToken;
         const original = btn.textContent;
         btn.disabled = true;
         btn.textContent = 'Checking DNS…';
         let pointsHere = false;
+        let reachable = true;
         try {
             const res = await fetch(`/api/onboard/check-domain-dns?domain=${encodeURIComponent(domain)}`);
-            if (res.ok) {
+            if (!res.ok) {
+                reachable = false;
+            } else {
                 const data = await res.json();
                 pointsHere = !!(data && data.pointsHere);
             }
-        } catch {}
+        } catch {
+            reachable = false;
+        }
+        if (myToken !== verifyCnameToken) return;
         if (pointsHere) {
             document.getElementById('domainDecision').hidden = true;
             document.getElementById('publishHeader').hidden = false;
@@ -2157,15 +2156,22 @@
             await runDeploy();
             return;
         }
-        btn.textContent = 'Still propagating — try again in a moment';
+        btn.textContent = reachable
+            ? 'Still propagating — try again in a moment'
+            : "Couldn't reach our DNS checker — try again";
         setTimeout(() => {
+            if (myToken !== verifyCnameToken) return;
             btn.textContent = original;
             btn.disabled = false;
         }, 6000);
     }
 
-    function copyToClipboard(text, btn, successLabel) {
-        try { navigator.clipboard.writeText(text); } catch {}
+    async function copyToClipboard(text, btn, successLabel) {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            return;
+        }
         if (!btn.dataset.copyOriginal) btn.dataset.copyOriginal = btn.textContent;
         btn.textContent = successLabel;
         clearTimeout(btn._copyTimer);
@@ -2212,6 +2218,7 @@
     }
 
     async function buyDomainAndContinue(domain, btn) {
+        cancelVerifyCname();
         try {
             localStorage.setItem('wts.wizardResume', JSON.stringify(snapshotWizardForResume(domain)));
         } catch {
@@ -2223,6 +2230,7 @@
     }
 
     function continueWithoutDomain() {
+        cancelVerifyCname();
         document.getElementById('domainInput').value = '';
         const registerCheckbox = document.getElementById('registerNewDomain');
         if (registerCheckbox) registerCheckbox.checked = false;
