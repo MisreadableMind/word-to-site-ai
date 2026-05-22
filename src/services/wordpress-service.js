@@ -593,20 +593,37 @@ class WordPressService {
    * @returns {Promise<Object>} Final result
    */
   async generateImages(credentials, options = {}) {
-    const { onProgress, maxAttempts = 200, pollInterval = 5000 } = options;
+    const {
+      onProgress,
+      maxAttempts = 200,
+      pollInterval = 5000,
+      callbackUrl,
+      awaitCompletion = true,
+    } = options;
 
     console.log(`Triggering generate-images on ${this.siteUrl}`);
     onProgress?.({ phase: 'starting', message: 'Starting plugin-side image generation...' });
 
+    const body = {
+      image_bank_login: credentials.login,
+      image_bank_password: credentials.password,
+      image_score_threshold: credentials.scoreThreshold || 0.85,
+      force: true,
+    };
+    if (callbackUrl) body.callback_url = callbackUrl;
+
     await this.requestRaw('trx-waas-wizard/v1/page-widgets/generate-images', {
       method: 'POST',
-      body: JSON.stringify({
-        image_bank_login: credentials.login,
-        image_bank_password: credentials.password,
-        image_score_threshold: credentials.scoreThreshold || 0.85,
-        force: true,
-      }),
+      body: JSON.stringify(body),
     });
+
+    if (!awaitCompletion) {
+      onProgress?.({
+        phase: 'dispatched',
+        message: 'Image generation started; placeholders will be replaced when ready.',
+      });
+      return { success: true, dispatched: true };
+    }
 
     const pollResult = await this._pollAsyncEndpoint('trx-waas-wizard/v1/page-widgets/generate-images', {
       terminalStates: ['generate_images_end'],

@@ -16,9 +16,10 @@ export default class SiteService {
     if (this.initialized) return;
 
     try {
-      const migrationPath = path.join(__dirname, '../db/migrations/004-user-sites.sql');
-      const sql = fs.readFileSync(migrationPath, 'utf-8');
-      await pool.query(sql);
+      const migration004 = path.join(__dirname, '../db/migrations/004-user-sites.sql');
+      const migration007 = path.join(__dirname, '../db/migrations/007-site-image-bank.sql');
+      await pool.query(fs.readFileSync(migration004, 'utf-8'));
+      await pool.query(fs.readFileSync(migration007, 'utf-8'));
       this.initialized = true;
       console.log('User sites database initialized');
     } catch (error) {
@@ -34,8 +35,12 @@ export default class SiteService {
     await this.initialize();
 
     const result = await pool.query(
-      `INSERT INTO user_sites (user_id, domain, instawp_id, template_slug, wp_url, wp_username, wp_password, site_name, onboard_type, onboard_data)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO user_sites (
+         user_id, domain, instawp_id, template_slug, wp_url, wp_username, wp_password,
+         site_name, onboard_type, onboard_data,
+         image_bank_login, image_bank_password, images_status
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, COALESCE($13, 'pending'))
        RETURNING *`,
       [
         userId,
@@ -48,10 +53,24 @@ export default class SiteService {
         data.siteName || null,
         data.onboardType || null,
         data.onboardData ? JSON.stringify(data.onboardData) : null,
+        data.imageBankLogin || null,
+        data.imageBankPassword || null,
+        data.imagesStatus || null,
       ]
     );
 
     return result.rows[0];
+  }
+
+  async setImagesStatusByImageBankLogin(login, status) {
+    await this.initialize();
+    const result = await pool.query(
+      `UPDATE user_sites SET images_status = $1, updated_at = NOW()
+       WHERE image_bank_login = $2 AND status != 'deleted'
+       RETURNING *`,
+      [status, login]
+    );
+    return result.rows[0] || null;
   }
 
   async listSites(userId) {

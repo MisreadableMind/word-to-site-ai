@@ -5,8 +5,61 @@
  */
 
 import OpenAI from 'openai';
+import { zodTextFormat } from 'openai/helpers/zod';
+import { z } from 'zod';
 import { config } from '../config.js';
 import { DEFAULTS, CONTENT_TONES } from '../constants.js';
+
+const WebsiteAnalysisSchema = z.object({
+  businessInfo: z.object({
+    name: z.string().describe('Business name as it appears on the site'),
+    tagline: z.string(),
+    industry: z.string(),
+    services: z.array(z.string()),
+    targetAudience: z.string().describe('Single string description, not a list'),
+    uniqueSellingPoints: z.array(z.string()),
+    location: z.string(),
+    contactInfo: z.object({
+      phone: z.string(),
+      email: z.string(),
+      address: z.string(),
+    }),
+  }),
+  brandElements: z.object({
+    colors: z.array(z.string()).describe('Hex color codes'),
+    fonts: z.array(z.string()),
+    logo: z.string().describe('Logo URL, empty string if none'),
+    style: z.enum(['modern', 'classic', 'minimal', 'bold']),
+  }),
+  siteStructure: z.object({
+    pages: z.array(z.object({
+      slug: z.string(),
+      title: z.string(),
+      purpose: z.string(),
+      sections: z.array(z.string()),
+    })),
+  }),
+  recommendedTemplate: z.object({
+    slug: z.string(),
+    reason: z.string(),
+  }),
+  contentTone: z.enum(['professional', 'friendly', 'casual', 'formal']),
+  seo: z.object({
+    title: z.string(),
+    description: z.string(),
+    keywords: z.array(z.string()),
+  }),
+});
+
+const TemplateMatchSchema = z.object({
+  slug: z.string(),
+  confidence: z.number(),
+  reason: z.string(),
+  alternates: z.array(z.object({
+    slug: z.string(),
+    reason: z.string(),
+  })),
+});
 
 class AIService {
   constructor(options = {}) {
@@ -47,8 +100,8 @@ class AIService {
    * @returns {Promise<Object>} Analysis result
    */
   async analyzeWebsite(firecrawlData, templateCatalog = []) {
-    if (!this.hasGemini) {
-      console.warn('Gemini not configured, using fallback analysis');
+    if (!this.hasGemini && !this.hasOpenAI) {
+      console.warn('No AI provider configured, using fallback analysis');
       return this.fallbackWebsiteAnalysis(firecrawlData);
     }
 
@@ -64,20 +117,23 @@ ${JSON.stringify(firecrawlData.metadata || {}, null, 2)}
 ${JSON.stringify(templateCatalog.map(t => ({ slug: t.slug, name: t.name, features: t.features })), null, 2)}
 
 ## Instructions:
-Analyze the website and return a JSON object with:
-
-1. **businessInfo**: Extract business name, tagline, industry, services, target audience, contact info
-2. **brandElements**: Colors (hex), fonts, logo URL, style (modern/classic/minimal/bold)
-3. **siteStructure**: List of pages with their purpose and sections
-4. **recommendedTemplate**: Best matching template slug from the catalog, with reasoning
-5. **contentTone**: One of: professional, friendly, casual, formal
-6. **seo**: Extracted meta title, description, keywords
-
-Return ONLY valid JSON, no markdown formatting.`;
+Analyze the website and fill every field of the response schema.
+- businessInfo.name must be the actual brand/company name shown on the site.
+- targetAudience must be a single descriptive sentence, not a list.
+- brandElements.colors are hex codes ("#RRGGBB").
+- recommendedTemplate.slug must come from the catalog above.`;
 
     try {
-      const result = await this.callGemini(prompt);
-      return JSON.parse(result);
+      if (this.hasGemini) {
+        const raw = await this.callGemini(prompt);
+        return JSON.parse(raw);
+      }
+      const response = await this.openai.responses.parse({
+        model: 'gpt-5-mini',
+        input: [{ role: 'user', content: prompt }],
+        text: { format: zodTextFormat(WebsiteAnalysisSchema, 'website_analysis') },
+      });
+      return response.output_parsed;
     } catch (error) {
       console.error('Website analysis error:', error.message);
       return this.fallbackWebsiteAnalysis(firecrawlData);
@@ -409,8 +465,7 @@ Return a JSON object with:
    * @returns {Promise<Object>} Best match with reasoning
    */
   async matchTemplate(analysis, templates) {
-    if (!this.hasGemini) {
-      // Return default template
+    if (!this.hasGemini && !this.hasOpenAI) {
       return {
         slug: DEFAULTS.TEMPLATE_SLUG,
         confidence: 0.5,
@@ -442,8 +497,25 @@ Return JSON:
   ]
 }`;
 
-    const response = await this.callGemini(prompt);
-    return JSON.parse(response);
+    try {
+      if (this.hasGemini) {
+        const raw = await this.callGemini(prompt);
+        return JSON.parse(raw);
+      }
+      const response = await this.openai.responses.parse({
+        model: 'gpt-5-mini',
+        input: [{ role: 'user', content: prompt }],
+        text: { format: zodTextFormat(TemplateMatchSchema, 'template_match') },
+      });
+      return response.output_parsed;
+    } catch (error) {
+      console.error('Template matching error:', error.message);
+      return {
+        slug: DEFAULTS.TEMPLATE_SLUG,
+        confidence: 0.5,
+        reason: 'Default template (AI matching error)',
+      };
+    }
   }
 
   // ==========================================

@@ -36,6 +36,7 @@ import createEditorRouter from './routes/editor-routes.js';
 import createBillingRouter, { createBillingWebhookRouter } from './routes/billing-routes.js';
 import createDomainRouter from './routes/domain-routes.js';
 import { PLATFORM_HOSTS, PRIMARY_PLATFORM_HOST, classify as classifyDomain } from './lib/domain-classifier.js';
+import { startSiteImageGeneration } from './lib/image-bank-flow.js';
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth.js';
 import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement.js';
 import { getEntitlements as getPlanEntitlements } from './billing/entitlements.js';
@@ -97,6 +98,27 @@ if (config.auth?.enabled !== false) {
   app.use('/api/sites', express.json(), createSiteRouter(siteService, authService, proxyService));
   app.use('/api/editor/chat', express.json(), createEditorRouter(editorService, authService));
 }
+
+app.post('/api/content-bank/callback', express.json({ limit: '256kb' }), async (req, res) => {
+  const login = req.query.login;
+  if (!login) {
+    return res.status(400).json({ ok: false, error: 'login required' });
+  }
+
+  const body = req.body || {};
+  const status = body.status === 'error' || body.success === false ? 'failed' : 'ready';
+
+  const updated = await siteService.setImagesStatusByImageBankLogin(login, status).catch((err) => {
+    console.warn(`[content-bank callback] update failed for login ${login}:`, err.message);
+    return null;
+  });
+
+  if (!updated) {
+    return res.status(404).json({ ok: false, error: 'unknown login' });
+  }
+
+  res.json({ ok: true, status });
+});
 
 // Stripe webhook MUST be mounted before the global express.json() parser below — signature
 // verification requires the raw request body.
@@ -1090,6 +1112,8 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
         deploymentContext,
         contentContext,
         editorPreference,
+        email: req.user?.email,
+        callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
       });
 
       // Save domain-workflow site to user's dashboard if logged in
@@ -1105,6 +1129,9 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
             siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
             onboardType: 'domain',
             onboardData: { deploymentContext, contentContext },
+            imageBankLogin: result.imageBank?.login || null,
+            imageBankPassword: result.imageBank?.password || null,
+            imagesStatus: result.imageBank?.status || null,
           });
         } catch (err) {
           console.warn('Failed to save site to user dashboard:', err.message);
@@ -1207,19 +1234,22 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
         result.steps.push({ step: 'generate_all_content', success: false, error: error.message });
       }
 
-      // Generate images (optional — only if image bank configured)
-      if (config.imageBank.login) {
-        try {
-          await wp.generateImages({
-            login: config.imageBank.login,
-            password: config.imageBank.password,
-            scoreThreshold: config.imageBank.scoreThreshold,
-          });
-          result.steps.push({ step: 'generate_images', success: true });
-        } catch (error) {
-          console.warn('Failed to generate images:', error.message);
-          result.steps.push({ step: 'generate_images', success: false, error: error.message });
+      try {
+        const bankResult = await startSiteImageGeneration({
+          wp,
+          site,
+          deploymentContext,
+          contentContext,
+          email: req.user?.email,
+          callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
+        });
+        if (bankResult) {
+          result.imageBank = bankResult;
+          result.steps.push({ step: 'generate_images_started', success: true });
         }
+      } catch (error) {
+        console.warn('Failed to start image generation:', error.message);
+        result.steps.push({ step: 'generate_images_started', success: false, error: error.message });
       }
 
       // Generate and push content
@@ -1297,6 +1327,9 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
           siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
           onboardType: domain ? 'domain' : 'simple',
           onboardData: { deploymentContext, contentContext },
+          imageBankLogin: result.imageBank?.login || null,
+          imageBankPassword: result.imageBank?.password || null,
+          imagesStatus: result.imageBank?.status || null,
         });
       } catch (err) {
         console.warn('Failed to save site to user dashboard:', err.message);
@@ -1374,6 +1407,8 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
         acceptOwnedDomain: acceptOwnedDomain === 'true',
         deploymentContext,
         contentContext,
+        email: req.user?.email,
+        callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
       });
 
       // Save to user's dashboard
@@ -1389,6 +1424,9 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
             siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
             onboardType: 'domain',
             onboardData: { deploymentContext, contentContext },
+            imageBankLogin: result.imageBank?.login || null,
+            imageBankPassword: result.imageBank?.password || null,
+            imagesStatus: result.imageBank?.status || null,
           });
         } catch (err) {
           console.warn('Failed to save site to user dashboard (stream):', err.message);
@@ -1514,24 +1552,29 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
           result.steps.push({ step: 'generate_all_content', success: false, error: error.message });
         }
 
-        // Generate images (optional — only if image bank configured)
-        if (config.imageBank.login) {
-          sendProgress('generating_images', { message: 'Generating images from image bank...' });
-          try {
-            await wp.generateImages({
-              login: config.imageBank.login,
-              password: config.imageBank.password,
-              scoreThreshold: config.imageBank.scoreThreshold,
-            }, {
-              onProgress: (progress) => {
-                sendProgress('generating_images', { message: progress.message, ...progress });
-              },
+        sendProgress('generating_images', { message: 'Starting image generation...' });
+        try {
+          const bankResult = await startSiteImageGeneration({
+            wp,
+            site,
+            deploymentContext,
+            contentContext,
+            email: req.user?.email,
+            callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
+            onProgress: (progress) => {
+              sendProgress('generating_images', { message: progress.message, ...progress });
+            },
+          });
+          if (bankResult) {
+            result.imageBank = bankResult;
+            result.steps.push({ step: 'generate_images_started', success: true });
+            sendProgress('generating_images', {
+              message: 'Image generation started; placeholders will be replaced when ready.',
             });
-            result.steps.push({ step: 'generate_images', success: true });
-          } catch (error) {
-            console.warn('Failed to generate images:', error.message);
-            result.steps.push({ step: 'generate_images', success: false, error: error.message });
           }
+        } catch (error) {
+          console.warn('Failed to start image generation:', error.message);
+          result.steps.push({ step: 'generate_images_started', success: false, error: error.message });
         }
 
         // Generate content
@@ -1600,6 +1643,9 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
             siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || 'My Site',
             onboardType: 'simple',
             onboardData: { deploymentContext, contentContext },
+            imageBankLogin: result.imageBank?.login || null,
+            imageBankPassword: result.imageBank?.password || null,
+            imagesStatus: result.imageBank?.status || null,
           });
         } catch (err) {
           console.warn('Failed to save site to user dashboard (stream):', err.message);

@@ -8,6 +8,7 @@ import AIService from './services/ai-service.js';
 import WordPressService from './services/wordpress-service.js';
 import { prepareWizardData } from './services/business-structurer.js';
 import { classify } from './lib/domain-classifier.js';
+import { startSiteImageGeneration } from './lib/image-bank-flow.js';
 import pRetry from 'p-retry';
 
 const CRITICAL_ONBOARDING_STEPS = [
@@ -371,6 +372,8 @@ class DomainWorkflow {
       contacts,
       includeWww = true,
       registrationYears = 1,
+      email,
+      callbackBaseUrl,
     } = params;
 
     // Run the standard domain workflow first
@@ -395,10 +398,16 @@ class DomainWorkflow {
       });
 
       try {
-        await this.applyDeploymentContext(result.site.id, result.site, deploymentContext, {
+        const deployResults = await this.applyDeploymentContext(result.site.id, result.site, deploymentContext, {
           contentContext,
           skinSlugOverride: params.templateSlug,
+          email,
+          domain,
+          callbackBaseUrl,
         });
+        if (deployResults?.imageBank) {
+          result.imageBank = deployResults.imageBank;
+        }
         result.steps.push({
           step: 'deployment_applied',
           success: true,
@@ -643,26 +652,37 @@ class DomainWorkflow {
       results.generateAllError = error.message;
     }
 
-    if (config.imageBank.login) {
-      try {
+    try {
+      this.emitProgress('provisioning_image_bank_user', {
+        message: 'Creating image bank account for site...',
+      });
+      const siteForBank = {
+        id: siteId,
+        domain: options.domain || (typeof siteUrl === 'object' && siteUrl?.domain) || null,
+        wp_url: site.url,
+      };
+      const bankResult = await startSiteImageGeneration({
+        wp,
+        site: siteForBank,
+        deploymentContext: context,
+        contentContext: options.contentContext,
+        email: options.email,
+        callbackBaseUrl: options.callbackBaseUrl,
+        onProgress: (progress) => {
+          this.emitProgress('generating_images', { message: progress.message, ...progress });
+        },
+      });
+      if (bankResult) {
         this.emitProgress('generating_images', {
-          message: 'Generating images from image bank...',
+          message: 'Image generation started; placeholders will be replaced when ready.',
         });
-        await wp.generateImages({
-          login: config.imageBank.login,
-          password: config.imageBank.password,
-          scoreThreshold: config.imageBank.scoreThreshold,
-        }, {
-          onProgress: (progress) => {
-            this.emitProgress('generating_images', { message: progress.message, ...progress });
-          },
-        });
+        results.imageBank = bankResult;
         results.imagesGenerated = true;
-        console.log('  Images generated from image bank');
-      } catch (error) {
-        console.warn('Failed to generate images:', error.message);
-        results.generateImagesError = error.message;
+        console.log('  Image generation dispatched (fire-and-forget)');
       }
+    } catch (error) {
+      console.warn('Failed to start image generation:', error.message);
+      results.generateImagesError = error.message;
     }
 
     const criticalFailures = [];

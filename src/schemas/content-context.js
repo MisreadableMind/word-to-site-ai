@@ -203,15 +203,6 @@ export function validateContentContext(context) {
     errors.push(`Invalid tone: ${context.tone}. Must be one of: ${Object.values(CONTENT_TONES).join(', ')}`);
   }
 
-  if (context.seo) {
-    if (context.seo.metaTitle && context.seo.metaTitle.length > 60) {
-      errors.push('SEO meta title should be 60 characters or less');
-    }
-    if (context.seo.metaDescription && context.seo.metaDescription.length > 160) {
-      errors.push('SEO meta description should be 160 characters or less');
-    }
-  }
-
   return {
     valid: errors.length === 0,
     errors,
