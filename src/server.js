@@ -1251,6 +1251,9 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
       }
 
       try {
+        const existingCreds = site?.wp_url
+          ? await siteService.findImageBankCredsByWpUrl(site.wp_url).catch(() => null)
+          : null;
         const bankResult = await startSiteImageGeneration({
           wp,
           site,
@@ -1258,6 +1261,7 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
           contentContext,
           email: req.user?.email,
           callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
+          existingCreds,
         });
         if (bankResult) {
           result.imageBank = bankResult;
@@ -1601,6 +1605,9 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
 
         sendProgress('generating_images', { message: 'Starting image generation...' });
         try {
+          const existingCreds = site?.wp_url
+            ? await siteService.findImageBankCredsByWpUrl(site.wp_url).catch(() => null)
+            : null;
           const bankResult = await startSiteImageGeneration({
             wp,
             site,
@@ -1608,6 +1615,7 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
             contentContext,
             email: req.user?.email,
             callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
+            existingCreds,
             onProgress: (progress) => {
               sendProgress('generating_images', { message: progress.message, ...progress });
             },

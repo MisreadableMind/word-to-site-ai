@@ -16,11 +16,20 @@ export function buildCallbackUrl(baseUrl, login) {
   return `${baseUrl.replace(/\/+$/, '')}/api/content-bank/callback?login=${encodeURIComponent(login)}`;
 }
 
-export async function provisionContentBankUser({ site, deploymentContext, contentContext, email }) {
+export async function provisionContentBankUser({
+  site,
+  deploymentContext,
+  contentContext,
+  email,
+  existingCreds,
+}) {
   const bank = client();
   if (!bank.enabled) return null;
   const domain = site?.domain || (site?.wp_url ? new URL(site.wp_url).hostname : null);
   if (!domain) return null;
+  if (existingCreds?.login && existingCreds?.password) {
+    return { login: existingCreds.login, password: existingCreds.password };
+  }
   return bank.createUser({
     domain,
     name: deploymentContext?.branding?.siteTitle || contentContext?.business?.name,
@@ -36,8 +45,15 @@ export async function startSiteImageGeneration({
   email,
   callbackBaseUrl,
   onProgress,
+  existingCreds,
 }) {
-  const creds = await provisionContentBankUser({ site, deploymentContext, contentContext, email });
+  const creds = await provisionContentBankUser({
+    site,
+    deploymentContext,
+    contentContext,
+    email,
+    existingCreds,
+  });
   if (!creds) return null;
 
   const callbackUrl = buildCallbackUrl(callbackBaseUrl, creds.login);

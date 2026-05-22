@@ -374,6 +374,7 @@ class DomainWorkflow {
       registrationYears = 1,
       email,
       callbackBaseUrl,
+      existingImageBankCreds,
     } = params;
 
     // Run the standard domain workflow first
@@ -404,6 +405,7 @@ class DomainWorkflow {
           email,
           domain,
           callbackBaseUrl,
+          existingImageBankCreds,
         });
         if (deployResults?.imageBank) {
           result.imageBank = deployResults.imageBank;
@@ -519,7 +521,7 @@ class DomainWorkflow {
    * @param {string} [options.skinSlugOverride] - User-selected skin slug override
    */
   async applyDeploymentContext(siteId, siteUrl, context, options = {}) {
-    const { contentContext, skinSlugOverride } = options;
+    const { contentContext, skinSlugOverride, existingImageBankCreds } = options;
     const favicon = context.branding?.faviconUrl || DEFAULTS.FAVICON_URL;
     const site = this.extractSiteCredentials(siteUrl);
 
@@ -668,6 +670,7 @@ class DomainWorkflow {
         contentContext: options.contentContext,
         email: options.email,
         callbackBaseUrl: options.callbackBaseUrl,
+        existingCreds: existingImageBankCreds,
         onProgress: (progress) => {
           this.emitProgress('generating_images', { message: progress.message, ...progress });
         },

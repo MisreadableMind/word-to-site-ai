@@ -73,6 +73,24 @@ export default class SiteService {
     return result.rows[0] || null;
   }
 
+  async findImageBankCredsByWpUrl(wpUrl) {
+    if (!wpUrl) return null;
+    await this.initialize();
+    const result = await pool.query(
+      `SELECT image_bank_login, image_bank_password
+       FROM user_sites
+       WHERE wp_url = $1
+         AND image_bank_login IS NOT NULL
+         AND image_bank_password IS NOT NULL
+         AND status != 'deleted'
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [wpUrl]
+    );
+    const row = result.rows[0];
+    return row ? { login: row.image_bank_login, password: row.image_bank_password } : null;
+  }
+
   async listSites(userId) {
     await this.initialize();
 
