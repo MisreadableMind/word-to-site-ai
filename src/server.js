@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import multer from 'multer';
 import dns from 'dns';
 import InstaWPSiteCreator from './index.js';
-import { sanitizeSiteName } from './instawp.js';
+import InstaWPAPI, { sanitizeSiteName } from './instawp.js';
 import DomainWorkflow from './domain-workflow.js';
 import NamecheapAPI from './namecheap.js';
 import { config, validateDomainConfig, toWpLocale } from './config.js';
@@ -1142,9 +1142,24 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
     }
 
     // Simple site creation (no domain) with full deploy pipeline
+    const requestedSiteName = deploymentContext.branding?.siteTitle
+      || contentContext?.business?.name
+      || undefined;
+    const sanitizedSiteName = sanitizeSiteName(requestedSiteName);
+    if (sanitizedSiteName) {
+      const api = new InstaWPAPI(effectiveApiKey);
+      const available = await api.isSiteNameAvailable(sanitizedSiteName);
+      if (!available) {
+        return res.status(409).json({
+          success: false,
+          error: `Site name "${sanitizedSiteName}" is already taken. Please choose a different name.`,
+        });
+      }
+    }
+
     const creator = new InstaWPSiteCreator(effectiveApiKey);
     const siteResult = await creator.createSite({
-      siteName: deploymentContext.branding?.siteTitle || contentContext?.business?.name || undefined,
+      siteName: requestedSiteName,
       templateSlug: templateSlug || deploymentContext.template?.slug,
     });
 
@@ -1446,6 +1461,34 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
       } else if (sanitizedName) {
         siteNameNote = ` "${sanitizedName}"`;
       }
+
+      if (sanitizedName) {
+        sendProgress('validating_name', { message: `Checking "${sanitizedName}" availability...` });
+        const api = new InstaWPAPI(effectiveApiKey);
+        let available = false;
+        try {
+          available = await api.isSiteNameAvailable(sanitizedName);
+        } catch (err) {
+          console.warn(`Site name availability check failed: ${err.message}`);
+          const message = `Could not verify site name availability: ${err.message}`;
+          sendProgress('error', { step: 'validating_name', message });
+          res.write(`data: ${JSON.stringify({
+            step: 'result',
+            data: { success: false, error: message, site: null, steps: [] },
+          })}\n\n`);
+          return res.end();
+        }
+        if (!available) {
+          const message = `Site name "${sanitizedName}" is already taken. Please choose a different name.`;
+          sendProgress('error', { step: 'validating_name', message });
+          res.write(`data: ${JSON.stringify({
+            step: 'result',
+            data: { success: false, error: message, site: null, steps: [] },
+          })}\n\n`);
+          return res.end();
+        }
+      }
+
       sendProgress('creating_site', { message: `Creating WordPress site${siteNameNote}...` });
 
       const creator = new InstaWPSiteCreator(effectiveApiKey);

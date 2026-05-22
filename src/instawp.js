@@ -142,6 +142,29 @@ class InstaWPAPI {
     return response.data;
   }
 
+  async listSitesByName(name) {
+    const sanitized = sanitizeSiteName(name);
+    if (!sanitized) return [];
+    const response = await this.makeRequest(
+      `/sites?search=${encodeURIComponent(sanitized)}&per_page=50`,
+    );
+    return response.data || [];
+  }
+
+  async isSiteNameAvailable(name) {
+    const sanitized = sanitizeSiteName(name);
+    if (!sanitized) return true;
+    const target = sanitized.toLowerCase();
+    const sites = await this.listSitesByName(sanitized);
+    return !sites.some((s) => {
+      const candidates = [s.name, s.site_name, s.sub_domain]
+        .filter(Boolean)
+        .map((v) => String(v).toLowerCase());
+      if (candidates.includes(target)) return true;
+      return candidates.some((c) => c === target || c.startsWith(`${target}.`));
+    });
+  }
+
   async mapDomain(siteId, domainName, options = {}) {
     console.log(`Mapping domain ${domainName} to site ${siteId}`);
 
