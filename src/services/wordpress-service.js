@@ -595,7 +595,7 @@ class WordPressService {
   async generateImages(credentials, options = {}) {
     const {
       onProgress,
-      maxAttempts = 200,
+      maxAttempts = 60,
       pollInterval = 5000,
       callbackUrl,
       awaitCompletion = true,

@@ -42,14 +42,17 @@ export async function startSiteImageGeneration({
 
   const callbackUrl = buildCallbackUrl(callbackBaseUrl, creds.login);
 
-  await wp.generateImages(
+  const wpResult = await wp.generateImages(
     { ...creds, scoreThreshold: config.imageBank.scoreThreshold },
     {
       callbackUrl,
-      awaitCompletion: false,
+      awaitCompletion: true,
       onProgress,
     },
   );
 
-  return { ...creds, status: 'generating', callbackUrl };
+  const terminalStatus = wpResult?.pollResult?.status;
+  const status = terminalStatus === 'generate_images_end' ? 'ready' : 'failed';
+
+  return { ...creds, status, callbackUrl, pollResult: wpResult?.pollResult ?? null };
 }

@@ -49,6 +49,7 @@ const CRITICAL_ONBOARDING_STEPS = [
   'deployment_applied',
   'wizard_data_saved',
   'generate_all_content',
+  'generate_images',
   'content_generated',
 ];
 
@@ -1260,11 +1261,14 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
         });
         if (bankResult) {
           result.imageBank = bankResult;
-          result.steps.push({ step: 'generate_images_started', success: true });
+          const ok = bankResult.status === 'ready';
+          result.steps.push(ok
+            ? { step: 'generate_images', success: true }
+            : { step: 'generate_images', success: false, error: 'Image generation did not reach terminal state' });
         }
       } catch (error) {
-        console.warn('Failed to start image generation:', error.message);
-        result.steps.push({ step: 'generate_images_started', success: false, error: error.message });
+        console.warn('Image generation failed:', error.message);
+        result.steps.push({ step: 'generate_images', success: false, error: error.message });
       }
 
       // Generate and push content
@@ -1610,14 +1614,29 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
           });
           if (bankResult) {
             result.imageBank = bankResult;
-            result.steps.push({ step: 'generate_images_started', success: true });
-            sendProgress('generating_images', {
-              message: 'Image generation started; placeholders will be replaced when ready.',
-            });
+            const ok = bankResult.status === 'ready';
+            if (ok) {
+              result.steps.push({ step: 'generate_images', success: true });
+              sendProgress('generating_images', {
+                phase: 'complete',
+                message: 'Image generation complete.',
+              });
+            } else {
+              result.steps.push({
+                step: 'generate_images',
+                success: false,
+                error: 'Image generation did not reach terminal state',
+              });
+              sendProgress('generating_images', {
+                phase: 'failed',
+                message: 'Image generation did not complete.',
+              });
+            }
           }
         } catch (error) {
-          console.warn('Failed to start image generation:', error.message);
-          result.steps.push({ step: 'generate_images_started', success: false, error: error.message });
+          console.warn('Image generation failed:', error.message);
+          result.steps.push({ step: 'generate_images', success: false, error: error.message });
+          sendProgress('generating_images', { phase: 'failed', message: error.message });
         }
 
         // Generate content

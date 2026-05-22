@@ -673,22 +673,34 @@ class DomainWorkflow {
         },
       });
       if (bankResult) {
-        this.emitProgress('generating_images', {
-          message: 'Image generation started; placeholders will be replaced when ready.',
-        });
         results.imageBank = bankResult;
-        results.imagesGenerated = true;
-        console.log('  Image generation dispatched (fire-and-forget)');
+        const ok = bankResult.status === 'ready';
+        if (ok) {
+          this.emitProgress('generating_images', {
+            phase: 'complete',
+            message: 'Image generation complete.',
+          });
+          results.imagesGenerated = true;
+        } else {
+          this.emitProgress('generating_images', {
+            phase: 'failed',
+            message: 'Image generation did not complete.',
+          });
+          results.imagesGenerated = false;
+          results.generateImagesError = 'Image generation did not reach terminal state';
+        }
       }
     } catch (error) {
-      console.warn('Failed to start image generation:', error.message);
+      console.warn('Image generation failed:', error.message);
       results.generateImagesError = error.message;
+      this.emitProgress('generating_images', { phase: 'failed', message: error.message });
     }
 
     const criticalFailures = [];
     if (results.skinSwitchError) criticalFailures.push(`skin_switched: ${results.skinSwitchError}`);
     if (results.wizardDataError) criticalFailures.push(`wizard_data_saved: ${results.wizardDataError}`);
     if (results.generateAllError) criticalFailures.push(`generate_all_content: ${results.generateAllError}`);
+    if (results.generateImagesError) criticalFailures.push(`generate_images: ${results.generateImagesError}`);
     if (criticalFailures.length > 0) {
       throw new Error(criticalFailures.join('; '));
     }
