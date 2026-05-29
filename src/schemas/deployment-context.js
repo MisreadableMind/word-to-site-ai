@@ -7,6 +7,7 @@
  * branding, and enabled features.
  */
 
+import validator from 'validator';
 import { DEFAULTS, DEFAULT_PAGES } from '../constants.js';
 
 /**
@@ -119,10 +120,10 @@ export function validateDeploymentContext(context) {
   }
 
   if (context.branding) {
-    if (context.branding.primaryColor && !/^#[0-9A-Fa-f]{6}$/.test(context.branding.primaryColor)) {
+    if (context.branding.primaryColor && !validator.isHexColor(context.branding.primaryColor)) {
       errors.push('Primary color must be a valid hex color (e.g., #667eea)');
     }
-    if (context.branding.secondaryColor && !/^#[0-9A-Fa-f]{6}$/.test(context.branding.secondaryColor)) {
+    if (context.branding.secondaryColor && !validator.isHexColor(context.branding.secondaryColor)) {
       errors.push('Secondary color must be a valid hex color');
     }
   }

@@ -3,6 +3,7 @@
  * Handles both Flow A (copy website) and Flow B (voice interview)
  */
 
+import { colord } from 'colord';
 import FirecrawlService from './services/firecrawl-service.js';
 import AIService from './services/ai-service.js';
 import VoiceService from './services/voice-service.js';
@@ -11,6 +12,11 @@ import { createDeploymentContext, validateDeploymentContext } from './schemas/de
 import { createContentContext, validateContentContext, buildContentContextFromInterview, buildContentContextFromScrape } from './schemas/content-context.js';
 import { DEFAULTS, ONBOARDING_FLOWS } from './constants.js';
 import { config } from './config.js';
+
+function toHexColor(value) {
+  const color = colord(value);
+  return color.isValid() ? color.toHex() : null;
+}
 
 /**
  * Onboarding workflow step identifiers
@@ -355,10 +361,10 @@ class OnboardingWorkflow {
       if (brandElements) {
         context.branding.faviconUrl = brandElements.favicon || DEFAULTS.FAVICON_URL;
         if (brandElements.colors?.length > 0) {
-          context.branding.primaryColor = brandElements.colors[0];
-          if (brandElements.colors.length > 1) {
-            context.branding.secondaryColor = brandElements.colors[1];
-          }
+          const primary = toHexColor(brandElements.colors[0]);
+          if (primary) context.branding.primaryColor = primary;
+          const secondary = toHexColor(brandElements.colors[1]);
+          if (secondary) context.branding.secondaryColor = secondary;
         }
         if (brandElements.logo) {
           context.branding.logoUrl = brandElements.logo;
@@ -379,7 +385,7 @@ class OnboardingWorkflow {
       const { brief } = data;
 
       if (brief.brandColors?.length > 0) {
-        const colors = brief.brandColors.filter(c => /^#[0-9A-Fa-f]{6}$/.test(c));
+        const colors = brief.brandColors.map(toHexColor).filter(Boolean);
         if (colors.length > 0) {
           context.branding.primaryColor = colors[0];
           if (colors.length > 1) {
