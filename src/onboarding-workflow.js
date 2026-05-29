@@ -196,7 +196,6 @@ class OnboardingWorkflow {
     } catch (error) {
       this.emitProgress(OnboardingSteps.ERROR, {
         message: error.message,
-        error,
       });
 
       result.error = error.message;
@@ -306,7 +305,6 @@ class OnboardingWorkflow {
     } catch (error) {
       this.emitProgress(OnboardingSteps.ERROR, {
         message: error.message,
-        error,
       });
 
       result.error = error.message;
