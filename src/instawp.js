@@ -142,6 +142,13 @@ class InstaWPAPI {
     return response.data;
   }
 
+  async deleteSite(siteId) {
+    console.log(`Deleting InstaWP site ID: ${siteId}`);
+
+    const response = await this.makeRequest(`/sites/${siteId}`, 'DELETE');
+    return response;
+  }
+
   async listSitesByName(name) {
     const sanitized = sanitizeSiteName(name);
     if (!sanitized) return [];

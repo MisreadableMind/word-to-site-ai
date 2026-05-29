@@ -2,6 +2,7 @@ import pool from '../db.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import InstaWPAPI from '../instawp.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -150,6 +151,16 @@ export default class SiteService {
       [siteId, userId]
     );
 
-    return result.rows[0] || null;
+    const site = result.rows[0] || null;
+
+    if (site && site.instawp_id) {
+      try {
+        await new InstaWPAPI().deleteSite(site.instawp_id);
+      } catch (error) {
+        console.error(`Failed to delete InstaWP site ${site.instawp_id}:`, error.message);
+      }
+    }
+
+    return site;
   }
 }
