@@ -291,7 +291,6 @@ class WordPressService {
    * Uses the WP REST API settings endpoint for supported values,
    * or custom theme mod endpoints if available.
    * @param {Object} settings - Customizer settings
-   * @param {string} [settings.primaryColor] - Primary brand color
    * @param {string} [settings.logoUrl] - Logo image URL
    * @returns {Promise<Object>} Result
    */
@@ -325,57 +324,7 @@ class WordPressService {
       }
     }
 
-    // Note: Primary/secondary color requires theme-specific API or custom CSS
-    // Most themes expose color settings via their own REST endpoints
-    if (settings.primaryColor) {
-      try {
-        // Try setting via custom CSS as a fallback
-        await this.injectCustomCss(`:root { --primary-color: ${settings.primaryColor}; }`);
-        results.primaryColor = { success: true, method: 'custom_css' };
-      } catch (error) {
-        console.warn('Failed to set primary color:', error.message);
-        results.primaryColor = { success: false, error: error.message };
-      }
-    }
-
     return results;
-  }
-
-  /**
-   * Inject custom CSS into the site
-   * @param {string} css - CSS string
-   * @returns {Promise<Object>} Result
-   */
-  async injectCustomCss(css) {
-    // WP stores custom CSS as a custom_css custom post type
-    // First check if a custom CSS post exists
-    const existing = await this.requestRaw(
-      `wp/v2/types/custom_css`,
-      { method: 'GET' }
-    ).catch(() => null);
-
-    if (!existing) {
-      // Custom CSS type not available; skip
-      return { success: false, reason: 'custom_css post type not available' };
-    }
-
-    // Get existing custom CSS posts
-    const posts = await this.request('/posts?type=custom_css&per_page=1').catch(() => []);
-
-    if (posts.length > 0) {
-      // Append to existing
-      const current = posts[0].content?.rendered || '';
-      return this.request(`/posts/${posts[0].id}`, {
-        method: 'POST',
-        body: JSON.stringify({
-          content: current + '\n' + css,
-        }),
-      });
-    }
-
-    // If no endpoint available, just log
-    console.log('Custom CSS injection: endpoint not available, skipping');
-    return { success: true, note: 'Custom CSS may need manual application' };
   }
 
   // ==========================================
