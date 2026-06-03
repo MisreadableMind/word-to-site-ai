@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { config } from './config.js';
+import { config } from './config';
 
 const pool = new pg.Pool({
   connectionString: config.pluginApi?.databaseUrl || process.env.DATABASE_URL || 'postgresql://localhost:5432/wordtosite',

@@ -5,9 +5,9 @@
  * Default skin: kindergarten
  */
 
-import InstaWPAPI from './instawp.js';
-import { config } from './config.js';
-import WordPressService from './services/wordpress-service.js';
+import InstaWPAPI from './instawp';
+import { config } from './config';
+import WordPressService from './services/wordpress-service';
 
 const skinSlug = process.argv[2] || 'kindergarten';
 

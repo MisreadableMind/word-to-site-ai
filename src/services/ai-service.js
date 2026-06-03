@@ -7,8 +7,8 @@
 import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
-import { config } from '../config.js';
-import { DEFAULTS, CONTENT_TONES } from '../constants.js';
+import { config } from '../config';
+import { DEFAULTS, CONTENT_TONES } from '../constants';
 
 const WebsiteAnalysisSchema = z.object({
   businessInfo: z.object({

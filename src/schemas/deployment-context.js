@@ -8,7 +8,7 @@
  */
 
 import validator from 'validator';
-import { DEFAULTS, DEFAULT_PAGES } from '../constants.js';
+import { DEFAULTS, DEFAULT_PAGES } from '../constants';
 
 /**
  * Schema definition for Deployment Context

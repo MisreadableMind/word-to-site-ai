@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { config } from '../src/config.js';
-import { getStripe } from '../src/billing/stripe-client.js';
-import { buildTargets, diffTargets, applyPlan } from '../src/billing/stripe-setup.js';
+import { config } from '../src/config';
+import { getStripe } from '../src/billing/stripe-client';
+import { buildTargets, diffTargets, applyPlan } from '../src/billing/stripe-setup';
 
 const EXIT_OK = 0;
 const EXIT_ERROR = 1;

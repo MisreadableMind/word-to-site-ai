@@ -3,8 +3,8 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import { parseString } from 'xml2js';
 import { promisify } from 'util';
 import { parse as parseHost } from 'tldts';
-import { config } from './config.js';
-import { assertRegisterable } from './lib/domain-classifier.js';
+import { config } from './config';
+import { assertRegisterable } from './lib/domain-classifier';
 
 const parseXml = promisify(parseString);
 

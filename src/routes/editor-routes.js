@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUserAuth } from '../middleware/user-auth.js';
+import { createUserAuth } from '../middleware/user-auth';
 
 /**
  * Create editor chat router

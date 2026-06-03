@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { config } from '../config.js';
-import { createUserAuth } from '../middleware/user-auth.js';
+import { config } from '../config';
+import { createUserAuth } from '../middleware/user-auth';
 
 /**
  * Create auth router

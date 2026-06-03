@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import express from 'express';
-import { createUserAuth } from '../middleware/user-auth.js';
+import { createUserAuth } from '../middleware/user-auth';
 import {
   getStripe,
   verifyWebhookSignature,
   priceIdForPlan,
   listResolvedPrices,
-} from '../billing/stripe-client.js';
-import { PLAN_ENTITLEMENTS, PLAN_TIERS, getEntitlements } from '../billing/entitlements.js';
+} from '../billing/stripe-client';
+import { PLAN_ENTITLEMENTS, PLAN_TIERS, getEntitlements } from '../billing/entitlements';
 
 const origin = (req) => `${req.protocol}://${req.get('host')}`;
 

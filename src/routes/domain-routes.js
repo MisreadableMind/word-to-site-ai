@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { createUserAuth } from '../middleware/user-auth.js';
-import { requireCustomDomain, requireDomainPurchase } from '../middleware/entitlement.js';
-import { DOMAIN_MARKUP_PERCENT } from '../billing/entitlements.js';
-import { getStripe } from '../billing/stripe-client.js';
-import { classify } from '../lib/domain-classifier.js';
+import { createUserAuth } from '../middleware/user-auth';
+import { requireCustomDomain, requireDomainPurchase } from '../middleware/entitlement';
+import { DOMAIN_MARKUP_PERCENT } from '../billing/entitlements';
+import { getStripe } from '../billing/stripe-client';
+import { classify } from '../lib/domain-classifier';
 
 const origin = (req) => `${req.protocol}://${req.get('host')}`;
 

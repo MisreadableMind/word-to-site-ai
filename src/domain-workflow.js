@@ -1,14 +1,14 @@
-import NamecheapAPI from './namecheap.js';
-import CloudflareAPI from './cloudflare.js';
-import InstaWPAPI from './instawp.js';
-import { config, validateDomainConfig, toWpLocale } from './config.js';
-import { DEFAULTS } from './constants.js';
-import EditorService from './services/editor-service.js';
-import AIService from './services/ai-service.js';
-import WordPressService from './services/wordpress-service.js';
-import { prepareWizardData } from './services/business-structurer.js';
-import { classify } from './lib/domain-classifier.js';
-import { startSiteImageGeneration } from './lib/image-bank-flow.js';
+import NamecheapAPI from './namecheap';
+import CloudflareAPI from './cloudflare';
+import InstaWPAPI from './instawp';
+import { config, validateDomainConfig, toWpLocale } from './config';
+import { DEFAULTS } from './constants';
+import EditorService from './services/editor-service';
+import AIService from './services/ai-service';
+import WordPressService from './services/wordpress-service';
+import { prepareWizardData } from './services/business-structurer';
+import { classify } from './lib/domain-classifier';
+import { startSiteImageGeneration } from './lib/image-bank-flow';
 import pRetry from 'p-retry';
 
 const CRITICAL_ONBOARDING_STEPS = [

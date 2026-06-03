@@ -7,7 +7,7 @@
  * and SEO metadata.
  */
 
-import { DEFAULTS, CONTENT_TONES, SUPPORTED_LANGUAGES } from '../constants.js';
+import { DEFAULTS, CONTENT_TONES, SUPPORTED_LANGUAGES } from '../constants';
 
 /**
  * Schema definition for Content Context

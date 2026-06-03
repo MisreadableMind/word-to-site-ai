@@ -1,4 +1,4 @@
-import InstaWPAPI from './instawp.js';
+import InstaWPAPI from './instawp';
 
 const api = new InstaWPAPI();
 

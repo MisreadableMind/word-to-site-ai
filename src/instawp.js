@@ -1,6 +1,6 @@
 import axios from 'axios';
 import pWaitFor, { TimeoutError } from 'p-wait-for';
-import { config } from './config.js';
+import { config } from './config';
 
 export function sanitizeSiteName(name) {
   if (!name) return undefined;

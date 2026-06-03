@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import createPluginAuth from '../middleware/plugin-auth.js';
+import createPluginAuth from '../middleware/plugin-auth';
 
 /**
  * Create plugin API router

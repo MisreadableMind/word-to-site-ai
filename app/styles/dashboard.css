@@ -1,0 +1,44 @@
+.dialog-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 14, 12, 0.45);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+}
+.dialog-overlay.open {
+  display: flex;
+}
+.dialog {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+}
+.empty-card {
+  text-align: center;
+  padding: 64px 24px;
+  background: var(--surface);
+  border: 1px dashed var(--line-2);
+  border-radius: 8px;
+}
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  background: var(--bg-3);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.loading-state {
+  text-align: center;
+  padding: 60px;
+  color: var(--muted);
+  font-size: 14px;
+}

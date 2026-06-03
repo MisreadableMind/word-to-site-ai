@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
-import { config } from '../config.js';
-import { PAID_LOOKUP_KEYS, planForLookupKey, lookupKeyForPlan } from './entitlements.js';
+import { config } from '../config';
+import { PAID_LOOKUP_KEYS, planForLookupKey, lookupKeyForPlan } from './entitlements';
 
 let stripeInstance = null;
 let priceCache = null;

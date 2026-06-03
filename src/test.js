@@ -1,7 +1,7 @@
-import { config, validateConfig } from './config.js';
-import NamecheapAPI from './namecheap.js';
-import InstaWPAPI from './instawp.js';
-import CloudflareAPI from './cloudflare.js';
+import { config, validateConfig } from './config';
+import NamecheapAPI from './namecheap';
+import InstaWPAPI from './instawp';
+import CloudflareAPI from './cloudflare';
 
 async function testNamecheap() {
   console.log('\n=== Testing Namecheap API ===\n');

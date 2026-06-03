@@ -3,9 +3,9 @@
  * Handles speech-to-text, text-to-speech, and voice interview flow
  */
 
-import AIService from './ai-service.js';
-import { config } from '../config.js';
-import { INTERVIEW_QUESTIONS, DEFAULTS } from '../constants.js';
+import AIService from './ai-service';
+import { config } from '../config';
+import { INTERVIEW_QUESTIONS, DEFAULTS } from '../constants';
 
 class VoiceService {
   constructor(options = {}) {

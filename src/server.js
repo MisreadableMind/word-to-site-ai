@@ -1,45 +1,46 @@
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { createServer } from 'http';
 import multer from 'multer';
 import dns from 'dns';
-import InstaWPSiteCreator from './index.js';
-import InstaWPAPI, { sanitizeSiteName } from './instawp.js';
-import DomainWorkflow from './domain-workflow.js';
-import NamecheapAPI from './namecheap.js';
-import { config, validateDomainConfig, toWpLocale } from './config.js';
-import { prepareWizardData } from './services/business-structurer.js';
-import OnboardingWorkflow, { OnboardingSteps } from './onboarding-workflow.js';
-import ExcerptService from './services/excerpt-service.js';
-import EditorService from './services/editor-service.js';
-import VoiceService from './services/voice-service.js';
-import AIService from './services/ai-service.js';
-import WordPressService from './services/wordpress-service.js';
-import BaseSiteService from './services/base-site-service.js';
-import VoiceHandler from './websocket/voice-handler.js';
-import { ONBOARDING_FLOWS, EDITOR_MODES } from './constants.js';
+import InstaWPSiteCreator from './index';
+import InstaWPAPI, { sanitizeSiteName } from './instawp';
+import DomainWorkflow from './domain-workflow';
+import NamecheapAPI from './namecheap';
+import { config, validateDomainConfig, toWpLocale } from './config';
+import { prepareWizardData } from './services/business-structurer';
+import OnboardingWorkflow, { OnboardingSteps } from './onboarding-workflow';
+import ExcerptService from './services/excerpt-service';
+import EditorService from './services/editor-service';
+import VoiceService from './services/voice-service';
+import AIService from './services/ai-service';
+import WordPressService from './services/wordpress-service';
+import BaseSiteService from './services/base-site-service';
+import VoiceHandler from './websocket/voice-handler';
+import { ONBOARDING_FLOWS, EDITOR_MODES } from './constants';
 import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
+import { makeParseableTextFormat } from 'openai/lib/parser';
 import { z } from 'zod';
-import PluginAPIService from './services/plugin-api-service.js';
-import createPluginRouter from './routes/plugin-routes.js';
-import ProxyService from './services/proxy-service.js';
-import createProxyRouter from './routes/proxy-routes.js';
-import AuthService from './services/auth-service.js';
-import SiteService from './services/site-service.js';
-import BillingService from './services/billing-service.js';
-import DomainService from './services/domain-service.js';
-import createAuthRouter from './routes/auth-routes.js';
-import createSiteRouter from './routes/site-routes.js';
-import createEditorRouter from './routes/editor-routes.js';
-import createBillingRouter, { createBillingWebhookRouter } from './routes/billing-routes.js';
-import createDomainRouter from './routes/domain-routes.js';
-import { PLATFORM_HOSTS, PRIMARY_PLATFORM_HOST, classify as classifyDomain } from './lib/domain-classifier.js';
-import { startSiteImageGeneration } from './lib/image-bank-flow.js';
-import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth.js';
-import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement.js';
-import { getEntitlements as getPlanEntitlements } from './billing/entitlements.js';
+import PluginAPIService from './services/plugin-api-service';
+import createPluginRouter from './routes/plugin-routes';
+import ProxyService from './services/proxy-service';
+import createProxyRouter from './routes/proxy-routes';
+import AuthService from './services/auth-service';
+import SiteService from './services/site-service';
+import BillingService from './services/billing-service';
+import DomainService from './services/domain-service';
+import createAuthRouter from './routes/auth-routes';
+import createSiteRouter from './routes/site-routes';
+import createEditorRouter from './routes/editor-routes';
+import createBillingRouter, { createBillingWebhookRouter } from './routes/billing-routes';
+import createDomainRouter from './routes/domain-routes';
+import { PLATFORM_HOSTS, PRIMARY_PLATFORM_HOST, classify as classifyDomain } from './lib/domain-classifier';
+import { startSiteImageGeneration } from './lib/image-bank-flow';
+import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth';
+import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement';
+import { getEntitlements as getPlanEntitlements } from './billing/entitlements';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -192,6 +193,28 @@ if (process.env.NODE_ENV !== 'development' && config.auth?.enabled === false) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Serve the built React SPA (production). In development the Vite dev server
+// (npm run dev:web on :5173) serves the frontend and proxies /api here.
+if (process.env.NODE_ENV !== 'development') {
+  const clientDir = path.join(__dirname, '../build/client');
+  app.use(express.static(clientDir, { redirect: false }));
+  app.get(/^(?!\/api\/).*/, (req, res, next) => {
+    // Let real asset files 404 normally, but route page paths (incl. legacy
+    // *.html, which the SPA redirects to clean routes) to the client shell.
+    const isAsset = /\.[a-z0-9]+$/i.test(req.path) && !req.path.endsWith('.html');
+    if (req.method !== 'GET' || isAsset) return next();
+    // Prefer a prerendered HTML page (clean 200) over the SPA shell.
+    const clean = req.path.replace(/\/+$/, '');
+    const prerendered = path.join(clientDir, clean ? `${clean.slice(1)}/index.html` : 'index.html');
+    res.sendFile(prerendered, (err) => {
+      if (!err) return;
+      res.sendFile(path.join(clientDir, '__spa-fallback.html'), (err2) => {
+        if (err2) next(err2);
+      });
+    });
+  });
+}
+
 // Multer for multipart file uploads (voice transcription)
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
@@ -264,6 +287,14 @@ app.get('/api/languages', async (req, res) => {
   }
 });
 
+function nonStrictTextFormat(schema, name) {
+  const { schema: jsonSchema } = zodTextFormat(schema, name);
+  return makeParseableTextFormat(
+    { type: 'json_schema', name, strict: false, schema: jsonSchema },
+    (content) => schema.parse(JSON.parse(content)),
+  );
+}
+
 // POST /api/skins/recommend — AI-ranked skins based on user onboarding input
 const SkinRecommendation = z.object({
   recommended: z.array(z.object({
@@ -317,7 +348,8 @@ app.post('/api/skins/recommend', async (req, res) => {
           content: `Company: ${companyName || 'N/A'}\nIndustry: ${industry}\nServices: ${services || 'N/A'}\nAbout: ${aboutUs || 'N/A'}`,
         },
       ],
-      text: { format: zodTextFormat(SkinRecommendation, 'skin_recommendation') },
+      text: { format: nonStrictTextFormat(SkinRecommendation, 'skin_recommendation') },
+      reasoning: { effort: 'minimal' },
     });
 
     const recs = response.output_parsed?.recommended || [];
@@ -878,7 +910,8 @@ app.post('/api/onboard/match-industry', async (req, res) => {
         },
         { role: 'user', content: text },
       ],
-      text: { format: zodTextFormat(IndustryMatch, 'industry_match') },
+      text: { format: nonStrictTextFormat(IndustryMatch, 'industry_match') },
+      reasoning: { effort: 'minimal' },
     });
 
     const matched = response.output_parsed?.matched || text;
@@ -917,7 +950,8 @@ app.post('/api/onboard/suggest-options', async (req, res) => {
         },
         { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}` },
       ],
-      text: { format: zodTextFormat(SuggestedOptions, 'suggested_options') },
+      text: { format: nonStrictTextFormat(SuggestedOptions, 'suggested_options') },
+      reasoning: { effort: 'minimal' },
     });
 
     const parsed = response.output_parsed;
@@ -960,7 +994,8 @@ app.post('/api/onboard/suggest-step2', async (req, res) => {
         },
         { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}\nServices: ${services || 'N/A'}` },
       ],
-      text: { format: zodTextFormat(Step2Suggestions, 'step2_suggestions') },
+      text: { format: nonStrictTextFormat(Step2Suggestions, 'step2_suggestions') },
+      reasoning: { effort: 'minimal' },
     });
 
     const parsed = response.output_parsed;
@@ -999,7 +1034,8 @@ app.post('/api/onboard/generate-tagline', async (req, res) => {
             { role: 'system', content: 'You are a branding expert. Generate a short, catchy tagline (max 8 words) for a business.' },
             { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}` },
           ],
-          text: { format: zodTextFormat(Tagline, 'tagline') },
+          text: { format: nonStrictTextFormat(Tagline, 'tagline') },
+          reasoning: { effort: 'minimal' },
         });
         const tagline = response.output_parsed?.tagline;
         if (tagline) return res.json({ success: true, tagline });
@@ -2153,4 +2189,8 @@ function startServer(port) {
   });
 }
 
-startServer(PORT);
+const isMainModule =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMainModule) startServer(PORT);
+
+export default app;

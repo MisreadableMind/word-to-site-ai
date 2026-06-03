@@ -1,6 +1,6 @@
-import { config, validateConfig } from './config.js';
-import InstaWPAPI from './instawp.js';
-import DomainWorkflow from './domain-workflow.js';
+import { config, validateConfig } from './config';
+import InstaWPAPI from './instawp';
+import DomainWorkflow from './domain-workflow';
 
 class InstaWPSiteCreator {
   constructor(apiKey = null) {

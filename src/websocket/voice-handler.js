@@ -4,10 +4,10 @@
  */
 
 import { WebSocketServer } from 'ws';
-import VoiceService from '../services/voice-service.js';
-import AIService from '../services/ai-service.js';
-import OnboardingWorkflow from '../onboarding-workflow.js';
-import { INTERVIEW_QUESTIONS } from '../constants.js';
+import VoiceService from '../services/voice-service';
+import AIService from '../services/ai-service';
+import OnboardingWorkflow from '../onboarding-workflow';
+import { INTERVIEW_QUESTIONS } from '../constants';
 
 /**
  * Message types for WebSocket communication

@@ -7,7 +7,7 @@ export {
   createDeploymentContext,
   validateDeploymentContext,
   mergeDeploymentContexts,
-} from './deployment-context.js';
+} from './deployment-context';
 
 export {
   ContentContextSchema,
@@ -15,4 +15,4 @@ export {
   validateContentContext,
   buildContentContextFromInterview,
   buildContentContextFromScrape,
-} from './content-context.js';
+} from './content-context';

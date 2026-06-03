@@ -1,5 +1,5 @@
-import { config } from '../config.js';
-import ContentBankService from '../services/content-bank-service.js';
+import { config } from '../config';
+import ContentBankService from '../services/content-bank-service';
 
 let _client = null;
 function client() {

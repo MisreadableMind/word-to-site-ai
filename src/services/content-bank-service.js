@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from '../config';
 
 const CONTENT_BANK_BASE_URL = 'https://content-bank.themerex.net';
 
