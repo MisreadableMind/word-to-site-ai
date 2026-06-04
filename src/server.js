@@ -1,6 +1,5 @@
 import express from 'express';
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { pathToFileURL } from 'url';
 import { createServer } from 'http';
 import multer from 'multer';
 import dns from 'dns';
@@ -41,9 +40,6 @@ import { startSiteImageGeneration } from './lib/image-bank-flow';
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth';
 import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement';
 import { getEntitlements as getPlanEntitlements } from './billing/entitlements';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const CRITICAL_ONBOARDING_STEPS = [
   'skin_switched',
@@ -163,8 +159,8 @@ function refuseLegacyDomainRegistration(req, res, next) {
     return res.status(400).json({
       error: {
         type: 'flow_moved',
-        message: 'Domain registration is now a separate, payment-confirmed step. Finish onboarding with a subdomain (or "bring your own domain"), then add a custom domain from /domains.html.',
-        redirect: '/domains.html',
+        message: 'Domain registration is now a separate, payment-confirmed step. Finish onboarding with a subdomain (or "bring your own domain"), then add a custom domain from /domains.',
+        redirect: '/domains',
       },
     });
   }
@@ -191,29 +187,6 @@ if (process.env.NODE_ENV !== 'development' && config.auth?.enabled === false) {
 }
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
-
-// Serve the built React SPA (production). In development the Vite dev server
-// (npm run dev:web on :5173) serves the frontend and proxies /api here.
-if (process.env.NODE_ENV !== 'development') {
-  const clientDir = path.join(__dirname, '../build/client');
-  app.use(express.static(clientDir, { redirect: false }));
-  app.get(/^(?!\/api\/).*/, (req, res, next) => {
-    // Let real asset files 404 normally, but route page paths (incl. legacy
-    // *.html, which the SPA redirects to clean routes) to the client shell.
-    const isAsset = /\.[a-z0-9]+$/i.test(req.path) && !req.path.endsWith('.html');
-    if (req.method !== 'GET' || isAsset) return next();
-    // Prefer a prerendered HTML page (clean 200) over the SPA shell.
-    const clean = req.path.replace(/\/+$/, '');
-    const prerendered = path.join(clientDir, clean ? `${clean.slice(1)}/index.html` : 'index.html');
-    res.sendFile(prerendered, (err) => {
-      if (!err) return;
-      res.sendFile(path.join(clientDir, '__spa-fallback.html'), (err2) => {
-        if (err2) next(err2);
-      });
-    });
-  });
-}
 
 // Multer for multipart file uploads (voice transcription)
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
@@ -710,7 +683,7 @@ app.post('/api/voice/transcribe', requireAuth, upload.single('audio'), async (re
     return res.status(429).json({
       success: false,
       error: `Voice limit reached (${voiceLimit}/day). Resets in ${rateCheck.resetIn} minutes. You can still type your answers.`,
-      upgradeUrl: '/pricing.html',
+      upgradeUrl: '/pricing',
     });
   }
   try {
@@ -2183,7 +2156,7 @@ function startServer(port) {
       console.log(`\nWebSocket:`);
       console.log(`  WS   /ws/voice - Voice interview handler`);
     }
-    console.log(`\n  → App:    http://localhost:${port}/app.html`);
+    console.log(`\n  → App:    http://localhost:${port}/app`);
     console.log(`  → Health: http://localhost:${port}/api/health`);
     console.log(`  → Config: http://localhost:${port}/api/config\n`);
   });

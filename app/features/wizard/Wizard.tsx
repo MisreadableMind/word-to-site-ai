@@ -38,7 +38,7 @@ export function Wizard() {
 
     const snap = readResumeSnapshot();
     if (!snap) {
-      window.location.href = `/domains.html?session_id=${encodeURIComponent(sessionId)}`;
+      window.location.href = `/domains?session_id=${encodeURIComponent(sessionId)}`;
       return;
     }
 
@@ -109,9 +109,9 @@ export function Wizard() {
           {resumeError} If you were charged, the payment was refunded automatically.
         </div>
         <div className="error-actions">
-          <a className="wts-btn" href="/domains.html">
+          <Link className="wts-btn" to="/domains">
             Go to Domains
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -123,9 +123,9 @@ export function Wizard() {
           Your domain is still being set up. You can finish from the Domains page once it's ready.
         </div>
         <div className="error-actions">
-          <a className="wts-btn" href="/domains.html">
+          <Link className="wts-btn" to="/domains">
             Go to Domains
-          </a>
+          </Link>
         </div>
       </div>
     );

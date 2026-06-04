@@ -116,8 +116,8 @@ export default function createBillingRouter(billingService, authService) {
         mode: 'subscription',
         customer: customerId,
         line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${base}/billing.html?status=success`,
-        cancel_url: `${base}/pricing.html?status=cancelled`,
+        success_url: `${base}/billing?status=success`,
+        cancel_url: `${base}/pricing?status=cancelled`,
         allow_promotion_codes: true,
         client_reference_id: req.user.id,
         metadata: { user_id: req.user.id, plan_tier: planTier },
@@ -136,7 +136,7 @@ export default function createBillingRouter(billingService, authService) {
       const stripe = getStripe();
       const session = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${origin(req)}/billing.html`,
+        return_url: `${origin(req)}/billing`,
       });
       res.json({ success: true, url: session.url });
     } catch (err) {

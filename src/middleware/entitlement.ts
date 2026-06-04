@@ -52,7 +52,7 @@ function paymentRequired(res: EntitlementResponse, body: PaymentRequiredBody): E
       currentPlanLimit: body.currentPlanLimit,
       blockingSiteName: body.blockingSiteName,
       requiredFor: body.requiredFor,
-      upgradeUrl: '/pricing.html',
+      upgradeUrl: '/pricing',
     },
   });
 }

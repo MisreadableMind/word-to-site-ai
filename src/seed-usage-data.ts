@@ -96,9 +96,9 @@ async function seed() {
   console.log('\n========================================');
   console.log('Done! To test:');
   console.log('1. Start the app: npm run dev');
-  console.log('2. Go to http://localhost:3000/login.html');
+  console.log('2. Go to http://localhost:3000/login');
   console.log('3. Log in with: test@wordtosite.com / testtest');
-  console.log('4. Visit http://localhost:3000/usage.html');
+  console.log('4. Visit http://localhost:3000/usage');
   console.log('========================================');
 
   await db.$client.end();
