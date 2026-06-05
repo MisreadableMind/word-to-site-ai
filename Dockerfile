@@ -18,11 +18,13 @@ RUN npm ci --omit=dev
 
 COPY src/ ./src/
 COPY public/ ./public/
+COPY certs/ ./certs/
 COPY --from=build /app/.output ./.output
 
 EXPOSE 3000
 
 ENV PORT=3000
 ENV NODE_ENV=production
+ENV NODE_EXTRA_CA_CERTS=/app/certs/letsencrypt-gen-y.pem
 
 CMD ["npm", "start"]

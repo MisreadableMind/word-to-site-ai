@@ -8,9 +8,9 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "NODE_EXTRA_CA_CERTS=./certs/letsencrypt-gen-y.pem vite dev --port 3000",
     "build": "NODE_OPTIONS=\"--import tsx\" vite build",
-    "start": "node --import tsx .output/server/index.mjs",
+    "start": "NODE_EXTRA_CA_CERTS=./certs/letsencrypt-gen-y.pem node --import tsx .output/server/index.mjs",
     "db:migration": "bash scripts/create-db-migration.sh",
     "typecheck": "tsc",
     "typecheck:server": "tsc -p tsconfig.server.json",
