@@ -10,11 +10,8 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "build": "NODE_OPTIONS=\"--import tsx\" vite build",
-    "prestart": "node scripts/migrate.mjs",
     "start": "node --import tsx .output/server/index.mjs",
-    "migrate": "node scripts/migrate.mjs",
-    "db:generate": "drizzle-kit generate",
-    "db:pull": "drizzle-kit pull",
+    "db:migration": "bash scripts/create-db-migration.sh",
     "typecheck": "tsc",
     "typecheck:server": "tsc -p tsconfig.server.json",
     "stripe:setup": "node --import tsx scripts/stripe-setup.js"
@@ -74,7 +71,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "6.0.2",
     "concurrently": "^9.2.1",
-    "drizzle-kit": "0.31.6",
     "nitro": "npm:nitro-nightly@^3.0.1-20260603-085201-f0cb358c",
     "nodemon": "^3.1.11",
     "typescript": "^5.9.3",

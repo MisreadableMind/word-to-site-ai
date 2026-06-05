@@ -1,5 +1,10 @@
-import { pgTable, index, unique, uuid, varchar, jsonb, boolean, timestamp, foreignKey, bigserial, smallint, text, integer, bigint, check } from "drizzle-orm/pg-core"
+// Hand-maintained schema for Drizzle's typed query layer.
+// Source of truth is the SQL migrations in src/db/migrations — do NOT run
+// drizzle-kit pull (it would re-introspect timestamps as mode:'string' and
+// revert the tstz() ISO typing).
+import { pgTable, index, unique, uuid, varchar, jsonb, boolean, foreignKey, bigserial, smallint, text, integer, bigint, check } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
+import { tstz } from "./timestamp"
 
 
 
@@ -10,8 +15,8 @@ export const apiKeys = pgTable("api_keys", {
 	clientName: varchar("client_name", { length: 255 }),
 	metadata: jsonb().default({}),
 	revoked: boolean().default(false),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	revokedAt: timestamp("revoked_at", { withTimezone: true, mode: 'string' }),
+	createdAt: tstz("created_at").default(sql`now()`),
+	revokedAt: tstz("revoked_at"),
 }, (table) => [
 	index("idx_api_keys_api_key").using("btree", table.apiKey.asc().nullsLast().op("text_ops")),
 	index("idx_api_keys_client_id").using("btree", table.clientId.asc().nullsLast().op("text_ops")),
@@ -26,8 +31,8 @@ export const siteRegistrations = pgTable("site_registrations", {
 	wpVersion: varchar("wp_version", { length: 20 }),
 	phpVersion: varchar("php_version", { length: 20 }),
 	activeTheme: varchar("active_theme", { length: 255 }),
-	registeredAt: timestamp("registered_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	lastHeartbeat: timestamp("last_heartbeat", { withTimezone: true, mode: 'string' }),
+	registeredAt: tstz("registered_at").default(sql`now()`),
+	lastHeartbeat: tstz("last_heartbeat"),
 	status: varchar({ length: 20 }).default('active'),
 	siteHealth: jsonb("site_health").default({}),
 }, (table) => [
@@ -43,13 +48,13 @@ export const siteRegistrations = pgTable("site_registrations", {
 export const pluginTrafficData = pgTable("plugin_traffic_data", {
 	id: bigserial({ mode: "bigint" }).primaryKey().notNull(),
 	registrationId: uuid("registration_id"),
-	visitTime: timestamp("visit_time", { withTimezone: true, mode: 'string' }).notNull(),
+	visitTime: tstz("visit_time").notNull(),
 	visitorType: varchar("visitor_type", { length: 20 }),
 	botName: varchar("bot_name", { length: 100 }),
 	botCompany: varchar("bot_company", { length: 100 }),
 	pageUrl: varchar("page_url", { length: 500 }),
 	confidence: smallint(),
-	syncedAt: timestamp("synced_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	syncedAt: tstz("synced_at").default(sql`now()`),
 }, (table) => [
 	index("idx_plugin_traffic_registration").using("btree", table.registrationId.asc().nullsLast().op("uuid_ops")),
 	index("idx_plugin_traffic_visit_time").using("btree", table.visitTime.asc().nullsLast().op("timestamptz_ops")),
@@ -65,7 +70,7 @@ export const pluginConfigs = pgTable("plugin_configs", {
 	configKey: varchar("config_key", { length: 100 }).notNull(),
 	configValue: jsonb("config_value").notNull(),
 	version: varchar({ length: 20 }).default('1.0.0'),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: tstz("updated_at").default(sql`now()`),
 }, (table) => [
 	unique("plugin_configs_config_key_key").on(table.configKey),
 ]);
@@ -77,9 +82,9 @@ export const agentActions = pgTable("agent_actions", {
 	payload: jsonb().notNull(),
 	status: varchar({ length: 20 }).default('pending'),
 	result: jsonb(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	deliveredAt: timestamp("delivered_at", { withTimezone: true, mode: 'string' }),
-	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
+	createdAt: tstz("created_at").default(sql`now()`),
+	deliveredAt: tstz("delivered_at"),
+	completedAt: tstz("completed_at"),
 }, (table) => [
 	index("idx_agent_actions_registration").using("btree", table.registrationId.asc().nullsLast().op("uuid_ops")),
 	index("idx_agent_actions_status").using("btree", table.status.asc().nullsLast().op("text_ops")),
@@ -97,10 +102,10 @@ export const subscriptions = pgTable("subscriptions", {
 	stripePriceId: text("stripe_price_id").notNull(),
 	planTier: text("plan_tier").notNull(),
 	status: text().notNull(),
-	currentPeriodEnd: timestamp("current_period_end", { withTimezone: true, mode: 'string' }),
+	currentPeriodEnd: tstz("current_period_end"),
 	cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
+	updatedAt: tstz("updated_at").default(sql`now()`).notNull(),
 }, (table) => [
 	index("idx_subscriptions_status").using("btree", table.status.asc().nullsLast().op("text_ops")),
 	index("idx_subscriptions_stripe_id").using("btree", table.stripeSubscriptionId.asc().nullsLast().op("text_ops")),
@@ -126,7 +131,7 @@ export const proxyRequestLog = pgTable("proxy_request_log", {
 	responseStatus: integer("response_status"),
 	latencyMs: integer("latency_ms"),
 	errorMessage: text("error_message"),
-	requestedAt: timestamp("requested_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	requestedAt: tstz("requested_at").default(sql`now()`),
 }, (table) => [
 	index("idx_proxy_request_log_domain").using("btree", table.domain.asc().nullsLast().op("text_ops")),
 	index("idx_proxy_request_log_requested_at").using("btree", table.requestedAt.asc().nullsLast().op("timestamptz_ops")),
@@ -146,8 +151,8 @@ export const proxySites = pgTable("proxy_sites", {
 	status: varchar({ length: 20 }).default('active'),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	monthlyTokenLimit: bigint("monthly_token_limit", { mode: "number" }).default(100000),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	revokedAt: timestamp("revoked_at", { withTimezone: true, mode: 'string' }),
+	createdAt: tstz("created_at").default(sql`now()`),
+	revokedAt: tstz("revoked_at"),
 	wpUrl: varchar("wp_url", { length: 500 }),
 }, (table) => [
 	index("idx_proxy_sites_api_key").using("btree", table.apiKey.asc().nullsLast().op("text_ops")),
@@ -165,8 +170,8 @@ export const users = pgTable("users", {
 	planTier: text("plan_tier").default('free').notNull(),
 	stripeCustomerId: text("stripe_customer_id"),
 	status: text().default('active').notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
+	updatedAt: tstz("updated_at").default(sql`now()`).notNull(),
 }, (table) => [
 	index("idx_users_email").using("btree", table.email.asc().nullsLast().op("text_ops")),
 	unique("users_email_key").on(table.email),
@@ -178,11 +183,11 @@ export const domainRegistrations = pgTable("domain_registrations", {
 	siteId: uuid("site_id"),
 	domain: text().notNull(),
 	namecheapOrderId: text("namecheap_order_id"),
-	registeredAt: timestamp("registered_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }),
+	registeredAt: tstz("registered_at").default(sql`now()`).notNull(),
+	expiresAt: tstz("expires_at"),
 	usedPlanCredit: boolean("used_plan_credit").default(true).notNull(),
 	stripePaymentIntentId: text("stripe_payment_intent_id"),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
 	status: text().default('registered').notNull(),
 	stripeCheckoutSessionId: text("stripe_checkout_session_id"),
 	errorMessage: text("error_message"),
@@ -212,8 +217,8 @@ export const userSessions = pgTable("user_sessions", {
 	token: text().notNull(),
 	userAgent: text("user_agent"),
 	ipAddress: text("ip_address"),
-	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	expiresAt: tstz("expires_at").notNull(),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
 }, (table) => [
 	index("idx_user_sessions_expires_at").using("btree", table.expiresAt.asc().nullsLast().op("timestamptz_ops")),
 	index("idx_user_sessions_token").using("btree", table.token.asc().nullsLast().op("text_ops")),
@@ -231,7 +236,7 @@ export const billingEvents = pgTable("billing_events", {
 	stripeEventId: text("stripe_event_id").notNull(),
 	eventType: text("event_type").notNull(),
 	payload: jsonb().notNull(),
-	processedAt: timestamp("processed_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	processedAt: tstz("processed_at").default(sql`now()`).notNull(),
 }, (table) => [
 	index("idx_billing_events_type").using("btree", table.eventType.asc().nullsLast().op("text_ops")),
 	unique("billing_events_stripe_event_id_key").on(table.stripeEventId),
@@ -250,8 +255,8 @@ export const userSites = pgTable("user_sites", {
 	status: text().default('active').notNull(),
 	onboardType: text("onboard_type"),
 	onboardData: jsonb("onboard_data"),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
+	updatedAt: tstz("updated_at").default(sql`now()`).notNull(),
 	imageBankLogin: text("image_bank_login"),
 	imageBankPassword: text("image_bank_password"),
 	imagesStatus: text("images_status").default('pending').notNull(),
@@ -271,8 +276,8 @@ export const editorSessions = pgTable("editor_sessions", {
 	userId: uuid("user_id").notNull(),
 	siteId: uuid("site_id").notNull(),
 	title: text().default('New conversation').notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
+	updatedAt: tstz("updated_at").default(sql`now()`).notNull(),
 }, (table) => [
 	index("idx_editor_sessions_site_id").using("btree", table.siteId.asc().nullsLast().op("uuid_ops")),
 	index("idx_editor_sessions_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
@@ -294,7 +299,7 @@ export const editorMessages = pgTable("editor_messages", {
 	role: text().notNull(),
 	content: text().notNull(),
 	metadata: jsonb(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
 }, (table) => [
 	index("idx_editor_messages_session_id").using("btree", table.sessionId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
