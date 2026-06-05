@@ -51,18 +51,14 @@ export function ReviewStep() {
       } else {
         const pw = asPaywallError(payload.error);
         if (pw) setPaywall(pw);
-        else {
-          setDeployError(errorText(payload.error) || "Deployment failed");
-          dispatch({ type: "SET_REVIEW_VIEW", view: "error" });
-        }
+        setDeployError(errorText(payload.error) || "Deployment failed");
+        dispatch({ type: "SET_REVIEW_VIEW", view: "error" });
       }
     } else if (stream.status === "error") {
       const pw = asPaywallError(stream.error);
       if (pw) setPaywall(pw);
-      else {
-        setDeployError(stream.error || "Deployment failed");
-        dispatch({ type: "SET_REVIEW_VIEW", view: "error" });
-      }
+      setDeployError(errorText(stream.error) || "Deployment failed");
+      dispatch({ type: "SET_REVIEW_VIEW", view: "error" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stream.status, stream.result, stream.error]);

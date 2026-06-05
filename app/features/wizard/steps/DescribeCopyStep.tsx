@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useOnboardingStream } from "~/hooks/useOnboardingStream";
 import { useWizard } from "../WizardContext";
 import { ProgressSteps, type ProgressStepDef } from "../components/ProgressSteps";
+import { errorText } from "../deployResult";
 import type { OnboardingResult } from "../types";
 
 const ANALYZE_STEPS: ProgressStepDef[] = [
@@ -83,7 +84,9 @@ export function DescribeCopyStep() {
 
           {stream.status === "error" ? (
             <div className="result-card error" style={{ marginTop: 16 }}>
-              <div className="error-detail">{stream.error ?? "Connection lost during analysis."}</div>
+              <div className="error-detail">
+                {stream.error == null ? "Connection lost during analysis." : errorText(stream.error)}
+              </div>
             </div>
           ) : null}
 
