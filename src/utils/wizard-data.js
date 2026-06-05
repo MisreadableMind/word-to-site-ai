@@ -1,4 +1,4 @@
-import { toWpLocale } from '../config.js';
+import { toWpLocale } from '../config';
 
 /**
  * Build a flat wizard-data payload from deployment + content contexts.

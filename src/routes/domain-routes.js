@@ -1,14 +1,14 @@
 import { Router } from 'express';
-import { createUserAuth } from '../middleware/user-auth.js';
-import { requireCustomDomain, requireDomainPurchase } from '../middleware/entitlement.js';
-import { DOMAIN_MARKUP_PERCENT } from '../billing/entitlements.js';
-import { getStripe } from '../billing/stripe-client.js';
-import { classify } from '../lib/domain-classifier.js';
+import { createUserAuth } from '../middleware/user-auth';
+import { requireCustomDomain, requireDomainPurchase } from '../middleware/entitlement';
+import { DOMAIN_MARKUP_PERCENT } from '../billing/entitlements';
+import { getStripe } from '../billing/stripe-client';
+import { classify } from '../lib/domain-classifier';
 
 const origin = (req) => `${req.protocol}://${req.get('host')}`;
 
-const SUCCESS_PATH_DEFAULT = '/domains.html?session_id={CHECKOUT_SESSION_ID}';
-const SUCCESS_PATH_WIZARD = '/app.html?resumeFromPurchase={CHECKOUT_SESSION_ID}';
+const SUCCESS_PATH_DEFAULT = '/domains?session_id={CHECKOUT_SESSION_ID}';
+const SUCCESS_PATH_WIZARD = '/app?resumeFromPurchase={CHECKOUT_SESSION_ID}';
 
 let pricingCache = { at: 0, data: new Map() };
 const PRICING_TTL_MS = 60 * 60 * 1000;
@@ -135,7 +135,7 @@ export default function createDomainRouter({ authService, namecheap, billingServ
           quantity: 1,
         }],
         success_url: `${base}${successPath}`,
-        cancel_url: `${base}/domains.html?status=cancelled`,
+        cancel_url: `${base}/domains?status=cancelled`,
         client_reference_id: req.user.id,
         metadata: {
           intent: 'domain_purchase',

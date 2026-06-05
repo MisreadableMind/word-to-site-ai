@@ -4,7 +4,7 @@
  * Uses in-memory TTL cache to avoid excessive API calls.
  */
 
-import { config } from '../config.js';
+import { config } from '../config';
 
 const DEFAULT_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 

@@ -1,0 +1,215 @@
+/* ============================================================
+   WordToSite — global tokens, themes, keyframes, base reset.
+   Two themes via [data-theme] on <html>:
+     - "marketing" (dark)  — landing/docs/legal (ported from index.html)
+     - "platform"  (light) — authed app + auth pages (ported from wts.css)
+   ALL @keyframes live here (global). *.module.css must never DEFINE
+   keyframes (Vite hashes their names per-file) — only reference them.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+
+/* ===== MARKETING THEME (dark) ===== */
+[data-theme="marketing"] {
+  --bg: #09090b;
+  --bg-subtle: #0f0f12;
+  --surface: #18181b;
+  --surface-hover: #1f1f23;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.1);
+  --text: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --accent: #818cf8;
+  --accent-bright: #a5b4fc;
+  --accent-dim: rgba(129, 140, 248, 0.1);
+  --green: #34d399;
+  --green-dim: rgba(52, 211, 153, 0.1);
+  --yellow: #fbbf24;
+  --yellow-dim: rgba(251, 191, 36, 0.1);
+  --pink: #f472b6;
+  --pink-dim: rgba(244, 114, 182, 0.1);
+  --orange: #fb923c;
+  --orange-dim: rgba(251, 146, 60, 0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  scroll-behavior: smooth;
+}
+[data-theme="marketing"] body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+[data-theme="marketing"] ::selection {
+  background: rgba(129, 140, 248, 0.3);
+  color: #fff;
+}
+[data-theme="marketing"] a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ===== PLATFORM THEME (light) ===== */
+[data-theme="platform"] {
+  --bg: #fafaf8;
+  --bg-2: #f2f2ef;
+  --bg-3: #e9e9e5;
+  --surface: #ffffff;
+  --ink: #0e0e0c;
+  --ink-2: #1f1f1c;
+  --muted: #58584f;
+  --muted-2: #8a8a80;
+  --line: #e2e2dd;
+  --line-2: #909088;
+  --accent: #1733d1;
+  --accent-2: #0e22a8;
+  --accent-bg: #eef0ff;
+  --danger: #b42318;
+  --success: #1a7f3f;
+  --warn: #b86e00;
+  --serif: "Newsreader", "Source Serif Pro", "Times New Roman", serif;
+  --sans: "Geist", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "Geist Mono", "SF Mono", ui-monospace, monospace;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --shadow-sm: 0 1px 2px rgba(14, 14, 12, 0.06);
+  --shadow-md: 0 4px 12px rgba(14, 14, 12, 0.08);
+}
+[data-theme="platform"] body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   KEYFRAMES (global — referenced from .module.css, never redefined there)
+   ============================================================ */
+
+/* platform */
+@keyframes wts-breathe {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+@keyframes wts-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(180, 35, 24, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(180, 35, 24, 0);
+  }
+}
+@keyframes wts-pulse-small {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@keyframes wts-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes wts-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes wts-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* marketing */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0);
+  }
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes showcaseScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+@keyframes waveAnim {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}

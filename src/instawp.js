@@ -1,6 +1,6 @@
 import axios from 'axios';
 import pWaitFor, { TimeoutError } from 'p-wait-for';
-import { config } from './config.js';
+import { config } from './config';
 
 export function sanitizeSiteName(name) {
   if (!name) return undefined;
@@ -12,6 +12,30 @@ export function sanitizeSiteName(name) {
     .replace(/-{2,}/g, '-')        // collapse multiple hyphens
     .replace(/^-+|-+$/g, '');      // trim leading/trailing hyphens
   return sanitized || undefined;
+}
+
+function describeProbeFailure(err) {
+  const cause = err?.cause;
+  const code = cause?.code || err?.code;
+  if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+    return 'no response within 8s — server not answering yet (timeout)';
+  }
+  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
+    return `DNS not resolving yet (${code})`;
+  }
+  if (code === 'ECONNREFUSED') {
+    return 'connection refused — web server not accepting connections yet (ECONNREFUSED)';
+  }
+  if (code === 'ECONNRESET') {
+    return 'connection reset mid-request — server still starting up (ECONNRESET)';
+  }
+  if (typeof code === 'string' && (code.startsWith('ERR_TLS') || code.includes('CERT'))) {
+    return `server is up but its SSL certificate is not ready yet — HTTPS still provisioning (${code})`;
+  }
+  const parts = [err?.message || 'request failed'];
+  if (code) parts.push(`code=${code}`);
+  if (cause?.message && cause.message !== err?.message) parts.push(cause.message);
+  return parts.join(' — ');
 }
 
 class InstaWPAPI {
@@ -280,7 +304,7 @@ class InstaWPAPI {
           console.log(`Probing ${siteUrl}: HTTP ${probe.status} (attempt ${probeAttempt})`);
           return false;
         } catch (err) {
-          console.log(`Probing ${siteUrl}: ${err.message} (attempt ${probeAttempt})`);
+          console.log(`Probing ${siteUrl}: ${describeProbeFailure(err)} (attempt ${probeAttempt})`);
           return false;
         }
       }, { interval: 3000, timeout: maxWaitTime });

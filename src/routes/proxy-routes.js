@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { config } from '../config.js';
-import createProxyAuth from '../middleware/proxy-auth.js';
+import { config } from '../config';
+import createProxyAuth from '../middleware/proxy-auth';
 
 /**
  * Create AI proxy router

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { config } from './config.js';
+import { config } from './config';
 
 const apiKey = config.instawp.apiKey;
 const url = 'https://app.instawp.io/api/v2/sites/template';

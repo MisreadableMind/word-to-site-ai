@@ -3,7 +3,7 @@
  * Handles website scraping and content extraction for Flow A
  */
 
-import { config } from '../config.js';
+import { config } from '../config';
 
 class FirecrawlService {
   constructor(apiKey = null) {

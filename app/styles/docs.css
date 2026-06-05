@@ -1,0 +1,142 @@
+[data-theme="marketing"] {
+  .page-content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 120px 32px 80px;
+  }
+
+  .page-title {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+  }
+
+  .page-subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 48px;
+  }
+
+  .page-section {
+    margin-bottom: 48px;
+  }
+
+  .page-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .page-section h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    margin-top: 20px;
+    color: var(--text);
+  }
+
+  .page-section p,
+  .page-section ul,
+  .page-section ol {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: 12px;
+  }
+
+  .page-section ul,
+  .page-section ol {
+    padding-left: 20px;
+  }
+
+  .page-section li {
+    margin-bottom: 6px;
+  }
+
+  .page-section a {
+    color: var(--accent-bright);
+    text-decoration: none;
+  }
+
+  .page-section a:hover {
+    text-decoration: underline;
+  }
+
+  .page-section code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--accent-bright);
+  }
+
+  .code-block {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 16px 0;
+    overflow-x: auto;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .step-list {
+    list-style: none;
+    padding: 0;
+    counter-reset: step;
+  }
+
+  .step-list li {
+    counter-increment: step;
+    padding: 16px 20px 16px 52px;
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    background: var(--surface);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    width: 24px;
+    height: 24px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media (max-width: 640px) {
+    .page-content {
+      padding: 100px 16px 56px;
+    }
+
+    .page-title {
+      font-size: 24px;
+    }
+
+    .page-subtitle {
+      font-size: 15px;
+    }
+  }
+}

@@ -2,8 +2,8 @@ import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import { empty } from 'zod-empty';
-import { config } from '../config.js';
-import { buildWizardData } from '../utils/wizard-data.js';
+import { config } from '../config';
+import { buildWizardData } from '../utils/wizard-data';
 
 const StructuredService = z.object({
   name: z.string(),

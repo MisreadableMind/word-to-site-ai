@@ -4,14 +4,14 @@
  */
 
 import { colord } from 'colord';
-import FirecrawlService from './services/firecrawl-service.js';
-import AIService from './services/ai-service.js';
-import VoiceService from './services/voice-service.js';
-import BaseSiteService from './services/base-site-service.js';
-import { createDeploymentContext, validateDeploymentContext } from './schemas/deployment-context.js';
-import { createContentContext, validateContentContext, buildContentContextFromInterview, buildContentContextFromScrape } from './schemas/content-context.js';
-import { DEFAULTS, ONBOARDING_FLOWS } from './constants.js';
-import { config } from './config.js';
+import FirecrawlService from './services/firecrawl-service';
+import AIService from './services/ai-service';
+import VoiceService from './services/voice-service';
+import BaseSiteService from './services/base-site-service';
+import { createDeploymentContext, validateDeploymentContext } from './schemas/deployment-context';
+import { createContentContext, validateContentContext, buildContentContextFromInterview, buildContentContextFromScrape } from './schemas/content-context';
+import { DEFAULTS, ONBOARDING_FLOWS } from './constants';
+import { config } from './config';
 
 function toHexColor(value) {
   const color = colord(value);

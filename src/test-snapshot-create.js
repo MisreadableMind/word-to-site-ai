@@ -1,4 +1,4 @@
-import InstaWPAPI from './instawp.js';
+import InstaWPAPI from './instawp';
 
 const SNAPSHOT_SLUG = 'waas-snapshot';
 const SNAPSHOT_ID = 22050;

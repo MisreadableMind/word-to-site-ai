@@ -1,4 +1,4 @@
-import { PLAN_ENTITLEMENTS } from './entitlements.js';
+import { PLAN_ENTITLEMENTS } from './entitlements';
 
 const SCRIPT_VERSION = 'v1';
 

@@ -3,8 +3,8 @@
  * Handles excerpt generation for posts and pages
  */
 
-import AIService from './ai-service.js';
-import { DEFAULTS } from '../constants.js';
+import AIService from './ai-service';
+import { DEFAULTS } from '../constants';
 
 class ExcerptService {
   constructor(options = {}) {

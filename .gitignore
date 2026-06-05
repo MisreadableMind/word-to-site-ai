@@ -36,3 +36,10 @@ coverage/
 # Build
 dist/
 build/
+.react-router/
+
+# TanStack Start / Nitro
+.output/
+.nitro/
+.tanstack/
+.vinxi/

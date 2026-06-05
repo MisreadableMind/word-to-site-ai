@@ -59,8 +59,15 @@ npm run dev               # starts on localhost:3000 with nodemon
 ```
 
 - **Database:** PostgreSQL via Docker Compose. Connection: `postgresql://wordtosite:wordtosite@localhost:5555/wordtosite` (configured in `src/.env` as `DATABASE_URL`).
-- Migrations in `src/db/migrations/` run automatically on first container start and on app init by each service.
 - Basic auth is disabled when `NODE_ENV=development`.
+
+### Migrations (pure SQL, manually applied)
+
+- Migrations are hand-written, timestamp-prefixed `.sql` files in `src/db/migrations/` (e.g. `20260604153000_add_thing.sql`). The app **never** runs migrations — there is no migrator/ORM-generated migration step.
+- **Create one:** `npm run db:migration <name>` → scaffolds `src/db/migrations/<YYYYMMDDHHMMSS>_<name>.sql`. Keep statements idempotent (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`).
+- **Fresh DB:** `docker compose up db` runs every file in `src/db/migrations/` once via Postgres `docker-entrypoint-initdb.d` (alphabetical = chronological order).
+- **Existing DB (apply a new migration):** run it manually — `psql "$DATABASE_URL" -f src/db/migrations/<file>` (or `docker compose exec -T db psql -U wordtosite -d wordtosite < src/db/migrations/<file>`).
+- **Drizzle is the typed query layer only.** `src/db/drizzle/schema.ts` + `relations.ts` are **hand-maintained** to match the SQL — do NOT run `drizzle-kit pull/generate` (drizzle-kit is removed). When a migration changes the schema, update `schema.ts` by hand; timestamp columns use the `tstz()` helper (`src/db/drizzle/timestamp.ts`) which returns ISO-8601 strings.
 
 ## Flexify WaaS Wizard Plugin (ThemeREX)
 
