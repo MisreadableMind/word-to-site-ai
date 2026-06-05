@@ -57,6 +57,9 @@
   padding: 20px 0;
   border-bottom: 1px solid var(--line);
 }
+.account-row .wts-input {
+  border: 0;
+}
 .account-row-label {
   font-size: 13.5px;
   font-weight: 500;

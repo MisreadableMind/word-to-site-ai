@@ -4,22 +4,22 @@ import clsx from "clsx";
 import { Icon, type IconName } from "./Icon";
 import { initials, useLogout, type User } from "~/lib/auth";
 
-type NavItem = { href: string; label: string; icon: IconName };
+type NavItem = { href: string; label: string; icon: IconName; newTab: boolean };
 
 const MAIN_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Sites", icon: "home" },
-  { href: "/app", label: "New site", icon: "plus" },
-  { href: "/domains", label: "Domains", icon: "globe" },
+  { href: "/dashboard", label: "Sites", icon: "home", newTab: false },
+  { href: "/app", label: "New site", icon: "plus", newTab: false },
+  { href: "/domains", label: "Domains", icon: "globe", newTab: false },
 ];
 const ACCOUNT_NAV: NavItem[] = [
-  { href: "/usage", label: "Usage", icon: "chart" },
-  { href: "/billing", label: "Billing", icon: "card" },
-  { href: "/profile", label: "Settings", icon: "cog" },
-  { href: "/pricing", label: "Plans", icon: "chart" },
+  { href: "/usage", label: "Usage", icon: "chart", newTab: false },
+  { href: "/billing", label: "Billing", icon: "card", newTab: false },
+  { href: "/profile", label: "Settings", icon: "cog", newTab: false },
+  { href: "/plans", label: "Plans", icon: "chart", newTab: false },
 ];
 const HELP_NAV: NavItem[] = [
-  { href: "/docs", label: "Docs", icon: "book" },
-  { href: "/changelog", label: "Changelog", icon: "help" },
+  { href: "/docs", label: "Docs", icon: "book", newTab: true },
+  { href: "/changelog", label: "Changelog", icon: "help", newTab: true },
 ];
 
 function NavLinks({
@@ -38,6 +38,8 @@ function NavLinks({
           className="wts-side-link"
           activeProps={{ className: "wts-side-link active" }}
           activeOptions={{ exact: true }}
+          target={i.newTab ? "_blank" : undefined}
+          rel={i.newTab ? "noopener" : undefined}
         >
           <span className="ico">
             <Icon name={i.icon} />

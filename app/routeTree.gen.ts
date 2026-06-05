@@ -19,6 +19,7 @@ import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as PlatformUsageRouteImport } from './routes/_platform/usage'
 import { Route as PlatformProfileRouteImport } from './routes/_platform/profile'
+import { Route as PlatformPlansRouteImport } from './routes/_platform/plans'
 import { Route as PlatformDomainsRouteImport } from './routes/_platform/domains'
 import { Route as PlatformDashboardRouteImport } from './routes/_platform/dashboard'
 import { Route as PlatformBillingRouteImport } from './routes/_platform/billing'
@@ -76,6 +77,11 @@ const PlatformUsageRoute = PlatformUsageRouteImport.update({
 const PlatformProfileRoute = PlatformProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformPlansRoute = PlatformPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
   getParentRoute: () => PlatformRoute,
 } as any)
 const PlatformDomainsRoute = PlatformDomainsRouteImport.update({
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof PlatformBillingRoute
   '/dashboard': typeof PlatformDashboardRoute
   '/domains': typeof PlatformDomainsRoute
+  '/plans': typeof PlatformPlansRoute
   '/profile': typeof PlatformProfileRoute
   '/usage': typeof PlatformUsageRoute
   '/api/$': typeof ApiSplatRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/billing': typeof PlatformBillingRoute
   '/dashboard': typeof PlatformDashboardRoute
   '/domains': typeof PlatformDomainsRoute
+  '/plans': typeof PlatformPlansRoute
   '/profile': typeof PlatformProfileRoute
   '/usage': typeof PlatformUsageRoute
   '/api/$': typeof ApiSplatRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/_platform/billing': typeof PlatformBillingRoute
   '/_platform/dashboard': typeof PlatformDashboardRoute
   '/_platform/domains': typeof PlatformDomainsRoute
+  '/_platform/plans': typeof PlatformPlansRoute
   '/_platform/profile': typeof PlatformProfileRoute
   '/_platform/usage': typeof PlatformUsageRoute
   '/api/$': typeof ApiSplatRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/domains'
+    | '/plans'
     | '/profile'
     | '/usage'
     | '/api/$'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/domains'
+    | '/plans'
     | '/profile'
     | '/usage'
     | '/api/$'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/_platform/billing'
     | '/_platform/dashboard'
     | '/_platform/domains'
+    | '/_platform/plans'
     | '/_platform/profile'
     | '/_platform/usage'
     | '/api/$'
@@ -337,6 +349,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof PlatformProfileRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/_platform/plans': {
+      id: '/_platform/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof PlatformPlansRouteImport
       parentRoute: typeof PlatformRoute
     }
     '/_platform/domains': {
@@ -441,6 +460,7 @@ interface PlatformRouteChildren {
   PlatformBillingRoute: typeof PlatformBillingRoute
   PlatformDashboardRoute: typeof PlatformDashboardRoute
   PlatformDomainsRoute: typeof PlatformDomainsRoute
+  PlatformPlansRoute: typeof PlatformPlansRoute
   PlatformProfileRoute: typeof PlatformProfileRoute
   PlatformUsageRoute: typeof PlatformUsageRoute
 }
@@ -450,6 +470,7 @@ const PlatformRouteChildren: PlatformRouteChildren = {
   PlatformBillingRoute: PlatformBillingRoute,
   PlatformDashboardRoute: PlatformDashboardRoute,
   PlatformDomainsRoute: PlatformDomainsRoute,
+  PlatformPlansRoute: PlatformPlansRoute,
   PlatformProfileRoute: PlatformProfileRoute,
   PlatformUsageRoute: PlatformUsageRoute,
 }

@@ -9,7 +9,7 @@ const ITEMS: SubnavItem[] = [
   { label: "Usage", to: "/usage" },
   { label: "Billing", to: "/billing" },
   { label: "Settings", to: "/profile" },
-  { label: "Plans", to: "/pricing" },
+  { label: "Plans", to: "/plans" },
 ];
 
 export function AccountSubnav() {
