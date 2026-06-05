@@ -26,6 +26,8 @@ export const FIELD_LABELS: Partial<Record<WizardField, string>> = {
 
 export type ChipMode = "single" | "multi";
 
+export type ChipVariant = "pill" | "phrase";
+
 export interface ChipConfig {
   mode: ChipMode;
   options: string[];

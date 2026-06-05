@@ -40,6 +40,7 @@ import { startSiteImageGeneration } from './lib/image-bank-flow';
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth';
 import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement';
 import { getEntitlements as getPlanEntitlements } from './billing/entitlements';
+import { get, isEmpty, isNil } from "lodash-es";
 
 const CRITICAL_ONBOARDING_STEPS = [
   'skin_switched',
@@ -260,13 +261,13 @@ app.get('/api/languages', async (req, res) => {
   }
 });
 
-function nonStrictTextFormat(schema, name) {
+const nonStrictTextFormat = <T extends z.ZodType>(schema: T, name: string) => {
   const { schema: jsonSchema } = zodTextFormat(schema, name);
   return makeParseableTextFormat(
     { type: 'json_schema', name, strict: false, schema: jsonSchema },
-    (content) => schema.parse(JSON.parse(content)),
+    (content): z.infer<T> => schema.parse(JSON.parse(content)),
   );
-}
+};
 
 // POST /api/skins/recommend — AI-ranked skins based on user onboarding input
 const SkinRecommendation = z.object({
@@ -915,7 +916,7 @@ app.post('/api/onboard/suggest-options', async (req, res) => {
     const openai = new OpenAI({ apiKey: config.openai.apiKey });
 
     const response = await openai.responses.parse({
-      model: 'gpt-5-mini',
+      model: 'gpt-4.1-mini',
       input: [
         {
           role: 'system',
@@ -924,7 +925,6 @@ app.post('/api/onboard/suggest-options', async (req, res) => {
         { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}` },
       ],
       text: { format: nonStrictTextFormat(SuggestedOptions, 'suggested_options') },
-      reasoning: { effort: 'minimal' },
     });
 
     const parsed = response.output_parsed;
@@ -1001,18 +1001,19 @@ app.post('/api/onboard/generate-tagline', async (req, res) => {
     if (config.openai?.apiKey) {
       try {
         const openai = new OpenAI({ apiKey: config.openai.apiKey });
-        const response = await openai.responses.parse({
-          model: 'gpt-5-mini',
+        const { output_parsed } = await openai.responses.parse({
+          model: 'gpt-4.1-mini',
           input: [
             { role: 'system', content: 'You are a branding expert. Generate a short, catchy tagline (max 8 words) for a business. Write the tagline in the same language as the business details provided; if unclear, use English.' },
             { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}\nServices: ${services || 'N/A'}\nAbout: ${aboutUs || 'N/A'}` },
           ],
           text: { format: nonStrictTextFormat(Tagline, 'tagline') },
-          reasoning: { effort: 'minimal' },
         });
-        const tagline = response.output_parsed?.tagline;
-        if (tagline) return res.json({ success: true, tagline });
-      } catch (error) {
+
+        if (!isNil(get(output_parsed, 'tagline'))) {
+          return res.json({ success: true, tagline: output_parsed!.tagline });
+        }
+      } catch (error: any) {
         console.warn('AI tagline generation failed:', error.message);
       }
     }

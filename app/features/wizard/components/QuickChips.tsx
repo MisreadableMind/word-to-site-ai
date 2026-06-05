@@ -1,10 +1,11 @@
 import { memo } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type { ChipMode } from "../constants";
+import type { ChipMode, ChipVariant } from "../constants";
 
 interface QuickChipsProps {
   options: string[];
   mode: ChipMode;
+  variant: ChipVariant;
   value: string;
   loading: boolean;
   onToggle: (option: string) => void;
@@ -18,9 +19,9 @@ function isSelected(value: string, option: string): boolean {
   return value.includes(option);
 }
 
-export const QuickChips = memo(function QuickChips({ options, value, loading, onToggle }: QuickChipsProps) {
+export const QuickChips = memo(function QuickChips({ options, variant, value, loading, onToggle }: QuickChipsProps) {
   return (
-    <motion.div layout transition={LAYOUT_TRANSITION} className="quick-options">
+    <motion.div layout transition={LAYOUT_TRANSITION} className={`quick-options${variant === "phrase" ? " phrase" : ""}`}>
       <AnimatePresence mode="popLayout" initial={false}>
         {loading
           ? SKELETON_WIDTHS.map((w, i) => (

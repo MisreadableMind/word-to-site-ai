@@ -31,12 +31,12 @@
 .voice-form { display: flex; flex-direction: column; gap: 18px; }
 .input-with-mic { position: relative; }
 .input-with-mic .wts-input, .input-with-mic .wts-textarea { padding-right: 44px; }
-.mic-btn { position: absolute; right: 6px; top: 6px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); border: 0; cursor: pointer; }
-.mic-btn:hover { background: var(--ink-2); }
+.mic-btn { position: absolute; right: 6px; top: 0; bottom: 0; margin: auto 0; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); border: 0; cursor: pointer; }
+.mic-btn:hover { background: var(--muted-2); }
 .mic-btn.recording { background: var(--danger); animation: wts-pulse 1.4s ease-in-out infinite; }
 .mic-btn.transcribing { background: var(--accent); }
-.input-with-mic textarea + .mic-btn { top: 8px; }
-.mic-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+.input-with-mic textarea + .mic-btn { top: 8px; bottom: auto; margin: 0; }
+.mic-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.4; }
 
 /* Quick chips */
 .quick-options { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -44,6 +44,17 @@
 .quick-chip:hover { border-color: var(--ink); color: var(--ink); }
 .quick-chip.selected { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .quick-chip-skeleton { background: linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%); background-size: 200% 100%; animation: shimmer 1.2s ease-in-out infinite; border-color: var(--line); cursor: default; pointer-events: none; }
+.quick-options.phrase { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 6px; }
+.quick-options.phrase .quick-chip { display: flex; align-items: flex-start; gap: 10px; width: 100%; max-width: 100%; height: auto; min-height: 40px; padding: 10px 14px; font-size: 13.5px; font-weight: 500; line-height: 1.45; text-align: left; white-space: normal; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); transition: border-color 120ms, background 120ms, box-shadow 120ms; }
+.quick-options.phrase .quick-chip::before { content: ""; flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px; border: 1.5px solid var(--line-2); border-radius: var(--r-sm); background: var(--surface); background-position: center; background-repeat: no-repeat; background-size: 11px 11px; transition: background-color 120ms, border-color 120ms; }
+.quick-options.phrase .quick-chip:hover { border-color: var(--ink); color: var(--ink); box-shadow: var(--shadow-sm); }
+.quick-options.phrase .quick-chip:hover::before { border-color: var(--ink); }
+.quick-options.phrase .quick-chip.selected { color: var(--bg); background: var(--ink); border-color: var(--ink); }
+.quick-options.phrase .quick-chip.selected::before { content: ""; border-color: var(--bg); background-color: var(--bg); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230e0e0c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E"); }
+.quick-options.phrase .quick-chip.selected:hover { color: var(--bg); border-color: var(--ink); }
+.quick-options.phrase .quick-chip.selected:hover::before { border-color: var(--bg); }
+.quick-options.phrase .quick-chip-skeleton { width: 100% !important; height: 40px; min-height: 40px; padding: 0; border-radius: var(--r-md); border-color: var(--line); }
+.quick-options.phrase .quick-chip-skeleton::before { content: none; }
 
 /* Voice status bar */
 .voice-status { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px 12px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-md); font-size: 12px; color: var(--muted); animation: wts-fade-in 200ms ease-out; }
@@ -84,13 +95,17 @@
 .skin-card:hover { border-color: var(--ink); box-shadow: var(--shadow-sm); }
 .skin-card.selected { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
 .skin-card.selected::after { content: '✓'; position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 11px; }
-.skin-thumb { aspect-ratio: 4 / 3; background: var(--bg-2); display: grid; place-items: center; overflow: hidden; border-bottom: 1px solid var(--line); }
-.skin-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.skin-thumb { position: relative; aspect-ratio: 4 / 3; background: var(--bg-2); display: grid; place-items: center; overflow: hidden; border-bottom: 1px solid var(--line); }
+.skin-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; filter: blur(12px); transition: opacity 0.4s ease, filter 0.4s ease; }
+.skin-thumb img.is-loaded { opacity: 1; filter: blur(0); }
+.skin-thumb-skeleton { position: absolute; inset: 0; background: linear-gradient(90deg, var(--bg-2), var(--bg-3), var(--bg-2)); background-size: 200% 100%; animation: shimmer 1.2s ease-in-out infinite; }
 .skin-thumb svg { width: 32px; height: 32px; color: var(--muted-2); }
 .skin-info { padding: 12px 14px; }
 .skin-info h4 { font-family: var(--serif); font-weight: 500; font-size: 15px; letter-spacing: -0.01em; }
 .skin-info p { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .skin-match { display: inline-block; font-family: var(--mono); font-size: 10.5px; color: var(--accent); }
+.skin-preview { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; font-size: 11px; font-weight: 500; color: var(--accent); background: var(--accent-bg); border: 1px solid rgba(23,51,209,0.25); border-radius: 100px; text-decoration: none; transition: background 120ms, border-color 120ms; }
+.skin-preview:hover { background: rgba(23,51,209,0.12); border-color: rgba(23,51,209,0.45); }
 .skin-loading { padding: 48px 24px; text-align: center; color: var(--muted); font-size: 13px; }
 .skin-loading svg { width: 18px; height: 18px; margin-bottom: 8px; animation: wts-spin 1s linear infinite; }
 

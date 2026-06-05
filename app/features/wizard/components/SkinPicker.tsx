@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { head, isEmpty, map } from "lodash-es";
 import { useWizard } from "../WizardContext";
@@ -15,22 +15,32 @@ const PLACEHOLDER_SVG = (
 
 const SkinThumb = memo(function SkinThumb({ skin }: { skin: SkinRecommendation }) {
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
   const screenshotUrl = skin.demo_url
     ? `https://api.microlink.io/?url=${encodeURIComponent(skin.demo_url)}&screenshot=true&meta=false&embed=screenshot.url`
     : "";
+
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true);
+  }, []);
 
   if (!screenshotUrl || failed) {
     return <div className="skin-thumb">{PLACEHOLDER_SVG}</div>;
   }
   return (
     <div className="skin-thumb">
+      {!loaded ? <div className="skin-thumb-skeleton" aria-hidden="true" /> : null}
       <img
+        ref={imgRef}
         src={screenshotUrl}
         alt={skin.title}
         loading="lazy"
         decoding="async"
         width={320}
         height={200}
+        className={loaded ? "is-loaded" : ""}
+        onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
       />
     </div>
@@ -58,11 +68,11 @@ const SkinCard = memo(function SkinCard({
           ) : null}
           {skin.demo_url ? (
             <a
+              className="skin-preview"
               href={skin.demo_url}
               target="_blank"
               rel="noopener"
               onClick={(e) => e.stopPropagation()}
-              style={{ fontSize: 11, color: "var(--accent)" }}
             >
               Preview ↗
             </a>

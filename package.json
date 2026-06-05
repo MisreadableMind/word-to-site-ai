@@ -2,7 +2,7 @@
   "name": "wordtosite",
   "version": "3.0.0",
   "description": "WordToSite - Website as a Service with AI-powered onboarding wizard",
-  "main": "src/server.js",
+  "main": "src/server.ts",
   "exports": {
     ".": "./src/server.js"
   },

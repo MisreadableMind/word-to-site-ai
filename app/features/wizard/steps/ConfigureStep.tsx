@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useWizard } from "../WizardContext";
 import { SkinPicker } from "../components/SkinPicker";
 import { FIELD_LABELS } from "../constants";
@@ -160,9 +161,23 @@ export function ConfigureStep() {
                     className="wts-field-hint"
                     style={hint?.error ? { color: "var(--danger)" } : undefined}
                   >
-                    {hint
-                      ? hint.text
-                      : "Enter a domain you already own to point at your site. To register a new domain, complete onboarding first — you can buy one from your domains. Leave blank to use a free wts subdomain."}
+                    {hint ? (
+                      hint.text
+                    ) : (
+                      <>
+                        Enter a domain you already own to point at your site. To register a new
+                        domain, complete onboarding first — you can buy one from{" "}
+                        <Link
+                          to="/domains"
+                          target="_blank"
+                          rel="noopener"
+                          style={{ color: "var(--accent)", fontWeight: 500 }}
+                        >
+                          your domains
+                        </Link>
+                        . Leave blank to use a free wts subdomain.
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="step-nav" style={{ marginTop: 18, paddingTop: 0, borderTop: 0 }}>

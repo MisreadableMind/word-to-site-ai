@@ -198,6 +198,7 @@ export function DescribeVoiceStep() {
             <QuickChips
               options={INDUSTRY_OPTIONS}
               mode="single"
+              variant="pill"
               value={answers.industry}
               loading={false}
               onToggle={selectIndustry}
@@ -222,6 +223,7 @@ export function DescribeVoiceStep() {
             <QuickChips
               options={serviceOptions}
               mode="multi"
+              variant="pill"
               value={answers.services}
               loading={suggestLoading}
               onToggle={toggleService}
@@ -246,6 +248,7 @@ export function DescribeVoiceStep() {
             <QuickChips
               options={aboutOptions}
               mode="multi"
+              variant="phrase"
               value={answers.aboutUs}
               loading={suggestLoading}
               onToggle={toggleAbout}
