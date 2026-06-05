@@ -65,8 +65,13 @@ interface CheckoutResponse {
   url: string;
 }
 
-export function generateTagline(companyName: string, industry: string): Promise<TaglineResponse> {
-  return apiSend<TaglineResponse>("/api/onboard/generate-tagline", "POST", { companyName, industry });
+export function generateTagline(answers: InterviewAnswers): Promise<TaglineResponse> {
+  return apiSend<TaglineResponse>("/api/onboard/generate-tagline", "POST", {
+    companyName: answers.companyName,
+    industry: answers.industry,
+    services: answers.services,
+    aboutUs: answers.aboutUs,
+  });
 }
 
 export function matchIndustry(text: string, options: string[]): Promise<MatchIndustryResponse> {

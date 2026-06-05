@@ -989,7 +989,7 @@ const Tagline = z.object({
 
 app.post('/api/onboard/generate-tagline', async (req, res) => {
   try {
-    const { companyName, industry } = req.body;
+    const { companyName, industry, services, aboutUs } = req.body;
 
     if (!companyName || !industry) {
       return res.status(400).json({
@@ -1004,8 +1004,8 @@ app.post('/api/onboard/generate-tagline', async (req, res) => {
         const response = await openai.responses.parse({
           model: 'gpt-5-mini',
           input: [
-            { role: 'system', content: 'You are a branding expert. Generate a short, catchy tagline (max 8 words) for a business.' },
-            { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}` },
+            { role: 'system', content: 'You are a branding expert. Generate a short, catchy tagline (max 8 words) for a business. Write the tagline in the same language as the business details provided; if unclear, use English.' },
+            { role: 'user', content: `Company: ${companyName}\nIndustry: ${industry}\nServices: ${services || 'N/A'}\nAbout: ${aboutUs || 'N/A'}` },
           ],
           text: { format: nonStrictTextFormat(Tagline, 'tagline') },
           reasoning: { effort: 'minimal' },

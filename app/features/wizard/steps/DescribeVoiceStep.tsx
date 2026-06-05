@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { useMe } from "~/lib/auth";
 import { useWizard } from "../WizardContext";
@@ -29,8 +29,8 @@ export function DescribeVoiceStep() {
   const [serviceOptions, setServiceOptions] = useState<string[]>(DEFAULT_SERVICE_OPTIONS);
   const [aboutOptions, setAboutOptions] = useState<string[]>(DEFAULT_ABOUT_OPTIONS);
   const [regenerating, setRegenerating] = useState(false);
+  const [suggestLoading, setSuggestLoading] = useState(false);
 
-  const taglineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suggestTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSuggestKey = useRef("");
   const emailPrefilled = useRef(false);
@@ -45,10 +45,10 @@ export function DescribeVoiceStep() {
   const setField = (field: WizardField, value: string) =>
     dispatch({ type: "SET_FIELD", field, value });
 
-  const runTagline = async (companyName: string, industry: string) => {
+  const runTagline = async () => {
     setRegenerating(true);
     try {
-      const data = await generateTagline(companyName, industry);
+      const data = await generateTagline(answers);
       dispatch({ type: "SET_TAGLINE", tagline: data.tagline || "" });
     } catch {
       dispatch({ type: "SET_TAGLINE", tagline: "" });
@@ -58,27 +58,33 @@ export function DescribeVoiceStep() {
   };
 
   const triggerCompanyIndustry = (companyName: string, industry: string) => {
-    if (taglineTimer.current) clearTimeout(taglineTimer.current);
     if (suggestTimer.current) clearTimeout(suggestTimer.current);
-    if (!companyName || !industry) return;
-
-    taglineTimer.current = setTimeout(() => void runTagline(companyName, industry), 800);
+    if (!companyName || !industry) {
+      if (industry) setServiceOptions(servicesForIndustry(industry));
+      setSuggestLoading(false);
+      return;
+    }
 
     const key = `${companyName}::${industry}`;
-    if (key === lastSuggestKey.current) return;
+    if (key === lastSuggestKey.current) {
+      setSuggestLoading(false);
+      return;
+    }
+    setSuggestLoading(true);
     suggestTimer.current = setTimeout(async () => {
       try {
         const data = await suggestOptions(companyName, industry);
-        if (!data.success) return;
+        if (!data.success) {
+          setServiceOptions(servicesForIndustry(industry));
+          return;
+        }
         lastSuggestKey.current = key;
-        if (data.services?.length) {
-          setServiceOptions((prev) => uniq([...prev, ...(data.services ?? [])]));
-        }
-        if (data.about?.length) {
-          setAboutOptions((prev) => uniq([...prev, ...(data.about ?? [])]));
-        }
+        setServiceOptions(data.services?.length ? uniq(data.services) : servicesForIndustry(industry));
+        if (data.about?.length) setAboutOptions(uniq(data.about));
       } catch {
-        /* keep existing chips */
+        setServiceOptions(servicesForIndustry(industry));
+      } finally {
+        setSuggestLoading(false);
       }
     }, 1000);
   };
@@ -95,37 +101,36 @@ export function DescribeVoiceStep() {
 
   const selectIndustry = (option: string) => {
     setField("industry", option);
-    setServiceOptions((prev) => uniq([...prev, ...servicesForIndustry(option)]));
     triggerCompanyIndustry(answers.companyName, option);
   };
 
-  const toggleService = (option: string) => {
-    const current = answers.services.split(",").map((s) => s.trim()).filter(Boolean);
-    const next = current.includes(option)
-      ? current.filter((s) => s !== option)
-      : [...current, option];
-    setField("services", next.join(", "));
-  };
+  const toggleService = useCallback(
+    (option: string) => {
+      const current = answers.services.split(",").map((s) => s.trim()).filter(Boolean);
+      const next = current.includes(option)
+        ? current.filter((s) => s !== option)
+        : [...current, option];
+      dispatch({ type: "SET_FIELD", field: "services", value: next.join(", ") });
+    },
+    [answers.services, dispatch],
+  );
 
-  const toggleAbout = (option: string) => {
-    const current = answers.aboutUs
-      .split(".")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const next = current.includes(option)
-      ? current.filter((s) => s !== option)
-      : [...current, option];
-    setField("aboutUs", next.length ? `${next.join(". ")}.` : "");
-  };
+  const toggleAbout = useCallback(
+    (option: string) => {
+      const current = answers.aboutUs.split(".").map((s) => s.trim()).filter(Boolean);
+      const next = current.includes(option)
+        ? current.filter((s) => s !== option)
+        : [...current, option];
+      dispatch({ type: "SET_FIELD", field: "aboutUs", value: next.length ? `${next.join(". ")}.` : "" });
+    },
+    [answers.aboutUs, dispatch],
+  );
 
   const onIndustryTranscript = async (text: string) => {
     try {
       const data = await matchIndustry(text, INDUSTRY_OPTIONS);
       const matched = data.success && data.matched ? data.matched : text;
       setField("industry", matched);
-      if (INDUSTRY_OPTIONS.includes(matched)) {
-        setServiceOptions((prev) => uniq([...prev, ...servicesForIndustry(matched)]));
-      }
       triggerCompanyIndustry(answers.companyName, matched);
     } catch {
       setField("industry", text);
@@ -194,42 +199,10 @@ export function DescribeVoiceStep() {
               options={INDUSTRY_OPTIONS}
               mode="single"
               value={answers.industry}
+              loading={false}
               onToggle={selectIndustry}
             />
           </FieldWithMic>
-
-          {state.tagline || regenerating ? (
-            <div className="wts-field">
-              <label className="wts-field-label">Tagline</label>
-              <motion.div
-                layout
-                transition={{ duration: 0.28, ease: "easeOut" }}
-                className={`tagline-box${regenerating ? " is-regenerating" : ""}`}
-              >
-                <motion.span layout="position" className="tagline-text">
-                  {state.tagline ? `"${state.tagline}"` : ""}
-                </motion.span>
-                <div className="tagline-skeleton" aria-hidden="true" />
-                <motion.button
-                  layout="position"
-                  type="button"
-                  className="regenerate-btn"
-                  disabled={regenerating}
-                  onClick={() => {
-                    if (answers.companyName && answers.industry) {
-                      void runTagline(answers.companyName, answers.industry);
-                    }
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M3 12a9 9 0 1 0 3-6.7" />
-                    <polyline points="3 4 3 9 8 9" />
-                  </svg>
-                  <span>Regenerate</span>
-                </motion.button>
-              </motion.div>
-            </div>
-          ) : null}
 
           <FieldWithMic
             label={
@@ -250,6 +223,7 @@ export function DescribeVoiceStep() {
               options={serviceOptions}
               mode="multi"
               value={answers.services}
+              loading={suggestLoading}
               onToggle={toggleService}
             />
           </FieldWithMic>
@@ -273,18 +247,61 @@ export function DescribeVoiceStep() {
               options={aboutOptions}
               mode="multi"
               value={answers.aboutUs}
+              loading={suggestLoading}
               onToggle={toggleAbout}
             />
           </FieldWithMic>
 
-          <div className="step-nav">
+          <div className="wts-field">
+            <label className="wts-field-label">
+              Tagline <span style={{ color: "var(--muted-2)", fontWeight: 400 }}>(optional)</span>
+            </label>
+            <motion.div
+              layout
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className={`tagline-box${regenerating ? " is-regenerating" : ""}`}
+            >
+              <motion.span
+                layout="position"
+                className="tagline-text"
+                style={state.tagline ? undefined : { color: "var(--muted-2)" }}
+              >
+                {state.tagline ? `"${state.tagline}"` : "No tagline yet — generate one (optional)."}
+              </motion.span>
+              <div className="tagline-skeleton" aria-hidden="true" />
+              <motion.button
+                layout="position"
+                type="button"
+                className="regenerate-btn"
+                disabled={regenerating || !answers.companyName || !answers.industry}
+                onClick={() => {
+                  if (answers.companyName && answers.industry) {
+                    void runTagline();
+                  }
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 12a9 9 0 1 0 3-6.7" />
+                  <polyline points="3 4 3 9 8 9" />
+                </svg>
+                <span>{regenerating ? "Generating…" : state.tagline ? "Regenerate" : "Generate"}</span>
+              </motion.button>
+            </motion.div>
+            {!regenerating && (!answers.companyName || !answers.industry) ? (
+              <div className="wts-field-hint">
+                Add your company name and industry first to generate a tagline.
+              </div>
+            ) : null}
+          </div>
+
+          <motion.div layout transition={{ duration: 0.28, ease: "easeOut" }} className="step-nav">
             <button type="button" className="wts-btn" onClick={() => dispatch({ type: "BACK_TO_PATH" })}>
               ← Back
             </button>
             <button type="submit" className="wts-btn primary">
               Continue →
             </button>
-          </div>
+          </motion.div>
         </form>
       </div>
 

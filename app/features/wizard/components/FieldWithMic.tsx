@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { motion } from "motion/react";
 import { useMicControl } from "./MicField";
 
 interface FieldWithMicProps {
@@ -29,7 +30,7 @@ export function FieldWithMic({
   const { micButton, statusBar } = useMicControl({ onTranscript, disabled });
 
   return (
-    <div className="wts-field">
+    <motion.div layout transition={{ duration: 0.28, ease: "easeOut" }} className="wts-field">
       <label className="wts-field-label">{label}</label>
       <div className="input-with-mic">
         {multiline ? (
@@ -57,6 +58,6 @@ export function FieldWithMic({
       </div>
       {statusBar}
       {children}
-    </div>
+    </motion.div>
   );
 }

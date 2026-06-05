@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { AppliedChange, ChatRole } from "./queries";
@@ -34,7 +34,7 @@ function ChangesBadge({ changes }: { changes: AppliedChange[] }) {
   );
 }
 
-export function MessageBubble({
+export const MessageBubble = memo(function MessageBubble({
   role,
   content,
   changes,
@@ -66,4 +66,4 @@ export function MessageBubble({
       {changes.length > 0 ? <ChangesBadge changes={changes} /> : null}
     </div>
   );
-}
+});

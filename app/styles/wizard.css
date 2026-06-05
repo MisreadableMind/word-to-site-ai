@@ -43,6 +43,7 @@
 .quick-chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; color: var(--muted); background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 100px; cursor: pointer; }
 .quick-chip:hover { border-color: var(--ink); color: var(--ink); }
 .quick-chip.selected { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.quick-chip-skeleton { background: linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%); background-size: 200% 100%; animation: shimmer 1.2s ease-in-out infinite; border-color: var(--line); cursor: default; pointer-events: none; }
 
 /* Voice status bar */
 .voice-status { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px 12px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-md); font-size: 12px; color: var(--muted); animation: wts-fade-in 200ms ease-out; }
@@ -64,6 +65,8 @@
 .tagline-box.is-regenerating .tagline-text { visibility: hidden; }
 .regenerate-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 11.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); cursor: pointer; }
 .regenerate-btn:hover { border-color: var(--ink); color: var(--ink); }
+.regenerate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.regenerate-btn:disabled:hover { border-color: var(--line); color: var(--muted); }
 .regenerate-btn svg { width: 11px; height: 11px; }
 
 /* AI generate button */
