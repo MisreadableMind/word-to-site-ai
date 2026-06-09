@@ -5,6 +5,7 @@ import { promisify } from 'util';
 import { parse as parseHost } from 'tldts';
 import { config } from './config';
 import { assertRegisterable } from './lib/domain-classifier';
+import pWaitFor from 'p-wait-for';
 
 const parseXml = promisify(parseString);
 
@@ -82,7 +83,7 @@ class NamecheapAPI {
     };
   }
 
-  async registerDomain(domainName, years = 1, contacts = null) {
+  async registerDomain(domainName, years = 1, contacts = null, { nameservers = null } = {}) {
     assertRegisterable(domainName);
     if (
       process.env.NODE_ENV === 'development'
@@ -147,6 +148,10 @@ class NamecheapAPI {
       AuxBillingPhone: contactInfo.phone,
       AuxBillingEmailAddress: contactInfo.email,
     };
+
+    if (nameservers && nameservers.length) {
+      params.Nameservers = nameservers.join(',');
+    }
 
     const response = await this.makeRequest('namecheap.domains.create', params);
     const result = response.CommandResponse[0].DomainCreateResult[0].$;
@@ -253,6 +258,25 @@ class NamecheapAPI {
       type: dnsDetails.$.ProviderType, // DNS, CUSTOM, etc.
       nameservers: dnsDetails.Nameserver || [],
     };
+  }
+
+  async waitForCustomNameservers(domainName, expectedNs, { timeout = 90_000, interval = 20_000 } = {}) {
+    const want = expectedNs.map((ns) => ns.toLowerCase().replace(/\.$/, ''));
+    try {
+      await pWaitFor(async () => {
+        let info;
+        try {
+          info = await this.getNameservers(domainName);
+        } catch {
+          return false;
+        }
+        const have = (info.nameservers || []).map((ns) => String(ns).toLowerCase().replace(/\.$/, ''));
+        return have.length > 0 && want.every((ns) => have.includes(ns));
+      }, { interval, timeout });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 

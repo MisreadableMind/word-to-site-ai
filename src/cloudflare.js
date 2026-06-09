@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { config } from './config';
+import pWaitFor, { TimeoutError } from 'p-wait-for';
 
 class CloudflareAPI {
   constructor() {
@@ -92,6 +93,43 @@ class CloudflareAPI {
     }
 
     return zone;
+  }
+
+  async getZoneById(zoneId) {
+    const response = await this.makeRequest(`/zones/${zoneId}`);
+    return response.result;
+  }
+
+  async triggerActivationCheck(zoneId) {
+    await this.makeRequest(`/zones/${zoneId}/activation_check`, 'PUT').catch(() => {});
+  }
+
+  async waitForZoneActive(zoneId, { timeout = 20 * 60_000, interval = 30_000, onProgress } = {}) {
+    let lastStatus = null;
+    try {
+      await pWaitFor(async () => {
+        let zone;
+        try {
+          zone = await this.getZoneById(zoneId);
+        } catch {
+          return false;
+        }
+        lastStatus = zone.status;
+        if (zone.status === 'active') return true;
+        if (zone.status === 'pending') {
+          await this.makeRequest(`/zones/${zoneId}/activation_check`, 'PUT').catch(() => {});
+        }
+        if (onProgress) onProgress({ status: zone.status });
+        return false;
+      }, { interval, timeout });
+    } catch (error) {
+      if (error instanceof TimeoutError) {
+        const wrapped = new Error(`Cloudflare zone ${zoneId} not active within ${Math.round(timeout / 1000)}s (last status: ${lastStatus}).`);
+        wrapped.code = 'ZONE_PENDING';
+        throw wrapped;
+      }
+      throw error;
+    }
   }
 
   async listDnsRecords(zoneId, type = null, name = null) {

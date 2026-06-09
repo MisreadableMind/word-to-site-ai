@@ -10,6 +10,7 @@ import { prepareWizardData } from './services/business-structurer';
 import { classify } from './lib/domain-classifier';
 import { startSiteImageGeneration } from './lib/image-bank-flow';
 import pRetry from 'p-retry';
+import { checkDnsMatches, waitForDnsResolves } from './lib/dns-ready';
 
 const CRITICAL_ONBOARDING_STEPS = [
   'skin_switched',
@@ -121,6 +122,9 @@ class DomainWorkflow {
       }
       result.steps.push({ step: 'config_validated', success: true });
 
+      let zone = null;
+      let managed = registerNewDomain;
+
       // Step 2: Check domain availability (if registering new domain)
       let alreadyOwned = false;
       if (registerNewDomain) {
@@ -172,6 +176,17 @@ class DomainWorkflow {
           });
         }
 
+        this.emitProgress(WorkflowSteps.CREATING_CLOUDFLARE_ZONE, {
+          message: `Setting up Cloudflare zone for ${domain}...`,
+        });
+        zone = await this.cloudflare.getOrCreateZone(domain);
+        result.cloudflare = { zoneId: zone.id, nameservers: zone.name_servers };
+        result.steps.push({
+          step: 'cloudflare_zone_created',
+          success: true,
+          data: { zoneId: zone.id, nameservers: zone.name_servers },
+        });
+
         // Step 3: Register domain (only if we don't already own it)
         if (!alreadyOwned) {
           this.emitProgress(WorkflowSteps.REGISTERING_DOMAIN, {
@@ -182,7 +197,8 @@ class DomainWorkflow {
           const registration = await this.namecheap.registerDomain(
             domain,
             registrationYears,
-            registrationContacts
+            registrationContacts,
+            { nameservers: zone.name_servers }
           );
 
           result.steps.push({
@@ -221,85 +237,90 @@ class DomainWorkflow {
       result.steps.push({ step: 'site_ready', success: true });
       result.site = { ...site, ...readySite };
 
-      let zone = null;
-
-      if (registerNewDomain) {
-        this.emitProgress(WorkflowSteps.CREATING_CLOUDFLARE_ZONE, {
-          message: `Setting up Cloudflare zone for ${domain}...`,
-        });
-
-        zone = await this.cloudflare.getOrCreateZone(domain);
-        result.steps.push({
-          step: 'cloudflare_zone_created',
-          success: true,
-          data: { zoneId: zone.id, nameservers: zone.name_servers },
-        });
-        result.cloudflare = { zoneId: zone.id, nameservers: zone.name_servers };
-
-        const cnameTarget = new URL(result.site.wp_url).hostname;
-
-        this.emitProgress(WorkflowSteps.SETTING_DNS_RECORDS, {
-          message: `Pointing DNS at ${cnameTarget}...`,
-        });
-
-        await this.cloudflare.setCnameRecords(zone.id, domain, cnameTarget, includeWww, {
-          proxied: false,
-        });
-        result.steps.push({
-          step: 'dns_records_set',
-          success: true,
-          data: { cname: cnameTarget, www: includeWww },
-        });
-
-        this.emitProgress(WorkflowSteps.UPDATING_NAMESERVERS, {
-          message: 'Updating nameservers to Cloudflare...',
-        });
-
-        await this.namecheap.setCustomNameservers(domain, zone.name_servers);
-        result.steps.push({
-          step: 'nameservers_updated',
-          success: true,
-          data: { nameservers: zone.name_servers },
-        });
+      if (!registerNewDomain) {
+        managed = await this.isManagedDomain(domain);
       }
 
-      this.emitProgress(WorkflowSteps.MAPPING_DOMAIN, {
-        message: `Mapping ${domain} to WordPress site...`,
-      });
-
+      const host = new URL(result.site.wp_url).hostname;
       const isMapDomainDnsError = (err) =>
         err?.status === 422 && err?.fieldErrors?.name?.length > 0;
 
-      const mapStart = Date.now();
-      const domainMapping = await pRetry(
-        () => this.instawp.mapDomain(site.id, domain, { www: includeWww, routeWww: includeWww }),
-        {
-          retries: 5,
-          minTimeout: 60_000,
-          factor: 1,
-          shouldRetry: ({ error }) => isMapDomainDnsError(error),
-          onFailedAttempt: ({ attemptNumber }) => {
-            const elapsed = Math.floor((Date.now() - mapStart) / 1000);
-            this.emitProgress(WorkflowSteps.MAPPING_DOMAIN, {
-              message: `Waiting for DNS to propagate (attempt ${attemptNumber}, ${elapsed}s elapsed)...`,
-            });
-          },
+      try {
+        if (managed) {
+          zone = await this.ensureCloudflareDelegationAndDns(domain, result.site, { includeWww, existingZone: zone });
+          result.cloudflare = { zoneId: zone.id, nameservers: zone.name_servers };
+          result.steps.push({ step: 'dns_configured', success: true, data: { cname: host, www: includeWww } });
+        } else if (!config.namecheap.sandbox) {
+          const dns = await checkDnsMatches(domain, host, { includeWww });
+          if (!dns.ok) {
+            throw new Error(
+              `${domain} is not pointing at your WordPress site yet. Add a CNAME for ${domain}`
+              + `${includeWww ? ` and www.${domain}` : ''} to ${host} `
+              + `(currently ${dns.apex.join(',') || 'none'}, expected one of ${dns.expected.join(',')}), then retry.`
+            );
+          }
         }
-      );
 
-      result.steps.push({
-        step: 'domain_mapped',
-        success: true,
-        data: domainMapping,
-      });
+        this.emitProgress(WorkflowSteps.MAPPING_DOMAIN, {
+          message: `Mapping ${domain} to WordPress site...`,
+        });
+
+        if (!config.namecheap.sandbox) {
+          this.emitProgress(WorkflowSteps.WAITING_FOR_DNS, {
+            message: 'Verifying public DNS resolves to the site...',
+          });
+          await waitForDnsResolves(domain, host, {
+            includeWww,
+            timeout: 6 * 60_000,
+            onProgress: ({ apex, expected }) => this.emitProgress(WorkflowSteps.WAITING_FOR_DNS, {
+              message: `${domain} → ${apex.join(',') || 'pending'} (expecting ${expected.join(',')})`,
+            }),
+          });
+        }
+
+        const domainMapping = await pRetry(
+          async () => {
+            if (!config.namecheap.sandbox) {
+              const dns = await checkDnsMatches(domain, host, { includeWww });
+              if (!dns.ok) {
+                const e = new Error('DNS not matching at map time');
+                e.status = 422;
+                e.fieldErrors = { name: ['dns'] };
+                throw e;
+              }
+            }
+            return this.instawp.mapDomain(site.id, domain, { www: includeWww, routeWww: includeWww });
+          },
+          {
+            retries: 2,
+            minTimeout: 30_000,
+            factor: 1,
+            shouldRetry: ({ error }) => isMapDomainDnsError(error),
+          }
+        );
+
+        result.steps.push({ step: 'domain_mapped', success: true, data: domainMapping });
+      } catch (error) {
+        if (error.code === 'DNS_TIMEOUT' || error.code === 'ZONE_PENDING' || isMapDomainDnsError(error)) {
+          result.domainMapping = 'pending';
+          result.domainMappingError = error.message;
+          result.steps.push({ step: 'domain_mapped', success: false, pending: true, error: error.message });
+        } else {
+          throw error;
+        }
+      }
 
       if (zone) {
         this.emitProgress(WorkflowSteps.CONFIGURING_SECURITY, {
           message: 'Configuring Cloudflare security and performance settings...',
         });
 
-        await this.cloudflare.configureSecurity(zone.id);
-        result.steps.push({ step: 'security_configured', success: true });
+        try {
+          await this.cloudflare.configureSecurity(zone.id);
+          result.steps.push({ step: 'security_configured', success: true });
+        } catch (error) {
+          result.steps.push({ step: 'security_configured', success: false, error: error.message });
+        }
       }
 
       // SSL info - it will auto-generate once DNS propagates
@@ -339,6 +360,59 @@ class DomainWorkflow {
 
       return result;
     }
+  }
+
+  async isManagedDomain(domain) {
+    const zone = await this.cloudflare.getZone(domain).catch(() => null);
+    if (zone) return true;
+    try {
+      await this.namecheap.getDomainInfo(domain);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async ensureNamecheapNameservers(domain, expectedNs) {
+    const want = expectedNs.map((ns) => ns.toLowerCase());
+    let current = null;
+    try {
+      current = await this.namecheap.getNameservers(domain);
+    } catch {
+      current = null;
+    }
+    const have = (current?.nameservers || []).map((ns) => String(ns).toLowerCase());
+    if (have.length && want.every((ns) => have.includes(ns))) {
+      return;
+    }
+    await pRetry(
+      async () => {
+        const res = await this.namecheap.setCustomNameservers(domain, expectedNs);
+        if (!res.success) throw new Error('Namecheap did not apply the nameserver change');
+        const ok = await this.namecheap.waitForCustomNameservers(domain, expectedNs, { timeout: 90_000 });
+        if (!ok) throw new Error('Custom nameservers not reflected by the registrar yet');
+      },
+      { retries: 3, minTimeout: 20_000, factor: 1 }
+    );
+  }
+
+  async ensureCloudflareDelegationAndDns(domain, site, { includeWww = true, existingZone = null } = {}) {
+    const cnameTarget = new URL(site.wp_url).hostname;
+    const zone = existingZone || await this.cloudflare.getOrCreateZone(domain);
+
+    this.emitProgress(WorkflowSteps.SETTING_DNS_RECORDS, {
+      message: `Pointing DNS at ${cnameTarget}...`,
+    });
+    await this.cloudflare.setCnameRecords(zone.id, domain, cnameTarget, includeWww, { proxied: false });
+
+    this.emitProgress(WorkflowSteps.UPDATING_NAMESERVERS, {
+      message: 'Pointing nameservers to Cloudflare...',
+    });
+    await this.ensureNamecheapNameservers(domain, zone.name_servers);
+
+    await this.cloudflare.triggerActivationCheck(zone.id);
+
+    return zone;
   }
 
   /**
