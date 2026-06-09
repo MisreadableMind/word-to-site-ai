@@ -1,3 +1,6 @@
+import { findIndex } from 'lodash-es';
+import { useEffect, useState } from "react";
+
 export interface ProgressStepDef {
   id: string;
   label: string;
@@ -29,7 +32,13 @@ function CrossIcon() {
 }
 
 export function ProgressSteps({ steps, activeId, activeMessage, failed }: ProgressStepsProps) {
-  const activeIndex = activeId ? steps.findIndex((s) => s.id === activeId) : -1;
+  const matched = activeId ? findIndex(steps, { id: activeId }) : -1;
+  const [lastValidIndex, setLastValidIndex] = useState(matched === -1 ? 0 : matched);
+  useEffect(() => {
+    if (matched !== -1) setLastValidIndex(matched);
+  }, [matched]);
+
+  const activeIndex = matched !== -1 ? matched : lastValidIndex;
 
   return (
     <div className="workflow-progress">
