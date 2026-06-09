@@ -1,13 +1,10 @@
-/**
- * Firecrawl Service
- * Handles website scraping and content extraction for Flow A
- */
-
+import {compact, uniq} from 'lodash-es';
 import { config } from '../config';
 
 class FirecrawlService {
+  apiUrl = 'https://api.firecrawl.dev/v1';
+
   constructor(apiKey = null) {
-    this.apiUrl = 'https://api.firecrawl.dev/v1';
     this.apiKey = apiKey || config.firecrawl?.apiKey;
   }
 
@@ -35,8 +32,10 @@ class FirecrawlService {
       excludeTags = ['script', 'style', 'noscript'],
       waitFor = 2000,
       timeout = 30000,
+      screenshot = false,
     } = options;
 
+    const requestedFormats = compact(uniq([...formats, 'links', screenshot ? 'screenshot' : null]));
     console.log(`Scraping URL: ${url}`);
 
     try {
@@ -48,13 +47,12 @@ class FirecrawlService {
         },
         body: JSON.stringify({
           url,
-          formats,
+          formats: requestedFormats,
           includeTags,
           excludeTags,
           waitFor,
           timeout,
           onlyMainContent: false,
-          screenshot: true,
         }),
       });
 
@@ -243,22 +241,11 @@ class FirecrawlService {
         throw new Error(data.error || 'Failed to start crawl');
       }
 
-      // For async crawls, return the job ID
-      if (data.id) {
-        console.log(`Crawl job started: ${data.id}`);
-        return {
-          success: true,
-          jobId: data.id,
-          status: 'processing',
-        };
-      }
-
-      // For immediate results
-      console.log(`✅ Crawled ${data.data?.length || 0} pages`);
+      console.log(`Crawl job started: ${data.id}`);
       return {
         success: true,
-        pages: data.data || [],
-        total: data.data?.length || 0,
+        jobId: data.id,
+        status: 'processing',
       };
     } catch (error) {
       console.error('Firecrawl crawl error:', error.message);
@@ -288,6 +275,10 @@ class FirecrawlService {
       }
 
       const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get crawl status');
+      }
 
       return {
         success: true,
