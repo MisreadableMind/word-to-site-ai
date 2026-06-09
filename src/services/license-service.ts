@@ -23,10 +23,11 @@ function hex(length: number): string {
 }
 
 export function generateLicenseKey(): string {
-  return `WaaS-${hex(4)}-${hex(4)}-4${hex(3)}-${hex(4)}-${hex(12)}`;
+  const variant = randomstring.generate({ length: 1, charset: "89ab" });
+  return `WaaS-${hex(8)}-${hex(4)}-4${hex(3)}-${variant}${hex(3)}-${hex(12)}`;
 }
 
-export const LICENSE_KEY_REGEX = /^WaaS-[0-9a-f]{4}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const LICENSE_KEY_REGEX = /^WaaS-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 export function isValidLicenseKeyFormat(key: string): boolean {
   return typeof key === "string" && LICENSE_KEY_REGEX.test(key);

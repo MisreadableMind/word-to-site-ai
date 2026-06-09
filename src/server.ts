@@ -88,7 +88,7 @@ if (proxyService) {
 const authService = new AuthService();
 const siteService = new SiteService();
 const licenseService = new LicenseService();
-app.use('/license', express.json(), createLicenseRouter(licenseService));
+app.use('/api/license', express.json(), createLicenseRouter(licenseService));
 const namecheapForBilling = config.stripe?.secretKey ? new NamecheapAPI() : null;
 const domainService = config.stripe?.secretKey ? new DomainService() : null;
 const billingService = config.stripe?.secretKey
