@@ -10,6 +10,10 @@ interface ProxyServiceLike {
   [key: string]: unknown;
 }
 
+interface LicenseServiceLike {
+  syncFromBilling(userId: string, status: string, expiresAt?: string | null): Promise<void>;
+}
+
 interface NamecheapLike {
   checkDomain(domain: string): Promise<{ available: boolean; premium: boolean }>;
   registerDomain(domain: string, years: number): Promise<{ registered: boolean; orderId: string }>;
@@ -19,6 +23,7 @@ interface BillingServiceDeps {
   proxyService?: ProxyServiceLike | null;
   domainService?: DomainService | null;
   namecheap?: NamecheapLike | null;
+  licenseService?: LicenseServiceLike | null;
 }
 
 interface UserContext {
@@ -86,12 +91,14 @@ export default class BillingService {
   proxyService: ProxyServiceLike | null;
   domainService: DomainService | null;
   namecheap: NamecheapLike | null;
+  licenseService: LicenseServiceLike | null;
 
-  constructor({ proxyService = null, domainService = null, namecheap = null }: BillingServiceDeps = {}) {
+  constructor({ proxyService = null, domainService = null, namecheap = null, licenseService = null }: BillingServiceDeps = {}) {
     this.initialized = false;
     this.proxyService = proxyService;
     this.domainService = domainService;
     this.namecheap = namecheap;
+    this.licenseService = licenseService;
   }
 
   async initialize() {
@@ -406,6 +413,18 @@ export default class BillingService {
       : PLAN_TIERS.FREE;
     await this.setUserPlanTier(user.id, effectivePlan);
 
+    if (this.licenseService) {
+      const licenseStatus = ['active', 'trialing'].includes(subscription.status)
+        ? 'active'
+        : subscription.status === 'past_due'
+          ? 'not_paid'
+          : 'expired';
+      const licenseExpiresAt = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
+      await this.licenseService.syncFromBilling(user.id, licenseStatus, licenseExpiresAt).catch((err) => {
+        console.warn('Failed to sync license status from billing:', (err as Error).message);
+      });
+    }
+
     return { processed: true, userId: user.id, planTier: effectivePlan };
   }
 
@@ -419,6 +438,13 @@ export default class BillingService {
       .set({ status: 'canceled', updatedAt: sql`NOW()` })
       .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
     await this.setUserPlanTier(user.id, PLAN_TIERS.FREE);
+
+    if (this.licenseService) {
+      await this.licenseService.syncFromBilling(user.id, 'expired').catch((err) => {
+        console.warn('Failed to sync license status from billing:', (err as Error).message);
+      });
+    }
+
     return { processed: true, userId: user.id, planTier: PLAN_TIERS.FREE };
   }
 

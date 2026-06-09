@@ -375,6 +375,7 @@ class DomainWorkflow {
       email,
       callbackBaseUrl,
       existingImageBankCreds,
+      licenseKey,
     } = params;
 
     // Run the standard domain workflow first
@@ -406,6 +407,7 @@ class DomainWorkflow {
           domain,
           callbackBaseUrl,
           existingImageBankCreds,
+          licenseKey,
         });
         if (deployResults?.imageBank) {
           result.imageBank = deployResults.imageBank;
@@ -521,7 +523,7 @@ class DomainWorkflow {
    * @param {string} [options.skinSlugOverride] - User-selected skin slug override
    */
   async applyDeploymentContext(siteId, siteUrl, context, options = {}) {
-    const { contentContext, skinSlugOverride, existingImageBankCreds } = options;
+    const { contentContext, skinSlugOverride, existingImageBankCreds, licenseKey } = options;
     const favicon = context.branding?.faviconUrl || DEFAULTS.FAVICON_URL;
     const site = this.extractSiteCredentials(siteUrl);
 
@@ -614,6 +616,19 @@ class DomainWorkflow {
       } catch (error) {
         console.error('Failed to save wizard data:', error.message);
         results.wizardDataError = error.message;
+      }
+    }
+
+    if (licenseKey) {
+      try {
+        await wp.activateLicense(licenseKey, {
+          userName: null,
+          userEmail: options.email || null,
+        });
+        results.licenseActivated = true;
+      } catch (error) {
+        console.warn('Failed to activate license on site:', error.message);
+        results.licenseError = error.message;
       }
     }
 

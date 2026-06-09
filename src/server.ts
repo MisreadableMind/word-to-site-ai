@@ -35,6 +35,8 @@ import createSiteRouter from './routes/site-routes';
 import createEditorRouter from './routes/editor-routes';
 import createBillingRouter, { createBillingWebhookRouter } from './routes/billing-routes';
 import createDomainRouter from './routes/domain-routes';
+import LicenseService, { generateLicenseKey } from './services/license-service';
+import createLicenseRouter from './routes/license-routes';
 import { PLATFORM_HOSTS, PRIMARY_PLATFORM_HOST, classify as classifyDomain } from './lib/domain-classifier';
 import { startSiteImageGeneration } from './lib/image-bank-flow';
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth';
@@ -85,10 +87,12 @@ if (proxyService) {
 // User Auth & Sites routes (mounted BEFORE basic auth - uses its own session auth)
 const authService = new AuthService();
 const siteService = new SiteService();
+const licenseService = new LicenseService();
+app.use('/license', express.json(), createLicenseRouter(licenseService));
 const namecheapForBilling = config.stripe?.secretKey ? new NamecheapAPI() : null;
 const domainService = config.stripe?.secretKey ? new DomainService() : null;
 const billingService = config.stripe?.secretKey
-  ? new BillingService({ proxyService, domainService, namecheap: namecheapForBilling })
+  ? new BillingService({ proxyService, domainService, namecheap: namecheapForBilling, licenseService })
   : null;
 const aiService = new AIService({ openaiApiKey: config.openai?.apiKey, geminiApiKey: config.gemini?.apiKey });
 const editorService = new EditorService({ aiService, siteService });
@@ -1108,6 +1112,8 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
       });
     }
 
+    const licenseKey = licenseService ? generateLicenseKey() : null;
+
     // If domain workflow is needed
     if (domain) {
       const domainWorkflow = new DomainWorkflow({
@@ -1125,12 +1131,26 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
         editorPreference,
         email: req.user?.email,
         callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
+        licenseKey,
       });
+
+      if (licenseService && licenseKey && result.site?.id) {
+        await licenseService
+          .issueForSite({
+            instawpId: result.site.id,
+            wpUrl: result.site.wp_url || null,
+            userId: req.user?.id || null,
+            userSiteId: null,
+            status: req.user ? 'active' : 'not_paid',
+            licenseKey,
+          })
+          .catch((err) => console.warn('Failed to issue license:', err.message));
+      }
 
       // Save domain-workflow site to user's dashboard if logged in
       if (req.user && result.site) {
         try {
-          await siteService.createSite(req.user.id, {
+          const createdRow = await siteService.createSite(req.user.id, {
             domain,
             instawpId: result.site.id || null,
             templateSlug: templateSlug || deploymentContext.template?.slug,
@@ -1144,6 +1164,11 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
             imageBankPassword: result.imageBank?.password || null,
             imagesStatus: result.imageBank?.status || null,
           });
+          if (licenseService && result.site.id && createdRow?.id) {
+            await licenseService
+              .linkSite({ instawpId: result.site.id, userId: req.user.id, userSiteId: createdRow.id })
+              .catch((err) => console.warn('Failed to link license:', err.message));
+          }
         } catch (err) {
           console.warn('Failed to save site to user dashboard:', err.message);
         }
@@ -1180,6 +1205,24 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
       site,
       steps: [{ step: 'site_created', success: true }],
     };
+
+    let effectiveLicenseKey = licenseKey;
+    if (licenseService && licenseKey && site?.id) {
+      const issued = await licenseService
+        .issueForSite({
+          instawpId: site.id,
+          wpUrl: site.wp_url || null,
+          userId: req.user?.id || null,
+          userSiteId: null,
+          status: req.user ? 'active' : 'not_paid',
+          licenseKey,
+        })
+        .catch((err) => {
+          console.warn('Failed to issue license:', err.message);
+          return null;
+        });
+      if (issued?.license_key) effectiveLicenseKey = issued.license_key;
+    }
 
     // Apply deployment context if we have site credentials
     if (site.wp_url && site.wp_username && site.wp_password) {
@@ -1230,6 +1273,20 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
       } catch (error) {
         console.error('Failed to save wizard data:', error.message);
         result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
+      }
+
+      if (effectiveLicenseKey) {
+        try {
+          await wp.activateLicense(effectiveLicenseKey, {
+            userName: req.user?.displayName || null,
+            userEmail: req.user?.email || null,
+          });
+          await licenseService.markActivated(effectiveLicenseKey).catch(() => {});
+          result.steps.push({ step: 'license_activated', success: true });
+        } catch (error) {
+          console.warn('Failed to activate license on site:', error.message);
+          result.steps.push({ step: 'license_activated', success: false, error: error.message });
+        }
       }
 
       // Auto-register proxy key (non-blocking)
@@ -1350,7 +1407,7 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
     // Save site to user's dashboard if logged in
     if (req.user && site) {
       try {
-        await siteService.createSite(req.user.id, {
+        const createdRow = await siteService.createSite(req.user.id, {
           domain: site.domain || null,
           instawpId: site.id || null,
           templateSlug: templateSlug || deploymentContext.template?.slug,
@@ -1364,6 +1421,11 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
           imageBankPassword: result.imageBank?.password || null,
           imagesStatus: result.imageBank?.status || null,
         });
+        if (licenseService && site.id && createdRow?.id) {
+          await licenseService
+            .linkSite({ instawpId: site.id, userId: req.user.id, userSiteId: createdRow.id })
+            .catch((err) => console.warn('Failed to link license:', err.message));
+        }
       } catch (err) {
         console.warn('Failed to save site to user dashboard:', err.message);
       }
@@ -1418,6 +1480,8 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
     return;
   }
 
+  const licenseKey = licenseService ? generateLicenseKey() : null;
+
   const sendProgress = (step, data = {}) => {
     res.write(`data: ${JSON.stringify({ step, timestamp: new Date().toISOString(), ...data })}\n\n`);
   };
@@ -1442,12 +1506,26 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
         contentContext,
         email: req.user?.email,
         callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
+        licenseKey,
       });
+
+      if (licenseService && licenseKey && result.site?.id) {
+        await licenseService
+          .issueForSite({
+            instawpId: result.site.id,
+            wpUrl: result.site.wp_url || null,
+            userId: req.user?.id || null,
+            userSiteId: null,
+            status: req.user ? 'active' : 'not_paid',
+            licenseKey,
+          })
+          .catch((err) => console.warn('Failed to issue license:', err.message));
+      }
 
       // Save to user's dashboard
       if (req.user && result.site) {
         try {
-          await siteService.createSite(req.user.id, {
+          const createdRow = await siteService.createSite(req.user.id, {
             domain,
             instawpId: result.site.id || null,
             templateSlug: templateSlug || deploymentContext.template?.slug,
@@ -1461,6 +1539,11 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
             imageBankPassword: result.imageBank?.password || null,
             imagesStatus: result.imageBank?.status || null,
           });
+          if (licenseService && result.site.id && createdRow?.id) {
+            await licenseService
+              .linkSite({ instawpId: result.site.id, userId: req.user.id, userSiteId: createdRow.id })
+              .catch((err) => console.warn('Failed to link license:', err.message));
+          }
         } catch (err) {
           console.warn('Failed to save site to user dashboard (stream):', err.message);
         }
@@ -1523,6 +1606,24 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
 
       const result = { success: true, site, steps: [] };
 
+      let effectiveLicenseKey = licenseKey;
+      if (licenseService && licenseKey && site?.id) {
+        const issued = await licenseService
+          .issueForSite({
+            instawpId: site.id,
+            wpUrl: site.wp_url || null,
+            userId: req.user?.id || null,
+            userSiteId: null,
+            status: req.user ? 'active' : 'not_paid',
+            licenseKey,
+          })
+          .catch((err) => {
+            console.warn('Failed to issue license:', err.message);
+            return null;
+          });
+        if (issued?.license_key) effectiveLicenseKey = issued.license_key;
+      }
+
       if (site.wp_url && site.wp_username && site.wp_password) {
         const wp = new WordPressService(site.wp_url, {
           username: config.instawp.snapshotWpUsername,
@@ -1573,6 +1674,20 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
         } catch (error) {
           console.error('Failed to save wizard data:', error.message);
           result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
+        }
+
+        if (effectiveLicenseKey) {
+          try {
+            await wp.activateLicense(effectiveLicenseKey, {
+              userName: req.user?.displayName || null,
+              userEmail: req.user?.email || null,
+            });
+            await licenseService.markActivated(effectiveLicenseKey).catch(() => {});
+            result.steps.push({ step: 'license_activated', success: true });
+          } catch (error) {
+            console.warn('Failed to activate license on site:', error.message);
+            result.steps.push({ step: 'license_activated', success: false, error: error.message });
+          }
         }
 
         // Auto-register proxy key (non-blocking)
@@ -1713,7 +1828,7 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
       // Save to user's dashboard
       if (req.user && site) {
         try {
-          await siteService.createSite(req.user.id, {
+          const createdRow = await siteService.createSite(req.user.id, {
             domain: site.domain || null,
             instawpId: site.id || null,
             templateSlug: templateSlug || deploymentContext.template?.slug,
@@ -1727,6 +1842,11 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
             imageBankPassword: result.imageBank?.password || null,
             imagesStatus: result.imageBank?.status || null,
           });
+          if (licenseService && site.id && createdRow?.id) {
+            await licenseService
+              .linkSite({ instawpId: site.id, userId: req.user.id, userSiteId: createdRow.id })
+              .catch((err) => console.warn('Failed to link license:', err.message));
+          }
         } catch (err) {
           console.warn('Failed to save site to user dashboard (stream):', err.message);
         }

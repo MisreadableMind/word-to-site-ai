@@ -83,6 +83,12 @@ export const config = {
     publicBaseUrl: (process.env.PROXY_PUBLIC_BASE_URL || '').replace(/\/+$/, ''),
   },
 
+  // License Key API (per-site activation + validation)
+  license: {
+    apiKey: process.env.LICENSE_API_KEY || '',
+    adminSecret: process.env.LICENSE_ADMIN_SECRET || '',
+  },
+
   // Plugin API Configuration (hub-and-spoke)
   pluginApi: {
     enabled: process.env.ENABLE_PLUGIN_API !== 'false',

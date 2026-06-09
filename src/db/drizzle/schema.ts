@@ -2,7 +2,7 @@
 // Source of truth is the SQL migrations in src/db/migrations — do NOT run
 // drizzle-kit pull (it would re-introspect timestamps as mode:'string' and
 // revert the tstz() ISO typing).
-import { pgTable, index, unique, uuid, varchar, jsonb, boolean, foreignKey, bigserial, smallint, text, integer, bigint, check } from "drizzle-orm/pg-core"
+import { pgTable, index, unique, pgEnum, uuid, varchar, jsonb, boolean, foreignKey, bigserial, smallint, text, integer, bigint, check } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { tstz } from "./timestamp"
 
@@ -269,6 +269,37 @@ export const userSites = pgTable("user_sites", {
 			foreignColumns: [users.id],
 			name: "user_sites_user_id_fkey"
 		}).onDelete("cascade"),
+]);
+
+export const licenseStatus = pgEnum("license_status", ["active", "expired", "not_paid", "disabled"]);
+
+export const siteLicenses = pgTable("site_licenses", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	licenseKey: text("license_key").notNull(),
+	instawpId: text("instawp_id"),
+	userSiteId: uuid("user_site_id"),
+	userId: uuid("user_id"),
+	wpUrl: text("wp_url"),
+	status: licenseStatus().default('not_paid').notNull(),
+	expiresAt: tstz("expires_at"),
+	activatedAt: tstz("activated_at"),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
+	updatedAt: tstz("updated_at").default(sql`now()`).notNull(),
+}, (table) => [
+	unique("site_licenses_license_key_key").on(table.licenseKey),
+	unique("site_licenses_instawp_id_key").on(table.instawpId),
+	index("idx_site_licenses_user_id").on(table.userId),
+	index("idx_site_licenses_status").on(table.status),
+	foreignKey({
+			columns: [table.userSiteId],
+			foreignColumns: [userSites.id],
+			name: "site_licenses_user_site_id_fkey"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "site_licenses_user_id_fkey"
+		}).onDelete("set null"),
 ]);
 
 export const editorSessions = pgTable("editor_sessions", {

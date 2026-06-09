@@ -371,6 +371,21 @@ class WordPressService {
     });
   }
 
+  async activateLicense(key, options = {}) {
+    const { userName = null, userEmail = null } = options;
+    try {
+      const result = await this.requestRaw('trx-waas-wizard/v1/license', {
+        method: 'POST',
+        body: JSON.stringify({ key, user_name: userName, user_email: userEmail }),
+      });
+      console.log(`[license] activate ok site=${this.siteUrl}`);
+      return result;
+    } catch (error) {
+      console.log(`[license] activate fail site=${this.siteUrl} error=${error.message}`);
+      throw error;
+    }
+  }
+
   // ==========================================
   // Async Endpoint Polling (WaaS Wizard)
   // ==========================================
