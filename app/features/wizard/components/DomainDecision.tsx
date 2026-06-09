@@ -54,6 +54,7 @@ export function DomainDecision({
   const [verifyLabel, setVerifyLabel] = useState("I've added the record — verify & publish");
   const [verifying, setVerifying] = useState(false);
   const [registering, setRegistering] = useState(false);
+  const [owned, setOwned] = useState(false);
 
   const name = companyName || domain;
   const initials = initialsFor(name);
@@ -70,6 +71,7 @@ export function DomainDecision({
       try {
         const data = await quoteDomain(domain);
         if (cancelled) return;
+        setOwned(false);
         if (data.premium) {
           setPriceAmount("—");
           setPriceSub("Premium domain — buy via the Domains page.");
@@ -77,6 +79,14 @@ export function DomainDecision({
           return;
         }
         if (!data.available) {
+          if (data.ownedByUser) {
+            setOwned(true);
+            setPriceAmount("$0");
+            setPriceSub("You already own this — we'll configure DNS and publish, no charge.");
+            setRegisterLabel("Set up & publish");
+            setRegisterDisabled(false);
+            return;
+          }
           setPriceAmount("—");
           setPriceSub(`${domain} isn't available for registration.`);
           setDisabled("Domain unavailable");
@@ -195,7 +205,9 @@ export function DomainDecision({
               </div>
             </div>
             <p className="dd-card-desc">
-              We register the domain in your name, configure DNS, and issue an SSL certificate. Live in about two minutes.
+              {owned
+                ? "You already own this — we'll configure DNS and issue an SSL certificate. Live in about two minutes."
+                : "We register the domain in your name, configure DNS, and issue an SSL certificate. Live in about two minutes."}
             </p>
           </div>
           <ul className="dd-features">
@@ -220,7 +232,7 @@ export function DomainDecision({
               className="wts-btn primary lg"
               style={{ width: "100%", justifyContent: "center" }}
               disabled={registerDisabled || registering}
-              onClick={() => void register()}
+              onClick={() => (owned ? onVerifiedPublish() : void register())}
             >
               {registerLabel}
             </button>

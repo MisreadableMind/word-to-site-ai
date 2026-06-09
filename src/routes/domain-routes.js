@@ -77,6 +77,17 @@ export default function createDomainRouter({ authService, namecheap, billingServ
 
       const availability = await namecheap.checkDomain(c.apex);
       if (!availability.available || availability.premium) {
+        let ownedByUser = false;
+        if (!availability.premium) {
+          try {
+            const owned = await domainService.listByUser(req.user.id);
+            ownedByUser = owned.some(
+              (d) => (d.domain || '').toLowerCase() === c.apex.toLowerCase() && d.status === 'registered',
+            );
+          } catch {
+            ownedByUser = false;
+          }
+        }
         return res.json({
           success: true,
           domain: c.apex,
@@ -84,6 +95,7 @@ export default function createDomainRouter({ authService, namecheap, billingServ
           premium: availability.premium,
           premiumPrice: availability.premiumPrice,
           reason: availability.premium ? 'premium' : 'taken',
+          ownedByUser,
         });
       }
       const wholesale = await quoteWholesale(namecheap, c);

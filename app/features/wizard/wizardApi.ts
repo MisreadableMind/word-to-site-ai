@@ -53,6 +53,7 @@ interface QuoteResponse {
   available: boolean;
   premium: boolean;
   totalPriceUsd: number;
+  ownedByUser?: boolean;
 }
 
 interface PlansResponse {
