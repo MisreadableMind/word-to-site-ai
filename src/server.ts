@@ -65,6 +65,15 @@ function withAggregateSuccess(result) {
   };
 }
 
+class CriticalStepError extends Error {
+  step: string;
+
+  constructor(step: string, message: string) {
+    super(message);
+    this.step = step;
+  }
+}
+
 const app = express();
 const PORT = config.server.port;
 
@@ -1225,11 +1234,14 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
     }
 
     // Apply deployment context if we have site credentials
+    try {
     if (site.wp_url && site.wp_username && site.wp_password) {
       const wp = new WordPressService(site.wp_url, {
         username: config.instawp.snapshotWpUsername,
         password: config.instawp.snapshotWpPassword,
       });
+
+      const skinSlug = templateSlug || deploymentContext.template?.slug;
 
       if (effectiveLicenseKey) {
         try {
@@ -1242,10 +1254,12 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
         } catch (error) {
           console.warn('Failed to activate license on site:', error.message);
           result.steps.push({ step: 'license_activated', success: false, error: error.message });
+          if (skinSlug && skinSlug !== 'default') {
+            throw new CriticalStepError('license_activated', error.message);
+          }
         }
       }
 
-      const skinSlug = templateSlug || deploymentContext.template?.slug;
       if (skinSlug && skinSlug !== 'default') {
         try {
           await wp.switchSkin(skinSlug);
@@ -1253,6 +1267,7 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
         } catch (error) {
           console.error('Failed to switch skin:', error.message);
           result.steps.push({ step: 'skin_switched', success: false, error: error.message });
+          throw new CriticalStepError('skin_switched', error.message);
         }
       }
 
@@ -1402,6 +1417,12 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
           result.editor = { mode: 'advanced', url: `${site.wp_url}/wp-admin` };
         }
       }
+    }
+    } catch (error) {
+      if (!(error instanceof CriticalStepError)) throw error;
+      console.error(`Deploy aborted at ${error.step}: ${error.message}`);
+      result.success = false;
+      result.error = `${error.step} failed: ${error.message}`;
     }
 
     // Save site to user's dashboard if logged in
@@ -1624,11 +1645,14 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
         if (issued?.license_key) effectiveLicenseKey = issued.license_key;
       }
 
+      try {
       if (site.wp_url && site.wp_username && site.wp_password) {
         const wp = new WordPressService(site.wp_url, {
           username: config.instawp.snapshotWpUsername,
           password: config.instawp.snapshotWpPassword,
         });
+
+        const skinSlug = templateSlug || deploymentContext.template?.slug;
 
         if (effectiveLicenseKey) {
           try {
@@ -1641,10 +1665,12 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
           } catch (error) {
             console.warn('Failed to activate license on site:', error.message);
             result.steps.push({ step: 'license_activated', success: false, error: error.message });
+            if (skinSlug && skinSlug !== 'default') {
+              throw new CriticalStepError('license_activated', error.message);
+            }
           }
         }
 
-        const skinSlug = templateSlug || deploymentContext.template?.slug;
         if (skinSlug && skinSlug !== 'default') {
           sendProgress('switching_skin', { message: `Switching skin to "${skinSlug}"...` });
           try {
@@ -1657,6 +1683,7 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
           } catch (error) {
             console.error('Failed to switch skin:', error.message);
             result.steps.push({ step: 'skin_switched', success: false, error: error.message });
+            throw new CriticalStepError('skin_switched', error.message);
           }
         }
 
@@ -1824,6 +1851,12 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
           }
         }
       }
+      } catch (error) {
+        if (!(error instanceof CriticalStepError)) throw error;
+        console.error(`Deploy aborted at ${error.step}: ${error.message}`);
+        result.success = false;
+        result.error = `${error.step} failed: ${error.message}`;
+      }
 
       // Save to user's dashboard
       if (req.user && site) {
@@ -1853,7 +1886,9 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
       }
 
       const finalResult = withAggregateSuccess(result);
-      sendProgress('complete', { message: 'Deployment complete!' });
+      if (finalResult.success !== false) {
+        sendProgress('complete', { message: 'Deployment complete!' });
+      }
       res.write(`data: ${JSON.stringify({ step: 'result', data: finalResult })}\n\n`);
     }
   } catch (error) {

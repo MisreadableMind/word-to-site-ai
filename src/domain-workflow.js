@@ -467,6 +467,8 @@ class DomainWorkflow {
       return result;
     }
 
+    let deployFailed = false;
+
     // Apply deployment context
     if (deploymentContext) {
       this.emitProgress('applying_deployment', {
@@ -496,6 +498,7 @@ class DomainWorkflow {
         });
       } catch (error) {
         console.error('Failed to apply deployment context:', error.message);
+        deployFailed = true;
         result.steps.push({
           step: 'deployment_applied',
           success: false,
@@ -539,7 +542,7 @@ class DomainWorkflow {
     }
 
     // Generate and push content
-    if (contentContext) {
+    if (contentContext && !deployFailed) {
       this.emitProgress('generating_content', {
         message: 'Generating website content...',
       });
@@ -565,7 +568,7 @@ class DomainWorkflow {
     }
 
     // Select editor mode
-    if (editorPreference) {
+    if (editorPreference && !deployFailed) {
       try {
         const editorService = new EditorService();
         const editorResult = await editorService.selectEditor(
@@ -613,6 +616,8 @@ class DomainWorkflow {
 
     const results = { applied: true, favicon, template: context.template?.slug };
 
+    const skinSlug = skinSlugOverride || context.template?.slug;
+
     if (licenseKey) {
       try {
         await wp.activateLicense(licenseKey, {
@@ -623,11 +628,13 @@ class DomainWorkflow {
       } catch (error) {
         console.warn('Failed to activate license on site:', error.message);
         results.licenseError = error.message;
+        if (skinSlug && skinSlug !== 'default') {
+          throw new Error(`license_activated failed: ${error.message}`);
+        }
       }
     }
 
     // 0. Switch skin if a non-default template was selected
-    const skinSlug = skinSlugOverride || context.template?.slug;
     if (skinSlug && skinSlug !== 'default') {
       try {
         this.emitProgress('switching_skin', {
@@ -642,7 +649,7 @@ class DomainWorkflow {
         console.log(`  Skin switched: ${skinSlug}`);
       } catch (error) {
         console.error('Failed to switch skin:', error.message);
-        results.skinSwitchError = error.message;
+        throw new Error(`skin_switched failed: ${error.message}`);
       }
     }
 
@@ -789,7 +796,6 @@ class DomainWorkflow {
     }
 
     const criticalFailures = [];
-    if (results.skinSwitchError) criticalFailures.push(`skin_switched: ${results.skinSwitchError}`);
     if (results.wizardDataError) criticalFailures.push(`wizard_data_saved: ${results.wizardDataError}`);
     if (results.generateAllError) criticalFailures.push(`generate_all_content: ${results.generateAllError}`);
     if (results.generateImagesError) criticalFailures.push(`generate_images: ${results.generateImagesError}`);
