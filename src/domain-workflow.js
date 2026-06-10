@@ -613,6 +613,19 @@ class DomainWorkflow {
 
     const results = { applied: true, favicon, template: context.template?.slug };
 
+    if (licenseKey) {
+      try {
+        await wp.activateLicense(licenseKey, {
+          userName: null,
+          userEmail: options.email || null,
+        });
+        results.licenseActivated = true;
+      } catch (error) {
+        console.warn('Failed to activate license on site:', error.message);
+        results.licenseError = error.message;
+      }
+    }
+
     // 0. Switch skin if a non-default template was selected
     const skinSlug = skinSlugOverride || context.template?.slug;
     if (skinSlug && skinSlug !== 'default') {
@@ -690,19 +703,6 @@ class DomainWorkflow {
       } catch (error) {
         console.error('Failed to save wizard data:', error.message);
         results.wizardDataError = error.message;
-      }
-    }
-
-    if (licenseKey) {
-      try {
-        await wp.activateLicense(licenseKey, {
-          userName: null,
-          userEmail: options.email || null,
-        });
-        results.licenseActivated = true;
-      } catch (error) {
-        console.warn('Failed to activate license on site:', error.message);
-        results.licenseError = error.message;
       }
     }
 

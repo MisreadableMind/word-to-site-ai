@@ -1231,6 +1231,20 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
         password: config.instawp.snapshotWpPassword,
       });
 
+      if (effectiveLicenseKey) {
+        try {
+          await wp.activateLicense(effectiveLicenseKey, {
+            userName: req.user?.displayName || null,
+            userEmail: req.user?.email || null,
+          });
+          await licenseService.markActivated(effectiveLicenseKey).catch(() => {});
+          result.steps.push({ step: 'license_activated', success: true });
+        } catch (error) {
+          console.warn('Failed to activate license on site:', error.message);
+          result.steps.push({ step: 'license_activated', success: false, error: error.message });
+        }
+      }
+
       const skinSlug = templateSlug || deploymentContext.template?.slug;
       if (skinSlug && skinSlug !== 'default') {
         try {
@@ -1273,20 +1287,6 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
       } catch (error) {
         console.error('Failed to save wizard data:', error.message);
         result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
-      }
-
-      if (effectiveLicenseKey) {
-        try {
-          await wp.activateLicense(effectiveLicenseKey, {
-            userName: req.user?.displayName || null,
-            userEmail: req.user?.email || null,
-          });
-          await licenseService.markActivated(effectiveLicenseKey).catch(() => {});
-          result.steps.push({ step: 'license_activated', success: true });
-        } catch (error) {
-          console.warn('Failed to activate license on site:', error.message);
-          result.steps.push({ step: 'license_activated', success: false, error: error.message });
-        }
       }
 
       // Auto-register proxy key (non-blocking)
@@ -1630,6 +1630,20 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
           password: config.instawp.snapshotWpPassword,
         });
 
+        if (effectiveLicenseKey) {
+          try {
+            await wp.activateLicense(effectiveLicenseKey, {
+              userName: req.user?.displayName || null,
+              userEmail: req.user?.email || null,
+            });
+            await licenseService.markActivated(effectiveLicenseKey).catch(() => {});
+            result.steps.push({ step: 'license_activated', success: true });
+          } catch (error) {
+            console.warn('Failed to activate license on site:', error.message);
+            result.steps.push({ step: 'license_activated', success: false, error: error.message });
+          }
+        }
+
         const skinSlug = templateSlug || deploymentContext.template?.slug;
         if (skinSlug && skinSlug !== 'default') {
           sendProgress('switching_skin', { message: `Switching skin to "${skinSlug}"...` });
@@ -1674,20 +1688,6 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
         } catch (error) {
           console.error('Failed to save wizard data:', error.message);
           result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
-        }
-
-        if (effectiveLicenseKey) {
-          try {
-            await wp.activateLicense(effectiveLicenseKey, {
-              userName: req.user?.displayName || null,
-              userEmail: req.user?.email || null,
-            });
-            await licenseService.markActivated(effectiveLicenseKey).catch(() => {});
-            result.steps.push({ step: 'license_activated', success: true });
-          } catch (error) {
-            console.warn('Failed to activate license on site:', error.message);
-            result.steps.push({ step: 'license_activated', success: false, error: error.message });
-          }
         }
 
         // Auto-register proxy key (non-blocking)
