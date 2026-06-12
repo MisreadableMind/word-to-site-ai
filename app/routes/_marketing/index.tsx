@@ -1,50 +1,24 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Faq, type FaqItem } from "~/components/Faq";
+import "~/styles/pricing.css";
+import "~/styles/landing.css";
 
 export const Route = createFileRoute("/_marketing/")({
   component: Home,
   head: () => ({
     meta: [
-      { title: "WordToSite — Websites for the zero-click internet" },
+      { title: "WordToSite — Client-ready WordPress sites in about a minute" },
       {
         name: "description",
         content:
-          "Search is going zero-click. WordToSite builds AEO- and GEO-optimized websites by voice — no dashboards, no CMS. Migrate any site or create one by talking.",
+          "Pick a design, add your client's details, and AI fills a live, polished WordPress site with tailored copy and images. 200 designs, shareable preview URLs, and you only pay while a site is live. Built for WordPress studios, agencies & freelancers.",
       },
     ],
   }),
 });
 
-const FAQ_ITEMS: FaqItem[] = [
-  {
-    q: 'What are AEO, GEO, and the "zero-click internet"?',
-    a: "Over 60% of Google searches now end without a click. AI assistants like ChatGPT, Perplexity, and Google's AI Overviews answer questions by pulling from your website directly. AEO (Answer Engine Optimization) means structuring your content so answer engines can find and cite you. GEO (Generative Engine Optimization) means optimizing for AI-generated search results. Your content matters more than ever, but visitors may never actually visit your page. WordToSite builds websites with AEO and GEO from day one: clean semantic HTML, proper schema markup, and content structured for AI extraction.",
-  },
-  {
-    q: "I already have a website. Why would I switch?",
-    a: "You don't have to abandon your existing site. Paste your URL, and we'll analyze everything: your brand, content, colors, page structure. Then rebuild it on modern infrastructure. Same brand, same message, but now with AEO-ready structured data, GEO-optimized content, automatic SSL, and the ability to manage it all by voice. Think of it as migrating your website to the future.",
-  },
-  {
-    q: "How does voice management work?",
-    a: 'Open WordToSite on your phone. Tap the mic. Say "Update the homepage heading to say we\'re hiring" or "Write a blog post about our new product launch." Your voice is transcribed in real-time, AI interprets your intent and generates the changes, and you tap one button to publish. No wp-admin. No laptop. No learning curve.',
-  },
-  {
-    q: "Can I actually manage my site from my phone?",
-    a: "Yes. That's the entire point. Traditional CMS dashboards were designed for desktop. WordToSite is designed for the way you actually work. On your phone, between meetings, on the go. Voice commands for quick edits, a mobile-first interface for reviewing changes, and an AI that understands context so you don't have to navigate menus.",
-  },
-  {
-    q: "Is this just another WordPress wrapper?",
-    a: "WordPress is the engine, not the interface. You never need to see wp-admin unless you want to. It's always there if you do. WordToSite is an AI orchestration layer powered by OpenAI, Anthropic Claude, and Google Gemini for content and intelligence, Firecrawl for scraping, Cloudflare for DNS, and InstaWP for hosting. WordPress is a battle-tested runtime for websites. We handle everything on top.",
-  },
-  {
-    q: "What's the tech stack?",
-    a: "AI from the best labs in the world: OpenAI ChatGPT for content, Anthropic Claude for reasoning, Google Gemini for visual analysis and long-context understanding. Firecrawl for web scraping. Cloudflare for DNS and SSL. InstaWP for WordPress deployment. Real-time voice via WebSocket, live deployment progress via Server-Sent Events. All wrapped in a simple UI. You don't need to know any of this to use it.",
-  },
-  {
-    q: "Can I self-host this?",
-    a: "Yes. WordToSite can run on your own infrastructure. You bring your own API keys for the AI services you want to use (OpenAI, Anthropic, Gemini, Cloudflare, etc.) and the platform runs entirely under your control. No vendor lock-in. Your data, your keys, your servers. We'll have a simple setup wizard to get you going in minutes.",
-  },
-];
+/* ─── Hero showcase (scrolling demo-site cards) ─── */
 
 const SC_NAV = (
   <div className="sc-nav">
@@ -74,7 +48,7 @@ const SC_3COLS = (
 const SHOWCASE_CARDS: { theme: string; url: string; body: React.ReactNode }[] = [
   {
     theme: "sc-theme-indigo",
-    url: "acme-saas.com",
+    url: "vista-dental.wordtosite.app",
     body: (
       <>
         {SC_NAV}
@@ -89,7 +63,7 @@ const SHOWCASE_CARDS: { theme: string; url: string; body: React.ReactNode }[] = 
   },
   {
     theme: "sc-theme-pink",
-    url: "studio-portfolio.com",
+    url: "metro-salon.wordtosite.app",
     body: (
       <>
         {SC_NAV}
@@ -107,7 +81,7 @@ const SHOWCASE_CARDS: { theme: string; url: string; body: React.ReactNode }[] = 
   },
   {
     theme: "sc-theme-green",
-    url: "greenbowl-cafe.com",
+    url: "bloom-cafe.wordtosite.app",
     body: (
       <>
         {SC_NAV}
@@ -126,7 +100,7 @@ const SHOWCASE_CARDS: { theme: string; url: string; body: React.ReactNode }[] = 
   },
   {
     theme: "sc-theme-yellow",
-    url: "urban-threads.shop",
+    url: "urban-eats.wordtosite.app",
     body: (
       <>
         {SC_NAV}
@@ -137,7 +111,7 @@ const SHOWCASE_CARDS: { theme: string; url: string; body: React.ReactNode }[] = 
   },
   {
     theme: "sc-theme-orange",
-    url: "spark-agency.co",
+    url: "harbor-law.wordtosite.app",
     body: (
       <>
         {SC_NAV}
@@ -158,7 +132,7 @@ const SHOWCASE_CARDS: { theme: string; url: string; body: React.ReactNode }[] = 
   },
   {
     theme: "sc-theme-indigo",
-    url: "daily-thoughts.blog",
+    url: "iron-gym.wordtosite.app",
     body: (
       <>
         {SC_NAV}
@@ -174,108 +148,535 @@ const SHOWCASE_CARDS: { theme: string; url: string; body: React.ReactNode }[] = 
   },
 ];
 
-const AEO_CODE_HTML = `<span class="hl-comment">&lt;!-- AEO: Structured data for answer engines --&gt;</span>
-<span class="hl-tag">&lt;script</span> <span class="hl-attr">type</span>=<span class="hl-str">"application/ld+json"</span><span class="hl-tag">&gt;</span>
-{
-  <span class="hl-key">"@context"</span>: <span class="hl-str">"schema.org"</span>,
-  <span class="hl-key">"@type"</span>: <span class="hl-str">"LocalBusiness"</span>,
-  <span class="hl-key">"name"</span>: <span class="hl-str">"Your Business"</span>,
-  <span class="hl-key">"description"</span>: <span class="hl-str">"..."</span>,
-  <span class="hl-key">"address"</span>: { ... },
-  <span class="hl-key">"openingHours"</span>: <span class="hl-str">"Mo-Fr 09:00-17:00"</span>
+/* ─── Why studios use it ─── */
+
+const TRIO_CARDS = [
+  {
+    bg: "--accent-dim",
+    fg: "--accent",
+    title: "Instant, not blank",
+    desc: "Every page comes pre-filled with copy and images written around your client's business — not placeholder text. Ready to present in about a minute.",
+    icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />,
+  },
+  {
+    bg: "--pink-dim",
+    fg: "--pink",
+    title: "200 designs to choose from",
+    desc: "A polished design for almost any niche — clinics, cafés, gyms, law firms, shops and more. Pick one and it deploys live, fully styled.",
+    icon: (
+      <>
+        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+        <polyline points="2 17 12 22 22 17" />
+        <polyline points="2 12 12 17 22 12" />
+      </>
+    ),
+  },
+  {
+    bg: "--green-dim",
+    fg: "--green",
+    title: "Pay only for what's live",
+    desc: "Run several client projects at once. The moment a client decides — or you're done — delete the site and billing for it stops on the spot.",
+    icon: (
+      <>
+        <rect x="1" y="4" width="22" height="16" rx="2" />
+        <line x1="1" y1="10" x2="23" y2="10" />
+      </>
+    ),
+  },
+];
+
+/* ─── How it works ─── */
+
+const HOW_STEPS = [
+  {
+    n: "1",
+    title: "Add your client's basics",
+    desc: "Business name, what they do, tone, a few details. This is the context the AI writes from.",
+  },
+  {
+    n: "2",
+    title: "Choose a design",
+    desc: "Browse 200 ready-made designs and pick the one that fits your client's industry and style.",
+  },
+  {
+    n: "3",
+    title: "AI builds & fills it — live",
+    desc: "The site is deployed to a live preview URL and AI generates tailored texts and images across every page. No hosting setup on your side.",
+  },
+  {
+    n: "4",
+    title: "Tweak & share",
+    desc: "Adjust the design, swap content, add your own touches, then send the preview link to your client.",
+  },
+  {
+    n: "5",
+    title: "Keep it or delete it",
+    desc: "Client's in? Move it forward. Client passed? Delete the site — and you stop being billed for it immediately.",
+  },
+  {
+    n: "↻",
+    title: "Run many at once",
+    desc: "Spin up sites for different clients in parallel — each is independent, and you only ever pay for the ones that are live.",
+    highlight: true,
+  },
+];
+
+/* ─── Who it's for ─── */
+
+const WHO_CARDS = [
+  {
+    bg: "--accent-dim",
+    fg: "--accent",
+    title: "Web studios",
+    desc: "Pitch multiple concepts fast, win more proposals, and start every project from a polished, content-filled base.",
+    icon: (
+      <>
+        <rect x="2" y="7" width="20" height="14" rx="2" />
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </>
+    ),
+  },
+  {
+    bg: "--yellow-dim",
+    fg: "--yellow",
+    title: "Digital agencies",
+    desc: "Give your sales and delivery teams a way to produce live client demos on demand — without tying up developers.",
+    icon: (
+      <>
+        <path d="M3 11l18-5v12L3 14v-3z" />
+        <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+      </>
+    ),
+  },
+  {
+    bg: "--pink-dim",
+    fg: "--pink",
+    title: "Freelancers",
+    desc: "Punch above your weight. Show clients a finished-looking site before you've written a line of code, and only pay while it's live.",
+    icon: (
+      <>
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </>
+    ),
+  },
+];
+
+/* ─── Features ─── */
+
+const FEATURES: [string, string][] = [
+  ["200 professional designs", "A professionally designed template for every kind of business."],
+  ["AI-written copy", "Headlines, services, about pages — written around your client's business and structured so AI search engines can cite it."],
+  ["AI-generated images", "Relevant visuals placed across the site automatically."],
+  ["Premium content library", "Royalty-free premium templates, images, and texts included with every project."],
+  ["One-click live deploy", "Each site goes live on a shareable preview URL — no hosting to set up."],
+  ["Safe sandbox", "Experiment freely in an isolated environment — never your client's production server."],
+  ["Full editing", "Tweak design and content before the client ever sees it."],
+  ["Many projects at once", "Run several client sites in parallel, for one client or many."],
+  ["Delete = stop billing", "No long-term commitment per site. Remove it and the meter stops."],
+];
+
+/* ─── Plans ─── */
+
+type PlanLi = { text: React.ReactNode; sub?: string; muted?: boolean };
+
+type LandingPlan = {
+  name: string;
+  price: number;
+  tagline: string;
+  cta: string;
+  to: string;
+  featured?: boolean;
+  items: PlanLi[];
+};
+
+const LANDING_PLANS: LandingPlan[] = [
+  {
+    name: "Free",
+    price: 0,
+    tagline: "Try the platform and see it for yourself.",
+    cta: "Start free",
+    to: "/app",
+    items: [
+      { text: <><b>1 live site</b> at a time</> },
+      { text: <>All <b>200 designs</b></> },
+      { text: "Live preview URL" },
+      { text: "No AI content generation", muted: true },
+      { text: "Site expires after 7 days", muted: true },
+    ],
+  },
+  {
+    name: "Pro",
+    price: 49,
+    tagline: "For studios and freelancers running client projects.",
+    cta: "Start Pro",
+    to: "/pricing",
+    featured: true,
+    items: [
+      { text: <><b>5 live sites</b> at once</> },
+      { text: <>Extra live sites: <b>$0.40 / day</b> each</>, sub: "billed only while live" },
+      { text: <><b>Unlimited sites</b> per month</>, sub: "create & delete as many as you want" },
+      { text: <><b>AI texts & images</b> on every site</> },
+      { text: "Premium content library" },
+      { text: <><b>10 AI generations</b> / month included</>, sub: "then $6 per extra generation" },
+      { text: "All 200 designs" },
+    ],
+  },
+  {
+    name: "Business",
+    price: 99,
+    tagline: "For agencies and teams with lots of projects.",
+    cta: "Start Business",
+    to: "/pricing",
+    items: [
+      { text: <><b>20 live sites</b> at once</> },
+      { text: <>Extra live sites: <b>$0.30 / day</b> each</>, sub: "cheaper per site than Pro" },
+      { text: <><b>Unlimited sites</b> per month</>, sub: "create & delete as many as you want" },
+      { text: "Everything in Pro" },
+      { text: <><b>25 AI generations</b> / month included</>, sub: "then $6 per extra generation" },
+      { text: "Priority support" },
+    ],
+  },
+];
+
+/* ─── Billing gantt ─── */
+
+type GBar = readonly [name: string, from: number, to: number];
+
+const POOL = [
+  "Maple Diner", "Oak & Co", "Riverside Inn", "Summit Law", "Velvet Salon", "Pine Dental",
+  "Echo Media", "Crest Realty", "Fern Florist", "Bolt Repair", "Hue Studio", "Sage Wellness",
+  "Tide Surf", "Atlas Movers", "Juno Bakery", "Onyx Barber", "Lark Boutique", "Ember Grill",
+  "Cove Hotel", "Drift Coffee", "Mint Spa", "Quill Books", "Rune Tattoo", "Aria Dance",
+  "Terra Garden", "Wren Photo", "Zephyr Travel", "Flux Gym", "Nimbus IT", "Pearl Nails",
+  "Cedar Vet", "Bay Cycles", "Lotus Yoga", "Forge Welding", "Halo Optics", "Brio Pasta",
+  "Vault Finance", "Reef Diving", "Aspen Ski", "Comet Couriers", "Sable Roofing", "Grove Daycare",
+];
+
+function bizSlots(): GBar[][] {
+  const slots: GBar[][] = [];
+  let n = 0;
+  for (let s = 0; s < 20; s++) {
+    const split = 11 + (s % 8);
+    slots.push([
+      [POOL[n++] ?? "", 1, split],
+      [POOL[n++] ?? "", split + 1, 30],
+    ]);
+  }
+  return slots;
 }
-<span class="hl-tag">&lt;/script&gt;</span>
 
-<span class="hl-tag">&lt;article</span> <span class="hl-attr">itemscope</span>
-  <span class="hl-attr">itemtype</span>=<span class="hl-str">"schema.org/Service"</span><span class="hl-tag">&gt;</span>
-  <span class="hl-tag">&lt;h1</span> <span class="hl-attr">itemprop</span>=<span class="hl-str">"name"</span><span class="hl-tag">&gt;</span>Web Design<span class="hl-tag">&lt;/h1&gt;</span>
-  <span class="hl-tag">&lt;p</span> <span class="hl-attr">itemprop</span>=<span class="hl-str">"description"</span><span class="hl-tag">&gt;</span>
-    Professional web design for
-    small businesses...
-  <span class="hl-tag">&lt;/p&gt;</span>
-  <span class="hl-tag">&lt;span</span> <span class="hl-attr">itemprop</span>=<span class="hl-str">"price"</span><span class="hl-tag">&gt;</span>$499<span class="hl-tag">&lt;/span&gt;</span>
-<span class="hl-tag">&lt;/article&gt;</span>
+type Scenario = {
+  plan: string;
+  price: number;
+  included: number;
+  rate: number;
+  slots: GBar[][];
+  extras: GBar[];
+  sub: React.ReactNode;
+  cap: React.ReactNode;
+};
 
-<span class="hl-comment">&lt;!-- GEO: Semantic HTML for generative AI --&gt;</span>
-<span class="hl-tag">&lt;nav</span> <span class="hl-attr">aria-label</span>=<span class="hl-str">"main"</span><span class="hl-tag">&gt;</span>...<span class="hl-tag">&lt;/nav&gt;</span>
-<span class="hl-tag">&lt;main</span> <span class="hl-attr">role</span>=<span class="hl-str">"main"</span><span class="hl-tag">&gt;</span>...<span class="hl-tag">&lt;/main&gt;</span>
-<span class="hl-tag">&lt;meta</span> <span class="hl-attr">name</span>=<span class="hl-str">"robots"</span>
-  <span class="hl-attr">content</span>=<span class="hl-str">"max-snippet:-1"</span><span class="hl-tag"> /&gt;</span>`;
+const SCENARIOS: Record<"pro" | "biz", Scenario> = {
+  pro: {
+    plan: "Pro",
+    price: 49,
+    included: 5,
+    rate: 0.4,
+    slots: [
+      [["Bloom Café", 1, 10], ["Vista Dental", 11, 21], ["Coral Spa", 22, 30]],
+      [["Harbor Law", 1, 8], ["Iron Gym", 9, 19], ["Peak Roofing", 20, 30]],
+      [["Sunny Daycare", 1, 13], ["Metro Salon", 14, 24], ["Apex Auto", 25, 30]],
+      [["Green Yoga", 1, 11], ["Lumen Studio", 12, 22], ["Nova Dental", 23, 30]],
+      [["Urban Eats", 1, 9], ["Stellar Gym", 10, 20], ["Bright Bakery", 21, 30]],
+    ],
+    extras: [["Pixel Agency", 10, 19], ["Bright Clinic", 10, 19]],
+    sub: (
+      <>
+        Your <b>Pro</b> plan covers <b>5 live sites at once</b>. Across the month 17 client sites
+        flowed through those 5 slots — each time you finish and delete one, the next project takes
+        its place. Only the 2 sites you ran <i>beyond</i> 5 are billed per day.
+      </>
+    ),
+    cap: (
+      <>
+        Watch the slots get reused: as each site is approved or dropped and deleted, the freed slot
+        instantly serves your next client — all for the one flat <b>$49</b>. The 2 sites that went
+        over your plan cost just <b>$8</b> for the days they were live, and stop the moment you
+        delete them.
+      </>
+    ),
+  },
+  biz: {
+    plan: "Business",
+    price: 99,
+    included: 20,
+    rate: 0.3,
+    slots: bizSlots(),
+    extras: [["Slate Roofing", 12, 21], ["Terra Health", 12, 21]],
+    sub: (
+      <>
+        Your <b>Business</b> plan covers <b>20 live sites at once</b>. A busy agency cycled{" "}
+        <b>40+ client sites</b> through those 20 slots this month — slots free up and refill as
+        projects wrap. Only the 2 sites beyond 20 are billed per day.
+      </>
+    ),
+    cap: (
+      <>
+        Run an entire agency from one plan. As each client site is finished and deleted, its slot
+        immediately serves the next — 40 sites for one flat <b>$99</b>. The 2 sites beyond your 20
+        added just <b>$6</b>, billed only for the days they were live.
+      </>
+    ),
+  },
+};
 
-const ARROW = (
-  <svg className="shift-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M5 12h14M12 5l7 7-7 7" />
-  </svg>
-);
+const TICKS = ["Day 1", "5", "10", "15", "20", "25", "30"];
 
-const SHIFT_ROWS: [string, string][] = [
-  ["Browse 200 themes", "AI picks your template"],
-  ["Write all your copy", "Describe it, we write it"],
-  ["Configure DNS yourself", "Domain + SSL, handled"],
-  ["Open wp-admin", '"Update the homepage"'],
-  ["Sit at your desk", "Manage from your phone"],
+function barPos(from: number, to: number): React.CSSProperties {
+  return {
+    left: `${(((from - 1) / 30) * 100).toFixed(2)}%`,
+    width: `${(((to - from + 1) / 30) * 100).toFixed(2)}%`,
+  };
+}
+
+function BillingGantt() {
+  const [key, setKey] = useState<"pro" | "biz">("pro");
+  const s = SCENARIOS[key];
+  const extraDays = s.extras.reduce((sum, [, from, to]) => sum + (to - from + 1), 0);
+  const extraCost = extraDays * s.rate;
+
+  return (
+    <div className="gantt">
+      <div className="gtab-hint">Pick a plan to see how its billing works ↓</div>
+      <div className="gtabs">
+        <button type="button" className={`gtab${key === "pro" ? " active" : ""}`} onClick={() => setKey("pro")}>
+          Pro · $49/mo
+        </button>
+        <button type="button" className={`gtab${key === "biz" ? " active" : ""}`} onClick={() => setKey("biz")}>
+          Business · $99/mo
+        </button>
+      </div>
+
+      <div className="gtitle">How your bill adds up — a real month</div>
+      <p className="gsub">{s.sub}</p>
+
+      <div className="glegend">
+        <span><i style={{ background: "linear-gradient(135deg,#3148e8,#6e5ae6)" }} />Covered by your plan</span>
+        <span><i style={{ background: "linear-gradient(135deg,#e3992e,#b86e00)" }} />Extra site — billed per day live</span>
+      </div>
+
+      <div className="gscroll">
+        <div className={`gchart${s.slots.length > 10 ? " dense" : ""}`}>
+          <div className="grow axis">
+            <div />
+            <div className="gtime">
+              {TICKS.map((label, i) => (
+                <span
+                  className="gtick"
+                  key={label}
+                  style={{
+                    left: `${(i * 100) / 6}%`,
+                    transform: i === 0 ? "none" : i === 6 ? "translateX(-100%)" : undefined,
+                  }}
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {s.slots.map((slot, i) => (
+            <div className="grow" key={i}>
+              <div className="glabel">Slot {i + 1}</div>
+              <div className="gtime">
+                {slot.map(([name, from, to], j) => (
+                  <div
+                    className={`gbar ${j % 2 ? "plan2" : "plan"}`}
+                    style={barPos(from, to)}
+                    title={`${name}: day ${from}–${to}`}
+                    key={j}
+                  >
+                    {name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="gseprow">
+            <span className="t">Above your plan's {s.included} sites — billed per day</span>
+          </div>
+
+          {s.extras.map(([name, from, to], i) => (
+            <div className="grow" key={i}>
+              <div className="glabel">Extra</div>
+              <div className="gtime">
+                <div className="gbar extra" style={barPos(from, to)} title={name}>
+                  {name} · {to - from + 1}d
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="ginv">
+        <div className="ir">
+          <span>{s.plan} plan — covers {s.included} live sites</span>
+          <span>${s.price.toFixed(2)}</span>
+        </div>
+        <div className="ir">
+          <span>{s.extras.length} extra sites — {extraDays} site-days × ${s.rate.toFixed(2)}</span>
+          <span>${extraCost.toFixed(2)}</span>
+        </div>
+        <div className="ir tot">
+          <span>Your bill this month</span>
+          <span>${(s.price + extraCost).toFixed(2)}</span>
+        </div>
+      </div>
+
+      <p className="gcap">{s.cap}</p>
+    </div>
+  );
+}
+
+/* ─── Go live ─── */
+
+const GOLIVE_STEPS = [
+  {
+    title: "Your client approves",
+    desc: <>Hit <b>"Take it live"</b> on the site you built. No re-work — it's the same site they already reviewed.</>,
+  },
+  {
+    title: "Choose where it lives",
+    desc: <>Export it to your own hosting in one click, or keep it hosted with us. The site moves with all its content intact.</>,
+  },
+  {
+    title: "Get the official theme license",
+    desc: <>A genuine ThemeREX license — <b>$69 once</b>, with lifetime updates and support. Charged only now, only for this won project.</>,
+  },
+  {
+    title: "It's yours to hand over",
+    desc: <>A real, licensed, update-ready WordPress site you deliver to your client and bill for — at your full project price.</>,
+  },
 ];
 
-const HOOD_CARDS = [
-  { bg: "--accent-dim", fg: "--accent", title: "Firecrawl Scraping", desc: "Deep-crawl any site. Extract content, brand elements, color palettes, and page structures automatically.", tag: "website analysis", icon: <><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></> },
-  { bg: "--green-dim", fg: "--green", title: "Whisper + WebSocket", desc: "Real-time voice transcription via WebSocket. Stream audio, get text back instantly. Works on mobile browsers.", tag: "voice pipeline", icon: <><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /></> },
-  { bg: "--yellow-dim", fg: "--yellow", title: "Multi-AI Content Engine", desc: "Page copy, blog posts, and meta descriptions generated by top-tier AI labs: OpenAI ChatGPT, Anthropic Claude, and Google Gemini.", tag: "content gen", icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
-  { bg: "--pink-dim", fg: "--pink", title: "Gemini Vision", desc: "Visual layout analysis with Google Gemini's 1M+ token context. Understands your site's design, not just its code.", tag: "visual AI", icon: <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></> },
-  { bg: "--orange-dim", fg: "--orange", title: "Cloudflare DNS + SSL", desc: "Automatic DNS zone creation, record management, and SSL provisioning. Zero manual nameserver config.", tag: "infrastructure", icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /> },
-  { bg: "--accent-dim", fg: "--accent", title: "InstaWP Deploy", desc: "Full WordPress instances in seconds. Template-based. No servers to manage. Auto-configured with your content.", tag: "deploy", icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /> },
-];
-
-const COMPARE_ROWS: [string, string][] = [
-  ["No AEO / Schema markup", "AEO & Schema markup"],
-  ["No GEO optimization", "GEO optimization"],
-  ["No voice management", "Voice management"],
-  ["Manual SSL & DNS", "Auto SSL & DNS"],
-  ["No AI content generation", "AI content generation"],
-  ["Desktop-first editing", "Mobile-first editing"],
-  ["Complex dashboards", "Dashboard-free"],
-  ["Slow deploy cycles", "60-second deploys"],
-];
-
-const CITATIONS = [
-  { icon: "G", style: { background: "#4285F4", color: "#fff" }, platform: "Google Featured Snippet", label: "Featured answer", labelColor: "var(--text-muted)", prefix: "Source:", src: "bellasbakery.com", body: <><strong>Bella's Bakery</strong> is a family-owned artisan bakery in Portland, OR specializing in sourdough breads and French pastries. Open Tuesday through Sunday, 7 AM to 6 PM.</> },
-  { icon: "C", style: { background: "#10A37F", color: "#fff" }, platform: "ChatGPT", label: "Answer", labelColor: "#10A37F", prefix: "Referenced:", src: "bellasbakery.com/wedding-cakes", body: <>Based on their website, <strong>Bella's Bakery</strong> offers custom wedding cakes starting at $150. They use locally sourced organic flour and offer gluten-free options.</> },
-  { icon: "A", style: { background: "linear-gradient(135deg,#D97706,#CA8A04)", color: "#fff" }, platform: "Claude", label: "Response", labelColor: "#D97706", prefix: "Cited:", src: "bellasbakery.com/menu", body: <>According to <strong>Bella's Bakery</strong>, their most popular items include the San Francisco-style sourdough loaf and the seasonal fruit tarts made with organic ingredients.</> },
-  { icon: "G", style: { background: "linear-gradient(135deg,#4285F4,#34A853)", color: "#fff" }, platform: "Gemini", label: "AI Overview", labelColor: "#4285F4", prefix: "From:", src: "bellasbakery.com/about", body: <><strong>Bella's Bakery</strong> in Portland has a 4.9-star rating. Reviewers highlight the artisan sourdough and welcoming atmosphere. They also offer baking classes on weekends.</> },
-];
+/* ─── Testimonials ─── */
 
 const TESTIMONIALS = [
-  { quote: "I rebuilt my entire agency portfolio in 20 minutes. The AEO markup alone would have taken my dev team a week. Now our clients show up in AI search results.", avatar: "linear-gradient(135deg,#818CF8,#6366F1)", name: "Sarah Chen", role: "Founder, Pixel & Co Agency" },
-  { quote: "Voice management is a game-changer. I updated my restaurant menu from my phone while prepping for dinner service. Said it, reviewed it, published. Done.", avatar: "linear-gradient(135deg,#34D399,#059669)", name: "Marcus Rivera", role: "Owner, The Green Fork" },
-  { quote: "We migrated 12 client sites in a single afternoon. Pasted the URLs, WordToSite analyzed everything, and rebuilt them with proper schema. Our SEO metrics jumped 40%.", avatar: "linear-gradient(135deg,#F472B6,#DB2777)", name: "Priya Patel", role: "Digital Strategist, BrightPath" },
-  { quote: "I'm not technical at all. I described my coaching business in a voice note and had a full website live in 60 seconds. My clients find me through ChatGPT now.", avatar: "linear-gradient(135deg,#FBBF24,#D97706)", name: "James Okafor", role: "Life Coach & Speaker" },
-  { quote: "The zero-dashboard approach sold me. No more logging into wp-admin, no more plugin updates. I just talk to my site and it does what I want. This is the future.", avatar: "linear-gradient(135deg,#FB923C,#EA580C)", name: "Lena Vogt", role: "Freelance Designer, Berlin" },
-  { quote: "We white-label WordToSite for our agency clients. They get AI-optimized sites, we get recurring revenue, and nobody touches a CMS dashboard. Everyone wins.", avatar: "linear-gradient(135deg,#A78BFA,#7C3AED)", name: "Tom Andersen", role: "CEO, Nordic Digital" },
+  {
+    quote: "We used to send clients static mockups and pray. Now we send a live site with their name on it. Two of our last three pitches closed on the spot.",
+    avatar: "linear-gradient(135deg,#3148e8,#1733d1)",
+    name: "Sarah Chen",
+    role: "Founder, Pixel & Co Agency",
+  },
+  {
+    quote: "Seventeen client demos last month on one Pro plan. The ones that didn't convert cost us nothing but the minute it took to delete them.",
+    avatar: "linear-gradient(135deg,#d4549a,#b4236e)",
+    name: "Priya Patel",
+    role: "Digital Strategist, BrightPath",
+  },
+  {
+    quote: "We white-label the demos for our clients. They see a finished-looking site in the first meeting, we get the contract — and we only pay for what stays live.",
+    avatar: "linear-gradient(135deg,#6e5ae6,#4b38c9)",
+    name: "Tom Andersen",
+    role: "CEO, Nordic Digital",
+  },
 ];
+
+/* ─── FAQ ─── */
+
+const FAQ_ITEMS: FaqItem[] = [
+  {
+    q: "Do I need my own hosting?",
+    a: "No. Every site runs on our cloud in a safe sandbox and gets its own live preview link. There's nothing to install or configure on your side.",
+  },
+  {
+    q: 'What exactly is an "AI generation"?',
+    a: "One generation is a full build of a site's content — all the texts and images, written and placed around your client's business. Each time you create a new site or regenerate its content, that's one generation. Your plan includes a monthly amount, and extras are billed at a flat per-generation rate.",
+  },
+  {
+    q: "What happens when I delete a site?",
+    a: "The site is removed and you immediately stop being billed for it. There's no per-site commitment — keep a site for three days or three weeks, it's entirely up to you.",
+  },
+  {
+    q: "Can I work on several client sites at the same time?",
+    a: "Yes. Each plan includes a number of sites you can run at once (1 on Free, 5 on Pro, 20 on Business). Need more than your plan includes? Add extra live sites anytime — they're billed only for the days they're online.",
+  },
+  {
+    q: "What does the client see?",
+    a: "A live, fully styled WordPress site on a shareable preview URL — already filled with relevant content, ready to review. You can tweak everything before sharing it.",
+  },
+  {
+    q: "Do I pay for the theme on every site?",
+    a: "No. Building and previewing sites costs you nothing in theme licensing — you only buy the theme license ($69 one-time, lifetime updates) on a project when your client approves it and you take it live. Every demo that never converts is completely free.",
+  },
+  {
+    q: "Is the theme license genuine, and why is it cheaper here?",
+    a: "Yes — WordToSite works directly with ThemeREX, the studio behind all 200 designs. The go-live license is a real, official license with lifetime updates and support, offered at an exclusive one-time price we arranged with them — a better deal than buying it on your own and re-subscribing for every project.",
+  },
+  {
+    q: "Is there a contract or setup fee?",
+    a: "No contracts and no setup fees. You can start free, upgrade when you're ready, and cancel anytime. Usage is totalled and billed once a month, and the one-time theme license is charged only when you take a won project live.",
+  },
+  {
+    q: "What if I go over my plan's limits?",
+    a: "You're never blocked. Extra live sites and extra AI generations are simply added to your monthly bill at the rates shown on each plan — so you can keep working without interruption.",
+  },
+];
+
+/* ─── Shared bits ─── */
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M3 8l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconCard({ card }: { card: (typeof TRIO_CARDS)[number] }) {
+  return (
+    <div className="hood-card">
+      <div className="hood-icon" style={{ background: `var(${card.bg})`, color: `var(${card.fg})` }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {card.icon}
+        </svg>
+      </div>
+      <h3 className="hood-title">{card.title}</h3>
+      <p className="hood-desc">{card.desc}</p>
+    </div>
+  );
+}
 
 function Home() {
   const cards = [...SHOWCASE_CARDS, ...SHOWCASE_CARDS];
   return (
     <>
+      {/* HERO */}
       <header className="hero">
-        <div className="hero-eyebrow">Building for the post-dashboard era</div>
+        <div className="hero-eyebrow">For WordPress studios, agencies &amp; freelancers</div>
         <h1>
-          Websites for the<br />
-          <span className="gradient">zero-click internet.</span>
+          Client-ready WordPress sites<br />
+          <span className="gradient">in about a minute.</span>
         </h1>
         <p className="hero-sub">
-          Search is going zero-click. AI answers questions before anyone visits your page. Your website needs AEO and GEO to stay visible, and you shouldn't need a dashboard to make it happen.
+          Pick a design, add your client's details, and watch AI fill a <b>live</b>, polished
+          WordPress site with tailored copy and images. Show it, tweak it, then keep it or delete
+          it — <b>you only pay for the time a site is really live.</b>
         </p>
         <div className="hero-actions">
           <Link className="btn-hero btn-hero-primary" to="/app">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
-            Create your site
+            Start free — no card needed
           </Link>
-          <a className="btn-hero btn-hero-secondary" href="#paths">See how it works</a>
-          <Link className="btn-hero btn-hero-secondary" to="/pricing">Pricing</Link>
+          <a className="btn-hero btn-hero-secondary" href="#how">See how it works</a>
+          <a className="btn-hero btn-hero-secondary" href="#pricing">Pricing</a>
         </div>
-        <p className="hero-hint">No code. No dashboards. Just talk and we build.</p>
+        <p className="hero-hint">200 ready-made designs · Human-like AI content · Delete anytime, billing stops</p>
 
         <div className="hero-showcase">
           <div className="showcase-row">
@@ -294,35 +695,12 @@ function Home() {
         </div>
       </header>
 
-      <div className="trust-bar">
-        <div className="trust-bar-inner">
-          <span className="trust-label">Powered by</span>
-          <div className="trust-logos">
-            <span className="trust-logo">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z" /></svg>
-              OpenAI
-            </span>
-            <span className="trust-logo">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.304 2.016H6.696C4.212 2.016 2.016 4.212 2.016 6.696v10.608c0 2.484 2.196 4.68 4.68 4.68h10.608c2.484 0 4.68-2.196 4.68-4.68V6.696c0-2.484-2.196-4.68-4.68-4.68zm-4.32 14.784h-1.2V8.4h-2.4v7.2h-1.2V8.4a1.2 1.2 0 0 1 1.2-1.2h2.4a1.2 1.2 0 0 1 1.2 1.2v8.4zm3.6 0h-1.2v-4.8h-1.2v-1.2h1.2V9.6h1.2v1.2h1.2v1.2h-1.2v4.8z" /></svg>
-              Anthropic
-            </span>
-            <span className="trust-logo">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" /></svg>
-              Gemini
-            </span>
-            <span className="trust-logo">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5088 16.8447C15.981 17.0258 15.27 17.1936 14.3811 17.3541L13.881 14.5765L16.5088 16.8447ZM7.49121 16.8447L10.1191 14.5765L9.61893 17.3541C8.72998 17.1936 8.01904 17.0258 7.49121 16.8447ZM12 3.8073L8.59473 10.4141H15.4053L12 3.8073ZM4.14844 13.9688C3.70898 13.1406 3.41992 12.2598 3.28418 11.3438L6.3252 14.0039L4.14844 13.9688ZM20.6748 11.3438C20.5391 12.2598 20.2501 13.1406 19.8115 13.9688L17.6748 14.0039L20.6748 11.3438ZM12 21.6C10.3477 21.6 8.74805 21.1898 7.30078 20.4023L9.87891 18.5039L12 21.1875L14.1211 18.5039L16.6992 20.4023C15.252 21.1898 13.6523 21.6 12 21.6Z" /></svg>
-              Cloudflare
-            </span>
-          </div>
-        </div>
-      </div>
-
+      {/* MANIFESTO STRIP */}
       <div className="manifesto">
         <div className="manifesto-track">
           {[
-            ["purple", "No dashboards"], ["green", "Voice-first management"], ["pink", "Migrate from any website"], ["yellow", "AEO + GEO optimized"], ["orange", "Manage from your phone"], ["purple", "Auto SSL + custom domains"], ["green", "60-second deploys"], ["pink", "Schema markup built-in"],
-            ["purple", "No dashboards"], ["green", "Voice-first management"], ["pink", "Migrate from any website"], ["yellow", "AEO + GEO optimized"], ["orange", "Manage from your phone"], ["purple", "Auto SSL + custom domains"], ["green", "60-second deploys"], ["pink", "Schema markup built-in"],
+            ["purple", "Client-ready in ~1 minute"], ["green", "200 ready-made designs"], ["pink", "AI copy + images included"], ["yellow", "Live preview URLs"], ["orange", "Delete = billing stops"], ["purple", "No hosting setup"], ["green", "Run client sites in parallel"], ["pink", "White-label demos"],
+            ["purple", "Client-ready in ~1 minute"], ["green", "200 ready-made designs"], ["pink", "AI copy + images included"], ["yellow", "Live preview URLs"], ["orange", "Delete = billing stops"], ["purple", "No hosting setup"], ["green", "Run client sites in parallel"], ["pink", "White-label demos"],
           ].map(([dot, label], i) => (
             <span className="manifesto-item" key={i}>
               <span className={`mi-dot ${dot}`} /> {label}
@@ -331,264 +709,233 @@ function Home() {
         </div>
       </div>
 
-      <section id="vision" className="border-t">
+      {/* WHY STUDIOS USE IT */}
+      <section className="border-t">
         <div className="section-container">
-          <div className="shift-layout fade-in">
-            <div className="section-eyebrow">the shift</div>
-            <h3 className="shift-headline">The internet changed.<br />Website creation didn't.</h3>
-            <p className="shift-body">
-              Most searches now end before anyone clicks a link. AI reads your site so humans don't have to. Your site needs Answer Engine Optimization (AEO) and Generative Engine Optimization (GEO) to stay visible. But theme hunting, block dragging, dashboard wrangling? That was designed for a different era.
+          <div className="section-header center fade-in">
+            <div className="section-eyebrow">why studios use it</div>
+            <h2 className="section-title">Stop showing clients empty templates.</h2>
+            <p className="section-desc">
+              Skip the blank-theme, lorem-ipsum stage. Hand your client something that already
+              looks finished — white-labeled and ready to present.
             </p>
-            <div className="shift-comparison">
-              {SHIFT_ROWS.map(([oldv, newv], i) => (
-                <div className="shift-row" key={i}>
-                  <div className="shift-old">{oldv}</div>
-                  {ARROW}
-                  <div className="shift-new">{newv}</div>
+          </div>
+          <div className="hood-grid fade-in">
+            {TRIO_CARDS.map((card) => (
+              <IconCard card={card} key={card.title} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how" className="border-t">
+        <div className="section-container">
+          <div className="section-header center fade-in">
+            <div className="section-eyebrow">how it works</div>
+            <h2 className="section-title">From brief to live preview in five steps.</h2>
+          </div>
+          <div className="steps-grid fade-in">
+            {HOW_STEPS.map((step) => (
+              <div className={`step-card${step.highlight ? " highlight" : ""}`} key={step.title}>
+                <div className="step-num">{step.n}</div>
+                <div>
+                  <h3>{step.title}</h3>
+                  <p>{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* WHO IT'S FOR */}
+      <section id="who" className="border-t">
+        <div className="section-container">
+          <div className="section-header center fade-in">
+            <div className="section-eyebrow">who it's for</div>
+            <h2 className="section-title">Built for people who pitch WordPress sites.</h2>
+            <p className="section-desc">
+              If you create WordPress sites for clients and want a faster, more impressive way to
+              win the project — this is for you.
+            </p>
+          </div>
+          <div className="hood-grid fade-in">
+            {WHO_CARDS.map((card) => (
+              <IconCard card={card} key={card.title} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section id="features" className="border-t">
+        <div className="section-container">
+          <div className="section-header center fade-in">
+            <div className="section-eyebrow">what you get</div>
+            <h2 className="section-title">Everything to go from idea to "wow."</h2>
+          </div>
+          <div className="feat-grid fade-in">
+            {FEATURES.map(([title, desc]) => (
+              <div className="feat-item" key={title}>
+                <span className="feat-check">✓</span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="border-t">
+        <div className="section-container">
+          <div className="section-header center fade-in">
+            <div className="section-eyebrow">pricing</div>
+            <h2 className="section-title">Simple plans. Pay for what you actually use.</h2>
+            <p className="section-desc">
+              Every plan includes a set of live sites. Need more? Add them — and only pay for the
+              days they're online.
+            </p>
+          </div>
+
+          <div className="landing-plans fade-in">
+            {LANDING_PLANS.map((plan) => (
+              <div className={`plan-card${plan.featured ? " featured" : ""}`} key={plan.name}>
+                {plan.featured ? <span className="plan-tag">Most popular</span> : null}
+                <div className="plan-head">
+                  <div className="plan-name">{plan.name}</div>
+                  <div className="plan-tagline">{plan.tagline}</div>
+                  <div className="plan-price-row">
+                    <div className="plan-price">
+                      <span className="currency">$</span>
+                      {plan.price}
+                    </div>
+                    <div className="plan-per">per month</div>
+                  </div>
+                </div>
+                <div className="plan-feats">
+                  <ul>
+                    {plan.items.map((item, i) => (
+                      <li className={item.muted ? "muted" : undefined} key={i}>
+                        {item.muted ? <span className="li-dash">–</span> : <CheckIcon />}
+                        <span>
+                          {item.text}
+                          {item.sub ? <span className="li-sub">{item.sub}</span> : null}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="plan-cta">
+                  <Link className={`plan-btn${plan.featured ? " primary" : ""}`} to={plan.to}>
+                    {plan.cta}
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="plans-note">No contracts. Cancel anytime. Usage is added up and billed once a month.</p>
+
+          {/* BILLING EXPLAINER */}
+          <div className="bill fade-in">
+            <div className="bill-head">
+              <h3>How "pay for what's live" works</h3>
+              <p>
+                Your plan covers a set number of live sites. Spin up more whenever you need them —
+                each extra site is billed only for the days it's actually online. Delete a site and
+                its billing stops the same day.
+              </p>
+            </div>
+
+            <BillingGantt />
+
+            <div className="bill-points">
+              <div className="bill-point">
+                <h3>🟢 You're in control</h3>
+                <p>Create and delete sites whenever you like. Nothing runs — or bills — without you.</p>
+              </div>
+              <div className="bill-point">
+                <h3>⏱️ Daily, not monthly</h3>
+                <p>Extra sites are counted per day they're live, so a 3-day demo costs a fraction of a full month.</p>
+              </div>
+              <div className="bill-point">
+                <h3>🧮 One clear invoice</h3>
+                <p>Your plan fee plus any usage is totalled into a single monthly bill. No surprises.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* GO LIVE / LICENSE */}
+      <section id="golive" className="border-t">
+        <div className="section-container">
+          <div className="section-header center fade-in">
+            <div className="section-eyebrow">when your client says yes</div>
+            <h2 className="section-title">Take it live — and own it.</h2>
+            <p className="section-desc">
+              Building and showing demos is always free. You only pay for the theme license on the
+              projects your client actually buys — then it's a flat <b>one-time</b> fee with{" "}
+              <b>lifetime updates</b>.
+            </p>
+          </div>
+
+          <div className="golive-grid fade-in">
+            <div className="gl-steps">
+              {GOLIVE_STEPS.map((step, i) => (
+                <div className="gl-step" key={step.title}>
+                  <div className="gl-num">{i + 1}</div>
+                  <div>
+                    <h3>{step.title}</h3>
+                    <p>{step.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
+
+            <div className="lic-card">
+              <div className="lic-badge">Exclusive WordToSite price</div>
+              <div className="lic-name">Go-live theme license</div>
+              <div className="lic-price">
+                $69<small> one-time</small>
+              </div>
+              <div className="lic-sub">
+                per won project — the official white-label license, sourced directly from ThemeREX,
+                the studio behind all 200 designs. We pass it through at cost.
+              </div>
+              <ul>
+                <li>Lifetime theme updates &amp; support included</li>
+                <li>Genuine, official ThemeREX license</li>
+                <li>Export to your own hosting, or keep it with us</li>
+                <li>Only charged when your client buys — every demo is free</li>
+              </ul>
+              <div className="lic-foot">
+                A better deal than buying the license on its own: one flat price, lifetime updates,
+                available exclusively through WordToSite.
+              </div>
+            </div>
+          </div>
+
+          <div className="demo-free">
+            🎉 <b>Build as many demos as you want at no theme cost.</b> The $69 license applies only
+            on projects you win and take live — never on demos that don't convert.
           </div>
         </div>
       </section>
 
+      {/* TESTIMONIALS */}
       <section className="border-t">
         <div className="section-container">
           <div className="section-header center fade-in">
-            <div className="section-eyebrow">the difference</div>
-            <h2 className="section-title">AEO + GEO, built in.</h2>
-            <p className="section-desc">Your visitors see a beautiful page. Answer engines and generative AI see clean, structured data. WordToSite builds for both. Automatically.</p>
-          </div>
-          <div className="dual-view fade-in">
-            <div className="view-card">
-              <div className="view-label">What your visitors see</div>
-              <div className="view-browser">
-                <div className="browser-bar">
-                  <span className="browser-dots"><span /><span /><span /></span>
-                  <span className="browser-url">yourbusiness.com</span>
-                </div>
-                <div className="browser-body">
-                  <div className="mock-nav">
-                    <div className="mock-logo"><div className="mock-logo-icon" /><div className="mock-logo-text" /></div>
-                    <div className="mock-nav-links"><div className="mock-nav-link" /><div className="mock-nav-link" /><div className="mock-nav-link" /></div>
-                    <div className="mock-nav-btn" />
-                  </div>
-                  <div className="mock-hero">
-                    <div className="mock-hero-title" /><div className="mock-hero-sub" /><div className="mock-hero-cta" />
-                  </div>
-                  <div className="mock-section-label" />
-                  <div className="mock-section-title" />
-                  <div className="mock-cards">
-                    {[0, 1, 2].map((i) => (
-                      <div className="mock-card" key={i}>
-                        <div className="mock-card-icon" /><div className="mock-card-title" /><div className="mock-card-desc" /><div className="mock-card-desc2" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mock-testimonial">
-                    <div className="mock-avatar" />
-                    <div className="mock-testimonial-lines"><div className="mock-testimonial-line" /><div className="mock-testimonial-line" /><div className="mock-testimonial-line" /></div>
-                  </div>
-                  <div className="mock-footer">
-                    <div className="mock-footer-logo" />
-                    <div className="mock-footer-links"><div className="mock-footer-link" /><div className="mock-footer-link" /><div className="mock-footer-link" /></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="view-card">
-              <div className="view-label view-label-ai">What answer engines see (AEO/GEO)</div>
-              <div className="view-code">
-                <pre dangerouslySetInnerHTML={{ __html: AEO_CODE_HTML }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="paths" className="border-t">
-        <div className="section-container">
-          <div className="section-header center fade-in">
-            <div className="section-eyebrow">get started</div>
-            <h2 className="section-title">Two paths. One destination.</h2>
-            <p className="section-desc">Whether you're migrating an existing website or building from scratch, you're 60 seconds from production.</p>
-          </div>
-          <div className="paths-grid fade-in">
-            <div className="path-card">
-              <div className="path-icon migrate">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-              </div>
-              <div className="path-label">I have a website</div>
-              <h3 className="path-title">Bring your old site<br />into the new internet</h3>
-              <p className="path-desc">Paste your URL. Our AI scrapes it, extracts your brand, analyzes your layout, and rebuilds it. AEO-ready with structured data, schema markup, and content optimized for answer engines.</p>
-              <div className="path-steps">
-                <div className="path-step"><span className="path-step-num">1</span> Paste your current website URL</div>
-                <div className="path-step"><span className="path-step-num">2</span> AI extracts brand, content, structure</div>
-                <div className="path-step"><span className="path-step-num">3</span> Template matched, content regenerated</div>
-                <div className="path-step"><span className="path-step-num">4</span> Live site with your custom domain</div>
-              </div>
-              <Link className="path-cta" to="/app">
-                Migrate my site
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-              </Link>
-            </div>
-            <div className="path-card">
-              <div className="path-icon voice">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
-              </div>
-              <div className="path-label">I need a new website</div>
-              <h3 className="path-title">Just talk.<br />We'll build it.</h3>
-              <p className="path-desc">Answer 8 quick questions by voice or text, from your laptop or phone. Our AI builds your complete site brief, picks the right template, and generates all your content.</p>
-              <div className="path-steps">
-                <div className="path-step"><span className="path-step-num">1</span> Answer questions by voice or text</div>
-                <div className="path-step"><span className="path-step-num">2</span> AI builds your business brief</div>
-                <div className="path-step"><span className="path-step-num">3</span> Template, content, and features selected</div>
-                <div className="path-step"><span className="path-step-num">4</span> Production site deployed instantly</div>
-              </div>
-              <Link className="path-cta" to="/app">
-                Start talking
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /></svg>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="voice" className="border-t">
-        <div className="section-container">
-          <div className="voice-grid fade-in">
-            <div className="voice-mockup">
-              <div className="phone-notch" />
-              <div className="phone-body">
-                <div className="phone-header">
-                  <h4>WordToSite</h4>
-                  <p>Managing your-business.com</p>
-                </div>
-                <div className="phone-wave">
-                  {[0, 1, 2, 3, 4, 5, 6].map((i) => <div className="wave-bar" key={i} />)}
-                </div>
-                <div className="phone-transcript">
-                  <div className="t-label">You said:</div>
-                  "Update the homepage hero to say we now serve Europe. Add a blog post about our expansion."
-                </div>
-                <div className="phone-actions">
-                  <div className="phone-btn secondary">Redo</div>
-                  <div className="phone-btn primary">Apply changes</div>
-                </div>
-              </div>
-            </div>
-            <div className="voice-info">
-              <div className="section-eyebrow">voice-first</div>
-              <h3>Your website, managed<br />from your pocket.</h3>
-              <p>No more opening a laptop to update a heading. No more learning wp-admin. Talk to your website like you'd talk to a colleague. From your phone, on the bus, between meetings.</p>
-              <p>This is where website management is going. We're just building it first.</p>
-              <div className="voice-capabilities">
-                <div className="voice-cap">
-                  <div className="voice-cap-icon v1">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                  </div>
-                  <div className="voice-cap-text"><h4>Edit by speaking</h4><p>"Change the tagline to 'Built for speed'". Done.</p></div>
-                </div>
-                <div className="voice-cap">
-                  <div className="voice-cap-icon v2">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
-                  </div>
-                  <div className="voice-cap-text"><h4>Create content by voice</h4><p>"Write a blog post about our new pricing". Published.</p></div>
-                </div>
-                <div className="voice-cap">
-                  <div className="voice-cap-icon v3">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>
-                  </div>
-                  <div className="voice-cap-text"><h4>Fully mobile</h4><p>No desktop required. Manage everything from your phone.</p></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="tech" className="border-t">
-        <div className="section-container">
-          <div className="section-header center fade-in">
-            <div className="section-eyebrow">under the hood</div>
-            <h2 className="section-title">Boring tech. Wild results.</h2>
-            <p className="section-desc">A clean UI that orchestrates AI from the world's best labs, handles DNS, and deploys WordPress. So you never have to.</p>
-          </div>
-          <div className="hood-grid fade-in">
-            {HOOD_CARDS.map((c, i) => (
-              <div className="hood-card" key={i}>
-                <div className="hood-icon" style={{ background: `var(${c.bg})`, color: `var(${c.fg})` }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">{c.icon}</svg>
-                </div>
-                <h3 className="hood-title">{c.title}</h3>
-                <p className="hood-desc">{c.desc}</p>
-                <span className="hood-tag">{c.tag}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t">
-        <div className="section-container">
-          <div className="section-header center fade-in">
-            <div className="section-eyebrow">the comparison</div>
-            <h2 className="section-title">Regular websites vs WordToSite</h2>
-            <p className="section-desc">Everything your current site is missing, built in from day one.</p>
-          </div>
-          <div className="compare-table fade-in">
-            <div className="compare-header">
-              <div className="compare-header-cell">Regular websites</div>
-              <div className="compare-header-cell">WordToSite</div>
-            </div>
-            {COMPARE_ROWS.map(([no, yes], i) => (
-              <div className="compare-row" key={i}>
-                <div className="compare-cell"><span className="compare-x">&#x2717;</span> {no}</div>
-                <div className="compare-cell"><span className="compare-check">&#x2713;</span> {yes}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t">
-        <div className="section-container">
-          <div className="section-header center fade-in">
-            <div className="section-eyebrow">visibility</div>
-            <h2 className="section-title">Where your site appears</h2>
-            <p className="section-desc">AEO and GEO-optimized sites get cited by AI engines. Here's what that looks like.</p>
-          </div>
-          <div className="citation-grid fade-in">
-            {CITATIONS.map((c, i) => (
-              <div className="citation-card" key={i}>
-                <div className="citation-header">
-                  <div className="citation-icon" style={c.style}>{c.icon}</div>
-                  <span className="citation-platform">{c.platform}</span>
-                </div>
-                <div className="citation-body">
-                  <div className="citation-label" style={{ color: c.labelColor }}>{c.label}</div>
-                  <p className="citation-text">{c.body}</p>
-                  <div className="citation-source">
-                    <span>{c.prefix}</span>
-                    <span className="citation-source-link">{c.src}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t">
-        <div className="section-container">
-          <div className="section-header center fade-in">
-            <div className="section-eyebrow">what people say</div>
-            <h2 className="section-title">Trusted by builders who ship</h2>
-            <p className="section-desc">Founders, freelancers, and agencies who switched to WordToSite.</p>
+            <div className="section-eyebrow">what studios say</div>
+            <h2 className="section-title">Pitch with a finished site, not a promise.</h2>
           </div>
           <div className="testimonials-grid fade-in">
-            {TESTIMONIALS.map((t, i) => (
-              <div className="testimonial-card" key={i}>
+            {TESTIMONIALS.map((t) => (
+              <div className="testimonial-card" key={t.name}>
                 <div className="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
                 <p className="testimonial-quote">"{t.quote}"</p>
                 <div className="testimonial-author">
@@ -604,27 +951,34 @@ function Home() {
         </div>
       </section>
 
+      {/* FAQ */}
       <section id="faq" className="border-t">
         <div className="section-container">
           <div className="section-header center fade-in">
             <div className="section-eyebrow">faq</div>
-            <h2 className="section-title">Questions you're thinking</h2>
+            <h2 className="section-title">Good questions, clear answers.</h2>
           </div>
           <Faq items={FAQ_ITEMS} />
         </div>
       </section>
 
+      {/* FINAL CTA */}
       <section className="border-t cta-section">
         <div className="section-container">
           <div className="fade-in">
-            <h2 className="cta-title">The web moved on.<br />Your website should too.</h2>
-            <p className="cta-desc">Migrate your existing site or create one by talking to it. AEO and GEO-ready from the first deploy.</p>
+            <h2 className="cta-title">Show your next client<br />a finished site — today.</h2>
+            <p className="cta-desc">
+              Start free, build your first AI-filled preview, and see why studios stop pitching
+              empty templates.
+            </p>
             <div className="cta-actions">
               <Link className="btn-hero btn-hero-primary" to="/app">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" width="16" height="16"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
-                Create your site
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" width="16" height="16">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+                Start free — no card needed
               </Link>
-              <a className="btn-hero btn-hero-secondary" href="#faq">Read FAQ</a>
+              <a className="btn-hero btn-hero-secondary" href="#pricing">Compare plans</a>
             </div>
             <div className="cta-powered">
               Powered by AI from

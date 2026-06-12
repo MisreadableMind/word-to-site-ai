@@ -8,7 +8,7 @@
    ============================================================ */
 
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
 
 *,
 *::before,
@@ -22,43 +22,46 @@ body {
   height: 100%;
 }
 
-/* ===== MARKETING THEME (dark) ===== */
+/* ===== MARKETING THEME (light, matched to the platform look) ===== */
 [data-theme="marketing"] {
-  --bg: #09090b;
-  --bg-subtle: #0f0f12;
-  --surface: #18181b;
-  --surface-hover: #1f1f23;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(255, 255, 255, 0.1);
-  --text: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --accent: #818cf8;
-  --accent-bright: #a5b4fc;
-  --accent-dim: rgba(129, 140, 248, 0.1);
-  --green: #34d399;
-  --green-dim: rgba(52, 211, 153, 0.1);
-  --yellow: #fbbf24;
-  --yellow-dim: rgba(251, 191, 36, 0.1);
-  --pink: #f472b6;
-  --pink-dim: rgba(244, 114, 182, 0.1);
-  --orange: #fb923c;
-  --orange-dim: rgba(251, 146, 60, 0.1);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  --bg: #fafaf8;
+  --bg-subtle: #f2f2ef;
+  --surface: #ffffff;
+  --surface-hover: #f7f7f4;
+  --border: #e7e7e1;
+  --border-hover: #d4d4cd;
+  --text: #0e0e0c;
+  --text-secondary: #58584f;
+  --text-muted: #8a8a80;
+  --accent: #1733d1;
+  --accent-bright: #0e22a8;
+  --accent-dim: #eef0ff;
+  --green: #1a7f3f;
+  --green-dim: rgba(26, 127, 63, 0.08);
+  --yellow: #b86e00;
+  --yellow-dim: rgba(184, 110, 0, 0.08);
+  --pink: #b4236e;
+  --pink-dim: rgba(180, 35, 110, 0.08);
+  --orange: #c2410c;
+  --orange-dim: rgba(194, 65, 12, 0.08);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --serif: "Newsreader", "Source Serif Pro", "Times New Roman", serif;
+  --mono: "Geist Mono", "SF Mono", ui-monospace, monospace;
   scroll-behavior: smooth;
 }
 [data-theme="marketing"] body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Geist", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
+  font-feature-settings: "ss01" 1, "cv01" 1;
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 [data-theme="marketing"] ::selection {
-  background: rgba(129, 140, 248, 0.3);
+  background: var(--accent);
   color: #fff;
 }
 [data-theme="marketing"] a {
@@ -169,11 +172,11 @@ body {
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
+    box-shadow: 0 0 0 0 rgba(26, 127, 63, 0.35);
   }
   50% {
     opacity: 0.8;
-    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0);
+    box-shadow: 0 0 0 4px rgba(26, 127, 63, 0);
   }
 }
 @keyframes fadeUp {
