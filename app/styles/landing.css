@@ -131,8 +131,9 @@
   }
 
   .bill-head h3 {
-    font-size: clamp(22px, 3vw, 30px);
-    font-weight: 700;
+    font-family: var(--serif);
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 500;
     letter-spacing: -0.02em;
     margin-bottom: 12px;
   }
@@ -260,9 +261,9 @@
     overflow: hidden;
   }
 
-  .gbar.plan { background: linear-gradient(135deg, #818cf8, #6366f1); }
-  .gbar.plan2 { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
-  .gbar.extra { background: linear-gradient(135deg, #fbbf24, #d97706); color: #231a02; }
+  .gbar.plan { background: linear-gradient(135deg, #3148e8, #1733d1); }
+  .gbar.plan2 { background: linear-gradient(135deg, #6e5ae6, #4b38c9); }
+  .gbar.extra { background: linear-gradient(135deg, #e3992e, #b86e00); color: #fff; }
 
   .gseprow {
     display: flex;
@@ -406,8 +407,9 @@
   }
 
   .lic-price {
-    font-size: 44px;
-    font-weight: 800;
+    font-family: var(--serif);
+    font-size: 46px;
+    font-weight: 500;
     letter-spacing: -0.02em;
     line-height: 1;
   }

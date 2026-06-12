@@ -462,8 +462,8 @@ function BillingGantt() {
       <p className="gsub">{s.sub}</p>
 
       <div className="glegend">
-        <span><i style={{ background: "linear-gradient(135deg,#818CF8,#7C3AED)" }} />Covered by your plan</span>
-        <span><i style={{ background: "linear-gradient(135deg,#FBBF24,#D97706)" }} />Extra site — billed per day live</span>
+        <span><i style={{ background: "linear-gradient(135deg,#3148e8,#6e5ae6)" }} />Covered by your plan</span>
+        <span><i style={{ background: "linear-gradient(135deg,#e3992e,#b86e00)" }} />Extra site — billed per day live</span>
       </div>
 
       <div className="gscroll">
@@ -567,19 +567,19 @@ const GOLIVE_STEPS = [
 const TESTIMONIALS = [
   {
     quote: "We used to send clients static mockups and pray. Now we send a live site with their name on it. Two of our last three pitches closed on the spot.",
-    avatar: "linear-gradient(135deg,#818CF8,#6366F1)",
+    avatar: "linear-gradient(135deg,#3148e8,#1733d1)",
     name: "Sarah Chen",
     role: "Founder, Pixel & Co Agency",
   },
   {
     quote: "Seventeen client demos last month on one Pro plan. The ones that didn't convert cost us nothing but the minute it took to delete them.",
-    avatar: "linear-gradient(135deg,#F472B6,#DB2777)",
+    avatar: "linear-gradient(135deg,#d4549a,#b4236e)",
     name: "Priya Patel",
     role: "Digital Strategist, BrightPath",
   },
   {
     quote: "We white-label the demos for our clients. They see a finished-looking site in the first meeting, we get the contract — and we only pay for what stays live.",
-    avatar: "linear-gradient(135deg,#A78BFA,#7C3AED)",
+    avatar: "linear-gradient(135deg,#6e5ae6,#4b38c9)",
     name: "Tom Andersen",
     role: "CEO, Nordic Digital",
   },
