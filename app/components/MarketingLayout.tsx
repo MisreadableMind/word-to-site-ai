@@ -18,9 +18,10 @@ function MarketingNav() {
             <span>WordToSite</span>
           </Link>
           <div className="nav-links">
-            <a className="nav-link" href="/#vision">Vision</a>
-            <a className="nav-link" href="/#paths">Get started</a>
-            <a className="nav-link" href="/#voice">Voice</a>
+            <a className="nav-link" href="/#how">How it works</a>
+            <a className="nav-link" href="/#features">Features</a>
+            <a className="nav-link" href="/#pricing">Pricing</a>
+            <a className="nav-link" href="/#golive">Going live</a>
             <a className="nav-link" href="/#faq">FAQ</a>
           </div>
         </div>
@@ -60,9 +61,9 @@ function MarketingFooter() {
         </div>
         <div className="footer-links">
           <Link className="footer-link" to="/app">Dashboard</Link>
-          <a className="footer-link" href="/#paths">Get started</a>
+          <a className="footer-link" href="/#how">How it works</a>
+          <a className="footer-link" href="/#pricing">Pricing</a>
           <a className="footer-link" href="/#faq">FAQ</a>
-          <a className="footer-link" href="/#tech">Tech</a>
           <Link className="footer-link" to="/privacy">Privacy</Link>
           <Link className="footer-link" to="/terms">Terms</Link>
           <Link className="footer-link" to="/mission">Mission</Link>
