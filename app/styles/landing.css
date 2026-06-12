@@ -471,6 +471,74 @@
 
   .demo-free b { color: var(--text); }
 
+  /* ─── HOW WE COMPARE ─── */
+  .cmp-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow-x: auto;
+  }
+
+  .cmp-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 720px;
+    font-size: 13.5px;
+  }
+
+  .cmp-table th,
+  .cmp-table td {
+    text-align: left;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .cmp-table thead th {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    background: var(--bg-subtle);
+  }
+
+  .cmp-table tbody tr:last-child td { border-bottom: none; }
+  .cmp-table tbody tr:hover td { background: var(--bg); }
+
+  .cmp-feature, .cmp-feature-h { width: 30%; min-width: 210px; }
+  .cmp-feature { font-weight: 500; color: var(--text); }
+
+  .cmp-table .cmp-col-wts { background: var(--accent-dim); }
+  .cmp-table thead .cmp-col-wts { color: var(--accent); font-weight: 700; }
+  .cmp-table tbody tr:hover .cmp-col-wts { background: #e4e8ff; }
+
+  .cmp-mark {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .cmp-sym { font-family: var(--mono); font-weight: 700; font-size: 12px; }
+  .cmp-yes .cmp-sym { color: var(--green); }
+  .cmp-no .cmp-sym { color: var(--text-muted); }
+  .cmp-mid .cmp-sym { color: var(--yellow); }
+  .cmp-no { color: var(--text-muted); }
+
+  .cmp-col-wts .cmp-mark { color: var(--accent-bright); font-weight: 600; }
+  .cmp-col-wts .cmp-yes .cmp-sym { color: var(--accent); }
+
+  .cmp-note {
+    text-align: center;
+    max-width: 640px;
+    margin: 20px auto 0;
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .cmp-note em { color: var(--text-secondary); font-style: italic; }
+
   /* ─── RESPONSIVE ─── */
   @media (max-width: 900px) {
     .steps-grid { grid-template-columns: repeat(2, 1fr); }
@@ -484,5 +552,7 @@
     .steps-grid, .feat-grid { grid-template-columns: 1fr; }
     .gantt { padding: 18px 14px; }
     .gtabs { flex-wrap: wrap; }
+    .cmp-table { font-size: 12.5px; min-width: 600px; }
+    .cmp-table th, .cmp-table td { padding: 11px 13px; }
   }
 }

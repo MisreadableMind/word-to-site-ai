@@ -20,6 +20,7 @@ function MarketingNav() {
           <div className="nav-links">
             <a className="nav-link" href="/#how">How it works</a>
             <a className="nav-link" href="/#features">Features</a>
+            <a className="nav-link" href="/#compare">Compare</a>
             <a className="nav-link" href="/#pricing">Pricing</a>
             <a className="nav-link" href="/#golive">Going live</a>
             <a className="nav-link" href="/#faq">FAQ</a>

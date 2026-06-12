@@ -276,6 +276,78 @@ const FEATURES: [string, string][] = [
   ["Delete = stop billing", "No long-term commitment per site. Remove it and the meter stops."],
 ];
 
+/* ─── How we compare ─── */
+
+type Cmp = { k: "yes" | "no" | "mid"; t: string };
+
+type CompareRow = { feature: string; wts: Cmp; wp: Cmp; fw: Cmp; wix: Cmp };
+
+const COMPARE_ROWS: CompareRow[] = [
+  {
+    feature: "Time to a content-filled site",
+    wts: { k: "yes", t: "~1 minute" },
+    wp: { k: "no", t: "Hours to days" },
+    fw: { k: "mid", t: "Hours, by hand" },
+    wix: { k: "mid", t: "Hours, by hand" },
+  },
+  {
+    feature: "Pre-filled AI copy & images (not lorem)",
+    wts: { k: "yes", t: "Every page" },
+    wp: { k: "no", t: "You write it" },
+    fw: { k: "no", t: "You write it" },
+    wix: { k: "mid", t: "Some AI assist" },
+  },
+  {
+    feature: "Ready-made designs for the niche",
+    wts: { k: "yes", t: "200 designs" },
+    wp: { k: "mid", t: "Theme hunt" },
+    fw: { k: "mid", t: "Templates" },
+    wix: { k: "mid", t: "Templates" },
+  },
+  {
+    feature: "Instant live preview URL to share",
+    wts: { k: "yes", t: "Automatic" },
+    wp: { k: "no", t: "Needs hosting" },
+    fw: { k: "yes", t: "Yes" },
+    wix: { k: "yes", t: "Yes" },
+  },
+  {
+    feature: "White-label client demos",
+    wts: { k: "yes", t: "Built in" },
+    wp: { k: "mid", t: "Manual" },
+    fw: { k: "mid", t: "Paid tiers" },
+    wix: { k: "no", t: "Their branding" },
+  },
+  {
+    feature: "Pay only while a site is live",
+    wts: { k: "yes", t: "Per-day · delete = stop" },
+    wp: { k: "no", t: "Hosting either way" },
+    fw: { k: "no", t: "Per-site plan" },
+    wix: { k: "no", t: "Per-site plan" },
+  },
+  {
+    feature: "Many parallel projects, one bill",
+    wts: { k: "yes", t: "Slots reused" },
+    wp: { k: "mid", t: "Your own infra" },
+    fw: { k: "no", t: "Pay per site" },
+    wix: { k: "no", t: "Pay per site" },
+  },
+  {
+    feature: "Real, portable WordPress you own",
+    wts: { k: "yes", t: "Export + license" },
+    wp: { k: "yes", t: "Yes" },
+    fw: { k: "no", t: "Proprietary" },
+    wix: { k: "no", t: "Locked-in" },
+  },
+  {
+    feature: "No hosting to set up",
+    wts: { k: "yes", t: "Managed" },
+    wp: { k: "no", t: "You manage" },
+    fw: { k: "yes", t: "Managed" },
+    wix: { k: "yes", t: "Managed" },
+  },
+];
+
 /* ─── Plans ─── */
 
 type PlanLi = { text: React.ReactNode; sub?: string; muted?: boolean };
@@ -650,6 +722,16 @@ function IconCard({ card }: { card: (typeof TRIO_CARDS)[number] }) {
   );
 }
 
+function CmpMark({ c }: { c: Cmp }) {
+  const sym = c.k === "yes" ? "✓" : c.k === "no" ? "✕" : "~";
+  return (
+    <span className={`cmp-mark cmp-${c.k}`}>
+      <span className="cmp-sym">{sym}</span>
+      {c.t}
+    </span>
+  );
+}
+
 function Home() {
   const cards = [...SHOWCASE_CARDS, ...SHOWCASE_CARDS];
   return (
@@ -786,6 +868,51 @@ function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* HOW WE COMPARE */}
+      <section id="compare" className="border-t">
+        <div className="section-container">
+          <div className="section-header center fade-in">
+            <div className="section-eyebrow">how we compare</div>
+            <h2 className="section-title">A faster way to put a site in front of a client.</h2>
+            <p className="section-desc">
+              The usual ways to produce a client website &mdash; versus building the same
+              pitch-ready demo in WordToSite.
+            </p>
+          </div>
+
+          <div className="cmp-wrap fade-in">
+            <table className="cmp-table">
+              <thead>
+                <tr>
+                  <th className="cmp-feature-h">Capability</th>
+                  <th className="cmp-col-wts">WordToSite</th>
+                  <th>Manual WordPress</th>
+                  <th>Framer / Webflow</th>
+                  <th>Wix / Squarespace</th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE_ROWS.map((r) => (
+                  <tr key={r.feature}>
+                    <td className="cmp-feature">{r.feature}</td>
+                    <td className="cmp-col-wts"><CmpMark c={r.wts} /></td>
+                    <td><CmpMark c={r.wp} /></td>
+                    <td><CmpMark c={r.fw} /></td>
+                    <td><CmpMark c={r.wix} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="cmp-note">
+            Need bespoke, pixel-level design? Framer and Webflow lead there. WordToSite
+            wins when you need a <em>finished-looking</em>, content-filled WordPress site in
+            front of a client today &mdash; and only want to pay for the ones that stick.
+          </p>
         </div>
       </section>
 
