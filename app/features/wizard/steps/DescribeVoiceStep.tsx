@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useMe } from "~/lib/auth";
 import { useWizard } from "../WizardContext";
@@ -298,9 +299,9 @@ export function DescribeVoiceStep() {
           </div>
 
           <motion.div layout transition={{ duration: 0.28, ease: "easeOut" }} className="step-nav">
-            <button type="button" className="wts-btn" onClick={() => dispatch({ type: "BACK_TO_PATH" })}>
+            <Link to="/dashboard" className="wts-btn">
               ← Back
-            </button>
+            </Link>
             <button type="submit" className="wts-btn primary">
               Continue →
             </button>

@@ -14,5 +14,4 @@ export {
   createContentContext,
   validateContentContext,
   buildContentContextFromInterview,
-  buildContentContextFromScrape,
 } from './content-context';

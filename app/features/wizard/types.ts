@@ -1,9 +1,7 @@
-export type WizardFlow = "voice" | "copy";
+export type WizardFlow = "voice";
 
 export type WizardState =
-  | "path"
   | "describe-voice"
-  | "describe-copy"
   | "details"
   | "configure"
   | "review";

@@ -1,8 +1,8 @@
 import { STATE_INDEX, STEPPERS } from "../constants";
 import type { WizardFlow, WizardState } from "../types";
 
-export function Stepper({ flow, stateName }: { flow: WizardFlow | null; stateName: WizardState }) {
-  const activeFlow: WizardFlow | "default" = flow && STEPPERS[flow] ? flow : "default";
+export function Stepper({ flow, stateName }: { flow: WizardFlow; stateName: WizardState }) {
+  const activeFlow: WizardFlow | "default" = STEPPERS[flow] ? flow : "default";
   const labels = STEPPERS[activeFlow];
   const activeIndex = STATE_INDEX[activeFlow][stateName] ?? 0;
 

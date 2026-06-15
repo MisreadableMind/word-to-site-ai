@@ -1,15 +1,13 @@
 import type { WizardField, WizardFlow, WizardState } from "./types";
 
 export const STEPPERS: Record<WizardFlow | "default", string[]> = {
-  voice: ["Choose path", "Describe", "Owner info", "Configure", "Review & publish"],
-  copy: ["Choose path", "Read site", "Configure", "Review & publish"],
-  default: ["Choose path", "Describe", "Configure", "Review & publish"],
+  voice: ["Describe", "Owner info", "Configure", "Review & publish"],
+  default: ["Describe", "Configure", "Review & publish"],
 };
 
 export const STATE_INDEX: Record<WizardFlow | "default", Partial<Record<WizardState, number>>> = {
-  voice: { path: 0, "describe-voice": 1, details: 2, configure: 3, review: 4 },
-  copy: { path: 0, "describe-copy": 1, configure: 2, review: 3 },
-  default: { path: 0, "describe-voice": 1, "describe-copy": 1, details: 1, configure: 2, review: 3 },
+  voice: { "describe-voice": 0, details: 1, configure: 2, review: 3 },
+  default: { "describe-voice": 0, details: 0, configure: 1, review: 2 },
 };
 
 export const FIELD_LABELS: Partial<Record<WizardField, string>> = {

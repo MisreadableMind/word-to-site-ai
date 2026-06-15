@@ -97,15 +97,6 @@ export const ContentContextSchema = {
         required: ['slug', 'title'],
       },
     },
-    sourceAnalysis: {
-      type: 'object',
-      description: 'Flow A: Data extracted from scraped website',
-      properties: {
-        extractedContent: { type: 'object' },
-        brandElements: { type: 'object' },
-        structure: { type: 'object' },
-      },
-    },
     voiceInterview: {
       type: 'object',
       description: 'Flow B: Q&A transcript from voice interview',
@@ -165,7 +156,6 @@ export function createContentContext(options = {}) {
       { slug: 'services', title: 'Services', sections: [{ type: 'services' }] },
       { slug: 'contact', title: 'Contact', sections: [{ type: 'contact' }] },
     ],
-    sourceAnalysis: options.sourceAnalysis || null,
     voiceInterview: options.voiceInterview || null,
     seo: {
       metaTitle: options.metaTitle || '',
@@ -281,51 +271,6 @@ export function buildContentContextFromInterview(answers) {
   return context;
 }
 
-/**
- * Build content context from scraped website data
- * @param {Object} scrapedData - Data from Firecrawl
- * @param {Object} analysis - AI analysis of the website
- * @returns {Object} Content context
- */
-export function buildContentContextFromScrape(scrapedData, analysis) {
-  const context = createContentContext();
-
-  // Extract business info from analysis
-  if (analysis.businessInfo) {
-    context.business = {
-      ...context.business,
-      ...analysis.businessInfo,
-    };
-  }
-
-  // Extract pages from site structure
-  if (analysis.siteStructure?.pages) {
-    context.pages = analysis.siteStructure.pages.map(page => ({
-      slug: page.slug || page.path?.replace(/^\//, '') || 'page',
-      title: page.title || page.name,
-      sections: page.sections || [],
-    }));
-  }
-
-  // Store source analysis
-  context.sourceAnalysis = {
-    extractedContent: scrapedData.content || {},
-    brandElements: analysis.brandElements || {},
-    structure: analysis.siteStructure || {},
-  };
-
-  // Generate SEO from analysis
-  if (analysis.seo) {
-    context.seo = {
-      metaTitle: analysis.seo.title || context.business.name,
-      metaDescription: analysis.seo.description || '',
-      keywords: analysis.seo.keywords || [],
-    };
-  }
-
-  return context;
-}
-
 // Helper functions
 function extractBusinessName(text) {
   // Simple extraction - in production, use NLP
@@ -382,5 +327,4 @@ export default {
   createContentContext,
   validateContentContext,
   buildContentContextFromInterview,
-  buildContentContextFromScrape,
 };

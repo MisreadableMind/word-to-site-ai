@@ -15,7 +15,7 @@ export type ReviewView =
   | "resume";
 
 export interface WizardData {
-  flow: WizardFlow | null;
+  flow: WizardFlow;
   stateName: WizardState;
   interviewAnswers: InterviewAnswers;
   onboardingResult: OnboardingResult | null;
@@ -47,7 +47,7 @@ export const EMPTY_ANSWERS: InterviewAnswers = {
 
 export const initialWizardData: WizardData = {
   flow: "voice",
-  stateName: "path",
+  stateName: "describe-voice",
   interviewAnswers: EMPTY_ANSWERS,
   onboardingResult: null,
   selectedSkin: null,
@@ -64,8 +64,6 @@ export const initialWizardData: WizardData = {
 };
 
 export type WizardAction =
-  | { type: "SELECT_FLOW"; flow: WizardFlow }
-  | { type: "BACK_TO_PATH" }
   | { type: "GO_STATE"; state: WizardState }
   | { type: "SET_FIELD"; field: WizardField; value: string }
   | { type: "PATCH_ANSWERS"; patch: Partial<InterviewAnswers> }
@@ -92,10 +90,6 @@ function withSkinSlug(result: OnboardingResult, slug: string): OnboardingResult 
 
 export function wizardReducer(state: WizardData, action: WizardAction): WizardData {
   switch (action.type) {
-    case "SELECT_FLOW":
-      return { ...state, flow: action.flow };
-    case "BACK_TO_PATH":
-      return { ...state, flow: null, stateName: "path" };
     case "GO_STATE":
       return { ...state, stateName: action.state };
     case "SET_FIELD":

@@ -4,12 +4,11 @@
  */
 
 import { colord } from 'colord';
-import FirecrawlService from './services/firecrawl-service';
 import AIService from './services/ai-service';
 import VoiceService from './services/voice-service';
 import BaseSiteService from './services/base-site-service';
 import { createDeploymentContext, validateDeploymentContext } from './schemas/deployment-context';
-import { createContentContext, validateContentContext, buildContentContextFromInterview, buildContentContextFromScrape } from './schemas/content-context';
+import { createContentContext, validateContentContext, buildContentContextFromInterview } from './schemas/content-context';
 import { DEFAULTS, ONBOARDING_FLOWS } from './constants';
 import { config } from './config';
 
@@ -22,8 +21,6 @@ function toHexColor(value) {
  * Onboarding workflow step identifiers
  */
 export const OnboardingSteps = {
-  SELECTING_FLOW: 'selecting_flow',
-  ANALYZING_SOURCE: 'analyzing_source',
   CONDUCTING_INTERVIEW: 'conducting_interview',
   MATCHING_TEMPLATE: 'matching_template',
   GENERATING_CONTEXTS: 'generating_contexts',
@@ -48,7 +45,6 @@ const FALLBACK_TEMPLATE_CATALOG = [
 
 class OnboardingWorkflow {
   constructor(options = {}) {
-    this.firecrawl = new FirecrawlService(options.firecrawlApiKey);
     this.ai = new AIService({
       openaiApiKey: options.openaiApiKey,
       geminiApiKey: options.geminiApiKey,
@@ -102,117 +98,6 @@ class OnboardingWorkflow {
       timestamp: new Date().toISOString(),
       ...data,
     });
-  }
-
-  /**
-   * Execute Flow A: Customer has existing website to copy
-   * @param {string} sourceUrl - URL of existing website
-   * @param {Object} options - Additional options
-   * @returns {Promise<Object>} Generated contexts
-   */
-  async executeFlowA(sourceUrl, options = {}) {
-    const result = {
-      success: false,
-      flow: ONBOARDING_FLOWS.COPY,
-      sourceUrl,
-      deploymentContext: null,
-      contentContext: null,
-      templateMatch: null,
-      steps: [],
-      error: null,
-    };
-
-    try {
-      // Step 1: Analyze source website
-      this.emitProgress(OnboardingSteps.ANALYZING_SOURCE, {
-        message: `Analyzing website: ${sourceUrl}`,
-      });
-
-      const scraped = await this.firecrawl.scrapeUrl(sourceUrl, {
-        formats: ['markdown', 'html'],
-      });
-
-      result.steps.push({
-        step: 'source_scraped',
-        success: true,
-        data: {
-          url: sourceUrl,
-          wordCount: scraped.markdown?.split(/\s+/).length || 0,
-          hasScreenshot: !!scraped.screenshot,
-        },
-      });
-
-      // Extract brand elements
-      const brandElements = this.firecrawl.extractBrandElements(scraped);
-
-      // Step 2: Match template
-      this.emitProgress(OnboardingSteps.MATCHING_TEMPLATE, {
-        message: 'Matching to best template...',
-      });
-
-      await this.loadTemplateCatalog();
-      const analysis = await this.ai.analyzeWebsite(scraped, this.templateCatalog);
-      const templateMatch = await this.ai.matchTemplate(analysis, this.templateCatalog);
-
-      result.templateMatch = templateMatch;
-      result.steps.push({
-        step: 'template_matched',
-        success: true,
-        data: templateMatch,
-      });
-
-      // Step 3: Generate contexts
-      this.emitProgress(OnboardingSteps.GENERATING_CONTEXTS, {
-        message: 'Generating deployment and content contexts...',
-      });
-
-      const contexts = this.generateContexts(ONBOARDING_FLOWS.COPY, {
-        analysis,
-        brandElements,
-        scraped,
-        templateMatch,
-        options,
-      });
-
-      result.deploymentContext = contexts.deploymentContext;
-      result.contentContext = contexts.contentContext;
-      result.steps.push({
-        step: 'contexts_generated',
-        success: true,
-      });
-
-      // Validate contexts
-      const deploymentValidation = validateDeploymentContext(result.deploymentContext);
-      const contentValidation = validateContentContext(result.contentContext);
-
-      if (!deploymentValidation.valid || !contentValidation.valid) {
-        throw new Error([
-          ...deploymentValidation.errors,
-          ...contentValidation.errors,
-        ].join(', '));
-      }
-
-      // Complete
-      this.emitProgress(OnboardingSteps.COMPLETE, {
-        message: 'Analysis complete! Ready for confirmation.',
-      });
-
-      result.success = true;
-      return result;
-    } catch (error) {
-      this.emitProgress(OnboardingSteps.ERROR, {
-        message: error.message,
-      });
-
-      result.error = error.message;
-      result.errorDetails = {
-        message: error.message,
-        stack: error.stack,
-        failedAtStep: result.steps[result.steps.length - 1]?.step || 'unknown',
-      };
-
-      return result;
-    }
   }
 
   /**
@@ -354,34 +239,8 @@ class OnboardingWorkflow {
       templateSlug: templateMatch?.slug || DEFAULTS.TEMPLATE_SLUG,
     });
 
-    if (flow === ONBOARDING_FLOWS.COPY) {
-      // Flow A: Extract from scraped website
-      const { brandElements, analysis } = data;
-
-      if (brandElements) {
-        context.branding.faviconUrl = brandElements.favicon || DEFAULTS.FAVICON_URL;
-        if (brandElements.colors?.length > 0) {
-          const primary = toHexColor(brandElements.colors[0]);
-          if (primary) context.branding.primaryColor = primary;
-          const secondary = toHexColor(brandElements.colors[1]);
-          if (secondary) context.branding.secondaryColor = secondary;
-        }
-        if (brandElements.logo) {
-          context.branding.logoUrl = brandElements.logo;
-        }
-      }
-
-      // Apply template variation if recommended
-      if (analysis?.recommendedTemplate?.variation) {
-        context.template.variation = analysis.recommendedTemplate.variation;
-      }
-
-      // Extract skin preference
-      if (analysis?.brandElements?.style) {
-        context.template.skin = analysis.brandElements.style;
-      }
-    } else if (flow === ONBOARDING_FLOWS.VOICE) {
-      // Flow B: Extract from interview brief
+    if (flow === ONBOARDING_FLOWS.VOICE) {
+      // Extract from interview brief
       const { brief } = data;
 
       if (brief.brandColors?.length > 0) {
@@ -422,12 +281,8 @@ class OnboardingWorkflow {
   buildContentContext(flow, data) {
     const { options = {} } = data;
 
-    if (flow === ONBOARDING_FLOWS.COPY) {
-      // Flow A: Build from scraped analysis
-      const { scraped, analysis } = data;
-      return buildContentContextFromScrape(scraped, analysis);
-    } else if (flow === ONBOARDING_FLOWS.VOICE) {
-      // Flow B: Build from interview
+    if (flow === ONBOARDING_FLOWS.VOICE) {
+      // Build from interview
       const { interviewAnswers, brief } = data;
 
       const context = buildContentContextFromInterview(interviewAnswers);
@@ -498,54 +353,6 @@ class OnboardingWorkflow {
     };
   }
 
-  /**
-   * Get available onboarding flows
-   * @returns {Object[]} Flow options
-   */
-  static getFlowOptions() {
-    return [
-      {
-        id: ONBOARDING_FLOWS.COPY,
-        label: 'I have an existing website',
-        description: 'We\'ll analyze your current site and recreate it with improvements',
-        icon: 'copy',
-        requiresUrl: true,
-      },
-      {
-        id: ONBOARDING_FLOWS.VOICE,
-        label: 'I need to create a new website',
-        description: 'Answer a few questions and we\'ll build your perfect site',
-        icon: 'microphone',
-        requiresUrl: false,
-      },
-    ];
-  }
-
-  /**
-   * Get onboarding step info for UI
-   * @param {string} flow - Selected flow
-   * @returns {Object[]} Step info
-   */
-  static getStepsInfo(flow) {
-    const commonSteps = [
-      { id: OnboardingSteps.MATCHING_TEMPLATE, label: 'Finding perfect template', order: 2 },
-      { id: OnboardingSteps.GENERATING_CONTEXTS, label: 'Generating configuration', order: 3 },
-      { id: OnboardingSteps.CONFIRMING_SELECTION, label: 'Confirming selection', order: 4 },
-      { id: OnboardingSteps.COMPLETE, label: 'Complete', order: 5 },
-    ];
-
-    if (flow === ONBOARDING_FLOWS.COPY) {
-      return [
-        { id: OnboardingSteps.ANALYZING_SOURCE, label: 'Analyzing your website', order: 1 },
-        ...commonSteps,
-      ];
-    } else {
-      return [
-        { id: OnboardingSteps.CONDUCTING_INTERVIEW, label: 'Processing your answers', order: 1 },
-        ...commonSteps,
-      ];
-    }
-  }
 }
 
 export default OnboardingWorkflow;

@@ -40,11 +40,7 @@ export function ConfigureStep() {
     (item) => item.value,
   );
 
-  const goBack = () => {
-    if (state.flow === "voice") dispatch({ type: "GO_STATE", state: "details" });
-    else if (state.flow === "copy") dispatch({ type: "GO_STATE", state: "describe-copy" });
-    else dispatch({ type: "GO_STATE", state: "path" });
-  };
+  const goBack = () => dispatch({ type: "GO_STATE", state: "details" });
 
   const publish = async () => {
     if (!state.onboardingResult) return;

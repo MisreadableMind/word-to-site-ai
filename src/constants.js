@@ -25,8 +25,7 @@ export const EDITOR_MODES = {
 };
 
 export const ONBOARDING_FLOWS = {
-  COPY: 'copy',   // Flow A: Customer has existing website to copy
-  VOICE: 'voice', // Flow B: Customer needs new website (voice interview)
+  VOICE: 'voice', // Customer creates a new website (voice interview)
 };
 
 export const CONTENT_TONES = {

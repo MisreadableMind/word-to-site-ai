@@ -9,7 +9,7 @@ import DomainWorkflow from './domain-workflow';
 import NamecheapAPI from './namecheap';
 import { config, validateDomainConfig, toWpLocale } from './config';
 import { prepareWizardData } from './services/business-structurer';
-import OnboardingWorkflow, { OnboardingSteps } from './onboarding-workflow';
+import OnboardingWorkflow from './onboarding-workflow';
 import ExcerptService from './services/excerpt-service';
 import EditorService from './services/editor-service';
 import VoiceService from './services/voice-service';
@@ -17,7 +17,7 @@ import AIService from './services/ai-service';
 import WordPressService from './services/wordpress-service';
 import BaseSiteService from './services/base-site-service';
 import VoiceHandler from './websocket/voice-handler';
-import { ONBOARDING_FLOWS, EDITOR_MODES } from './constants';
+import { EDITOR_MODES } from './constants';
 import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { makeParseableTextFormat } from 'openai/lib/parser';
@@ -634,13 +634,11 @@ app.get('/api/config', requireAdminKey, async (req, res) => {
     aiServices: {
       openaiConfigured: !!config.openai?.apiKey,
       geminiConfigured: !!config.gemini?.apiKey,
-      firecrawlConfigured: !!config.firecrawl?.apiKey,
     },
     features: {
       voiceFlow: config.features?.voiceFlow || false,
       lightEditor: config.features?.lightEditor || false,
       aiContent: config.features?.aiContent !== false,
-      onboardingFlowA: true,
       onboardingFlowB: true,
     },
     skins: await baseSiteService.getSkins().catch(() => null),
@@ -741,13 +739,6 @@ app.post('/api/voice/transcribe', requireAuth, upload.single('audio'), async (re
 // ONBOARDING ENDPOINTS
 // ==========================================
 
-// Get available onboarding flows
-app.get('/api/onboard/flows', (req, res) => {
-  res.json({
-    flows: OnboardingWorkflow.getFlowOptions(),
-  });
-});
-
 app.get('/api/onboard/check-domain-dns', async (req, res) => {
   const domain = (req.query.domain || '').toString().trim().toLowerCase();
   const c = classifyDomain(domain);
@@ -794,79 +785,6 @@ app.get('/api/onboard/check-domain-dns', async (req, res) => {
   }
 
   res.json(result);
-});
-
-// Flow A: Analyze existing website
-app.post('/api/onboard/analyze-url', async (req, res) => {
-  try {
-    const { url, options } = req.body;
-
-    if (!url) {
-      return res.status(400).json({
-        success: false,
-        error: 'URL is required',
-      });
-    }
-
-    // Validate URL format
-    try {
-      new URL(url);
-    } catch {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid URL format',
-      });
-    }
-
-    const workflow = new OnboardingWorkflow({
-      firecrawlApiKey: config.firecrawl?.apiKey,
-      openaiApiKey: config.openai?.apiKey,
-      geminiApiKey: config.gemini?.apiKey,
-    });
-
-    const result = await workflow.executeFlowA(url, options || {});
-    res.json(result);
-  } catch (error) {
-    console.error('Error in Flow A:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
-
-// Flow A: SSE stream for real-time progress
-app.get('/api/onboard/analyze-url/stream', async (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
-  const { url } = req.query;
-
-  if (!url) {
-    res.write(`data: ${JSON.stringify({ step: 'error', error: 'URL is required' })}\n\n`);
-    res.end();
-    return;
-  }
-
-  const workflow = new OnboardingWorkflow({
-    firecrawlApiKey: config.firecrawl?.apiKey,
-    openaiApiKey: config.openai?.apiKey,
-    geminiApiKey: config.gemini?.apiKey,
-    onProgress: (progress) => {
-      res.write(`data: ${JSON.stringify(progress)}\n\n`);
-    },
-  });
-
-  try {
-    const result = await workflow.executeFlowA(url);
-    res.write(`data: ${JSON.stringify({ step: 'result', data: result })}\n\n`);
-  } catch (error) {
-    res.write(`data: ${JSON.stringify({ step: 'error', error: error.message })}\n\n`);
-  }
-
-  res.end();
 });
 
 // Generate tagline from company name and industry
@@ -1077,14 +995,6 @@ app.post('/api/onboard/interview/complete', async (req, res) => {
       error: error.message,
     });
   }
-});
-
-// Get onboarding steps info for UI
-app.get('/api/onboard/steps', (req, res) => {
-  const flow = req.query.flow || ONBOARDING_FLOWS.COPY;
-  res.json({
-    steps: OnboardingWorkflow.getStepsInfo(flow),
-  });
 });
 
 // Optional auth middleware for onboarding confirm endpoints
@@ -2264,8 +2174,6 @@ function startServer(port) {
     console.log(`\nVoice endpoints:`);
     console.log(`  POST /api/voice/transcribe - Transcribe audio file`);
     console.log(`\nOnboarding endpoints:`);
-    console.log(`  GET  /api/onboard/flows - Get available flows`);
-    console.log(`  POST /api/onboard/analyze-url - Flow A: Analyze existing website`);
     console.log(`  POST /api/skins/recommend - AI-ranked skin recommendations`);
     console.log(`  POST /api/onboard/match-industry - Match voice input to industry option`);
     console.log(`  POST /api/onboard/suggest-options - AI-suggested services & about chips`);

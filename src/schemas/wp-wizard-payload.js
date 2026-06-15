@@ -14,8 +14,7 @@
  * @param {Object} params.site           - Created InstaWP site data
  * @param {Object} params.deploymentContext - Deployment context (template, branding, plugins)
  * @param {Object} params.contentContext   - Content context (business, pages, SEO, tone)
- * @param {Object} [params.interviewAnswers] - Raw interview answers (Flow B)
- * @param {Object} [params.sourceAnalysis]   - Scraped site analysis (Flow A)
+ * @param {Object} [params.interviewAnswers] - Raw interview answers
  * @returns {Object} WP wizard payload
  */
 export function buildWizardPayload({
@@ -23,7 +22,6 @@ export function buildWizardPayload({
   deploymentContext,
   contentContext,
   interviewAnswers,
-  sourceAnalysis,
 }) {
   const dc = deploymentContext || {};
   const cc = contentContext || {};
@@ -33,7 +31,7 @@ export function buildWizardPayload({
     // ── Meta ──────────────────────────────────────────────
     version: '1.0.0',
     generatedAt: new Date().toISOString(),
-    flow: cc.sourceAnalysis ? 'copy' : 'voice',
+    flow: 'voice',
 
     // ── Site ─────────────────────────────────────────────
     site: {
@@ -116,7 +114,6 @@ export function buildWizardPayload({
     // ── Source Data (for debugging / re-generation) ──────
     _source: {
       interviewAnswers: interviewAnswers || null,
-      sourceAnalysis: sourceAnalysis || null,
       voiceInterview: cc.voiceInterview || null,
     },
   };
@@ -212,7 +209,6 @@ export const EXAMPLE_PAYLOAD = {
       team: '5 engineers, 2 designers',
       advantages: 'AI-powered automation, 24/7 support, No-code management',
     },
-    sourceAnalysis: null,
     voiceInterview: null,
   },
 };

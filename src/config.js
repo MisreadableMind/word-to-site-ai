@@ -26,11 +26,6 @@ export const config = {
     apiKey: process.env.GEMINI_API_KEY,
   },
 
-  // Firecrawl Configuration (Website scraping)
-  firecrawl: {
-    apiKey: process.env.FIRECRAWL_API_KEY,
-  },
-
   // Feature Flags
   features: {
     voiceFlow: process.env.ENABLE_VOICE_FLOW === 'true',

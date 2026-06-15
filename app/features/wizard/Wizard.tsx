@@ -4,8 +4,6 @@ import { useMe } from "~/lib/auth";
 import { WizardProvider } from "./WizardContext";
 import { initialWizardData, wizardReducer } from "./wizardReducer";
 import { Stepper } from "./components/Stepper";
-import { PathStep } from "./steps/PathStep";
-import { DescribeCopyStep } from "./steps/DescribeCopyStep";
 import { DescribeVoiceStep } from "./steps/DescribeVoiceStep";
 import { OwnerInfoStep } from "./steps/OwnerInfoStep";
 import { ConfigureStep } from "./steps/ConfigureStep";
@@ -131,12 +129,6 @@ export function Wizard() {
     );
   } else {
     switch (state.stateName) {
-      case "path":
-        body = <PathStep />;
-        break;
-      case "describe-copy":
-        body = <DescribeCopyStep />;
-        break;
       case "describe-voice":
         body = <DescribeVoiceStep />;
         break;
@@ -150,7 +142,7 @@ export function Wizard() {
         body = <ReviewStep />;
         break;
       default:
-        body = <PathStep />;
+        body = <DescribeVoiceStep />;
     }
   }
 
