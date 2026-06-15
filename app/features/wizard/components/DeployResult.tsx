@@ -67,7 +67,6 @@ export function DeployResult({ data }: { data: DeployResultPayload }) {
 
   const { status, attempts } = useSiteStatus(siteUrl);
 
-  const contentGenerated = (data.steps || []).some((s) => s.step === "content_generated" && s.success);
   const tempUrl = data.finalUrls?.temporaryUrl;
   const showTemp = tempUrl && siteUrl && tempUrl !== siteUrl;
 
@@ -177,10 +176,6 @@ export function DeployResult({ data }: { data: DeployResultPayload }) {
           </a>
           {data.editor.bounced ? ` (bounced: ${data.editor.reason})` : ""}
         </div>
-      ) : null}
-
-      {contentGenerated ? (
-        <div className="result-note">AI content generated and published to your site.</div>
       ) : null}
     </div>
   );

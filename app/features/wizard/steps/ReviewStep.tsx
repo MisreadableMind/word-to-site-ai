@@ -13,9 +13,8 @@ import type { DeployResultPayload, PaywallError } from "../types";
 
 const DEPLOY_STEPS: ProgressStepDef[] = [
   { id: "creating_site", label: "Creating WordPress site" },
-  { id: "applying_deployment", label: "Applying site configuration" },
-  { id: "generating_content", label: "Generating AI content" },
-  { id: "pushing_content", label: "Publishing pages" },
+  { id: "switching_skin", label: "Installing theme & default content" },
+  { id: "applying_deployment", label: "Applying branding" },
   { id: "complete", label: "Done" },
 ];
 

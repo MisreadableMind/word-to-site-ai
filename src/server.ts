@@ -38,7 +38,6 @@ import createDomainRouter from './routes/domain-routes';
 import LicenseService, { generateLicenseKey } from './services/license-service';
 import createLicenseRouter from './routes/license-routes';
 import { PLATFORM_HOSTS, PRIMARY_PLATFORM_HOST, classify as classifyDomain } from './lib/domain-classifier';
-import { startSiteImageGeneration } from './lib/image-bank-flow';
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth';
 import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement';
 import { getEntitlements as getPlanEntitlements } from './billing/entitlements';
@@ -48,9 +47,6 @@ const CRITICAL_ONBOARDING_STEPS = [
   'skin_switched',
   'deployment_applied',
   'wizard_data_saved',
-  'generate_all_content',
-  'generate_images',
-  'content_generated',
 ];
 
 function withAggregateSuccess(result) {
@@ -1234,91 +1230,6 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
         }
       }
 
-      try {
-        await wp.generateAllContent();
-        result.steps.push({ step: 'generate_all_content', success: true });
-      } catch (error) {
-        console.error('Failed to generate all content:', error.message);
-        result.steps.push({ step: 'generate_all_content', success: false, error: error.message });
-      }
-
-      try {
-        const existingCreds = site?.wp_url
-          ? await siteService.findImageBankCredsByWpUrl(site.wp_url).catch(() => null)
-          : null;
-        const bankResult = await startSiteImageGeneration({
-          wp,
-          site,
-          deploymentContext,
-          contentContext,
-          email: req.user?.email,
-          callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
-          existingCreds,
-        });
-        if (bankResult) {
-          result.imageBank = bankResult;
-          const ok = bankResult.status === 'ready';
-          result.steps.push(ok
-            ? { step: 'generate_images', success: true }
-            : { step: 'generate_images', success: false, error: 'Image generation did not reach terminal state' });
-        }
-      } catch (error) {
-        console.warn('Image generation failed:', error.message);
-        result.steps.push({ step: 'generate_images', success: false, error: error.message });
-      }
-
-      // Generate and push content
-      if (contentContext) {
-        try {
-          const ai = new AIService({
-            openaiApiKey: config.openai?.apiKey,
-            geminiApiKey: config.gemini?.apiKey,
-          });
-
-          let generatedContent = null;
-          if (ai.hasOpenAI) {
-            generatedContent = await ai.generateContent(contentContext);
-          }
-
-          const pagesToCreate = contentContext.pages || [];
-          let homepageId = null;
-
-          for (const pageDef of pagesToCreate) {
-            try {
-              const aiPage = generatedContent?.pages?.[pageDef.slug];
-              const content = aiPage
-                ? buildPageHtml(pageDef.slug, aiPage)
-                : buildFallbackHtml(pageDef, contentContext.business);
-
-              const created = await wp.createPage({
-                title: pageDef.title || pageDef.slug,
-                content,
-                slug: pageDef.slug,
-                status: 'publish',
-              });
-
-              if (pageDef.slug === 'home') homepageId = created.id;
-            } catch (err) {
-              console.warn(`Failed to create page ${pageDef.slug}:`, err.message);
-            }
-          }
-
-          if (homepageId) {
-            await wp.setFrontPage(homepageId).catch(() => {});
-          }
-
-          await wp.updateSiteSettings({
-            title: contentContext.business?.name || 'My Website',
-            tagline: contentContext.business?.tagline || '',
-          }).catch(() => {});
-
-          result.steps.push({ step: 'content_generated', success: true });
-        } catch (error) {
-          console.error('Failed to generate content:', error.message);
-          result.steps.push({ step: 'content_generated', success: false, error: error.message });
-        }
-      }
-
       if (editorPreference) {
         try {
           const editorService = new EditorService();
@@ -1651,115 +1562,6 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
             result.steps.push({ step: 'plugin_translated', success: false, error: error.message });
           }
         }
-
-        sendProgress('generating_all_content', { message: 'Generating plugin-side content...' });
-        try {
-          await wp.generateAllContent({
-            onProgress: (progress) => {
-              sendProgress('generating_all_content', { message: progress.message, ...progress });
-            },
-          });
-          result.steps.push({ step: 'generate_all_content', success: true });
-        } catch (error) {
-          console.error('Failed to generate all content:', error.message);
-          result.steps.push({ step: 'generate_all_content', success: false, error: error.message });
-        }
-
-        sendProgress('generating_images', { message: 'Starting image generation...' });
-        try {
-          const existingCreds = site?.wp_url
-            ? await siteService.findImageBankCredsByWpUrl(site.wp_url).catch(() => null)
-            : null;
-          const bankResult = await startSiteImageGeneration({
-            wp,
-            site,
-            deploymentContext,
-            contentContext,
-            email: req.user?.email,
-            callbackBaseUrl: `${req.protocol}://${req.get('host')}`,
-            existingCreds,
-            onProgress: (progress) => {
-              sendProgress('generating_images', { message: progress.message, ...progress });
-            },
-          });
-          if (bankResult) {
-            result.imageBank = bankResult;
-            const ok = bankResult.status === 'ready';
-            if (ok) {
-              result.steps.push({ step: 'generate_images', success: true });
-              sendProgress('generating_images', {
-                phase: 'complete',
-                message: 'Image generation complete.',
-              });
-            } else {
-              result.steps.push({
-                step: 'generate_images',
-                success: false,
-                error: 'Image generation did not reach terminal state',
-              });
-              sendProgress('generating_images', {
-                phase: 'failed',
-                message: 'Image generation did not complete.',
-              });
-            }
-          }
-        } catch (error) {
-          console.warn('Image generation failed:', error.message);
-          result.steps.push({ step: 'generate_images', success: false, error: error.message });
-          sendProgress('generating_images', { phase: 'failed', message: error.message });
-        }
-
-        // Generate content
-        if (contentContext) {
-          sendProgress('generating_content', { message: 'Generating AI content...' });
-
-          try {
-            const ai = new AIService({
-              openaiApiKey: config.openai?.apiKey,
-              geminiApiKey: config.gemini?.apiKey,
-            });
-
-            let generated = null;
-            if (ai.hasOpenAI) {
-              generated = await ai.generateContent(contentContext);
-            }
-
-            sendProgress('pushing_content', { message: 'Publishing pages...' });
-
-            const pages = contentContext.pages || [];
-            let homepageId = null;
-
-            for (const pageDef of pages) {
-              try {
-                const aiPage = generated?.pages?.[pageDef.slug];
-                const content = aiPage
-                  ? buildPageHtml(pageDef.slug, aiPage)
-                  : buildFallbackHtml(pageDef, contentContext.business);
-
-                const created = await wp.createPage({
-                  title: pageDef.title || pageDef.slug,
-                  content,
-                  slug: pageDef.slug,
-                  status: 'publish',
-                });
-                if (pageDef.slug === 'home') homepageId = created.id;
-              } catch (err) {
-                console.warn(`Failed to create page ${pageDef.slug}:`, err.message);
-              }
-            }
-
-            if (homepageId) await wp.setFrontPage(homepageId).catch(() => {});
-
-            await wp.updateSiteSettings({
-              title: contentContext.business?.name || 'My Website',
-              tagline: contentContext.business?.tagline || '',
-            }).catch(() => {});
-
-            result.steps.push({ step: 'content_generated', success: true });
-          } catch (error) {
-            result.steps.push({ step: 'content_generated', success: false, error: error.message });
-          }
-        }
       }
       } catch (error) {
         if (!(error instanceof CriticalStepError)) throw error;
@@ -2055,68 +1857,6 @@ function findUrlInObject(obj) {
     }
   }
   return null;
-}
-
-// ==========================================
-// CONTENT HELPERS
-// ==========================================
-
-/**
- * Build HTML content for a page from AI-generated structured content
- */
-function buildPageHtml(slug, pageContent) {
-  const sections = [];
-
-  if (pageContent.hero) {
-    sections.push(`<div class="hero-section"><h1>${pageContent.hero.headline || ''}</h1><p>${pageContent.hero.subheadline || ''}</p>${pageContent.hero.cta ? `<a href="#contact" class="cta-button">${pageContent.hero.cta}</a>` : ''}</div>`);
-  }
-
-  if (pageContent.features && Array.isArray(pageContent.features)) {
-    const items = pageContent.features.map(f => `<div class="feature"><h3>${f.title || ''}</h3><p>${f.description || ''}</p></div>`).join('\n');
-    sections.push(`<div class="features-section">${items}</div>`);
-  }
-
-  if (pageContent.about) {
-    const content = typeof pageContent.about === 'string' ? pageContent.about : (pageContent.about.content || pageContent.about.description || '');
-    sections.push(`<div class="about-section"><h2>${pageContent.about.title || 'About Us'}</h2><p>${content}</p></div>`);
-  }
-
-  if (pageContent.services && Array.isArray(pageContent.services)) {
-    const items = pageContent.services.map(s => `<div class="service"><h3>${s.title || ''}</h3><p>${s.description || ''}</p></div>`).join('\n');
-    sections.push(`<div class="services-section"><h2>Our Services</h2>${items}</div>`);
-  }
-
-  if (pageContent.contact) {
-    sections.push(`<div class="contact-section"><h2>${pageContent.contact.title || 'Contact Us'}</h2><p>${pageContent.contact.description || 'Get in touch with us.'}</p></div>`);
-  }
-
-  if (sections.length === 0) {
-    for (const [key, value] of Object.entries(pageContent)) {
-      if (typeof value === 'string') {
-        sections.push(`<p>${value}</p>`);
-      } else if (typeof value === 'object' && value !== null) {
-        sections.push(`<div><h2>${value.title || key}</h2><p>${value.content || value.description || ''}</p></div>`);
-      }
-    }
-  }
-
-  return sections.join('\n\n');
-}
-
-/**
- * Build fallback HTML when AI content generation is unavailable
- */
-function buildFallbackHtml(pageDef, business) {
-  const name = business?.name || 'Our Business';
-  const tagline = business?.tagline || '';
-  switch (pageDef.slug) {
-    case 'home': return `<h1>Welcome to ${name}</h1>\n<p>${tagline}</p>\n<p>We are dedicated to providing exceptional service.</p>`;
-    case 'about': return `<h2>About ${name}</h2>\n<p>Learn more about our story, mission, and team.</p>`;
-    case 'services': return `<h2>Our Services</h2>\n<p>Discover what ${name} can do for you.</p>`;
-    case 'contact': return `<h2>Contact Us</h2>\n<p>Get in touch with ${name}. We'd love to hear from you.</p>`;
-    case 'blog': return `<h2>Blog</h2>\n<p>Stay up to date with the latest news from ${name}.</p>`;
-    default: return `<h2>${pageDef.title || pageDef.slug}</h2>\n<p>Welcome to the ${pageDef.title || pageDef.slug} page.</p>`;
-  }
 }
 
 // Create HTTP server, attach WebSocket, and start listening

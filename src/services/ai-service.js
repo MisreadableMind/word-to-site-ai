@@ -8,7 +8,7 @@ import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import { config } from '../config';
-import { DEFAULTS, CONTENT_TONES } from '../constants';
+import { DEFAULTS } from '../constants';
 
 const TemplateMatchSchema = z.object({
   slug: z.string(),
@@ -51,66 +51,6 @@ class AIService {
   // ==========================================
   // Content Generation (GPT-4o)
   // ==========================================
-
-  /**
-   * Generate website content based on content context
-   * @param {Object} contentContext - Content context object
-   * @param {Object} templateSlots - Template-specific content slots
-   * @returns {Promise<Object>} Generated content
-   */
-  async generateContent(contentContext, templateSlots = {}) {
-    if (!this.hasOpenAI) {
-      throw new Error('OpenAI API key is required for content generation');
-    }
-
-    const business = contentContext.business || {};
-    const tone = contentContext.tone || DEFAULTS.TONE;
-
-    const prompt = `Generate website content for a ${business.industry || 'business'} called "${business.name}".
-
-## Business Information:
-- Name: ${business.name}
-- Tagline: ${business.tagline || 'Not specified'}
-- Industry: ${business.industry || 'Not specified'}
-- Services: ${(business.services || []).join(', ') || 'Not specified'}
-- Target Audience: ${business.targetAudience || 'General'}
-- Unique Selling Points: ${(business.uniqueSellingPoints || []).join(', ') || 'Not specified'}
-
-## Content Requirements:
-- Tone: ${tone}
-- Language: ${contentContext.language?.primary || DEFAULTS.LANGUAGE}
-
-## Pages to Generate:
-${JSON.stringify(contentContext.pages || [], null, 2)}
-
-## Template Slots:
-${JSON.stringify(templateSlots, null, 2)}
-
-Generate content for each page section. Return a JSON object with:
-{
-  "pages": {
-    "home": {
-      "hero": { "headline": "...", "subheadline": "...", "cta": "..." },
-      "features": [{ "title": "...", "description": "..." }]
-    },
-    "about": { ... },
-    ...
-  },
-  "global": {
-    "footer": { ... },
-    "navigation": [ ... ]
-  }
-}
-
-Return ONLY valid JSON.`;
-
-    const response = await this.callOpenAI(prompt, {
-      model: 'gpt-4o',
-      responseFormat: { type: 'json_object' },
-    });
-
-    return JSON.parse(response);
-  }
 
   /**
    * Generate blog post content

@@ -113,15 +113,6 @@ export const config = {
     appPassword: process.env.BASE_SITE_APP_PASSWORD,
   },
 
-  // Image Bank Configuration — admin credentials for content-bank.themerex.net.
-  // Used to provision a per-site user via POST /api/users; the returned per-site
-  // credentials are then passed to the plugin's generate-images endpoint.
-  imageBank: {
-    login: process.env.IMAGE_BANK_LOGIN || '',
-    password: process.env.IMAGE_BANK_PASSWORD || '',
-    scoreThreshold: parseFloat(process.env.IMAGE_BANK_SCORE_THRESHOLD) || 0.85,
-  },
-
   // Server Configuration
   server: {
     port: parseInt(process.env.PORT) || 3000,

@@ -4,11 +4,9 @@ import InstaWPAPI from './instawp';
 import { config, validateDomainConfig, toWpLocale } from './config';
 import { DEFAULTS } from './constants';
 import EditorService from './services/editor-service';
-import AIService from './services/ai-service';
 import WordPressService from './services/wordpress-service';
 import { prepareWizardData } from './services/business-structurer';
 import { classify } from './lib/domain-classifier';
-import { startSiteImageGeneration } from './lib/image-bank-flow';
 import pRetry from 'p-retry';
 import { checkDnsMatches, waitForDnsResolves } from './lib/dns-ready';
 
@@ -16,8 +14,6 @@ const CRITICAL_ONBOARDING_STEPS = [
   'skin_switched',
   'deployment_applied',
   'wizard_data_saved',
-  'generate_all_content',
-  'content_generated',
 ];
 
 function withAggregateSuccess(result) {
@@ -448,7 +444,6 @@ class DomainWorkflow {
       registrationYears = 1,
       email,
       callbackBaseUrl,
-      existingImageBankCreds,
       licenseKey,
     } = params;
 
@@ -476,18 +471,14 @@ class DomainWorkflow {
       });
 
       try {
-        const deployResults = await this.applyDeploymentContext(result.site.id, result.site, deploymentContext, {
+        await this.applyDeploymentContext(result.site.id, result.site, deploymentContext, {
           contentContext,
           skinSlugOverride: params.templateSlug,
           email,
           domain,
           callbackBaseUrl,
-          existingImageBankCreds,
           licenseKey,
         });
-        if (deployResults?.imageBank) {
-          result.imageBank = deployResults.imageBank;
-        }
         result.steps.push({
           step: 'deployment_applied',
           success: true,
@@ -541,32 +532,6 @@ class DomainWorkflow {
       }
     }
 
-    // Generate and push content
-    if (contentContext && !deployFailed) {
-      this.emitProgress('generating_content', {
-        message: 'Generating website content...',
-      });
-
-      try {
-        const contentResult = await this.generateContent(result.site.id, result.site, contentContext);
-        result.steps.push({
-          step: 'content_generated',
-          success: true,
-          data: {
-            pages: contentResult.pages?.length || 0,
-            generated: contentResult.generated,
-          },
-        });
-      } catch (error) {
-        console.error('Failed to generate content:', error.message);
-        result.steps.push({
-          step: 'content_generated',
-          success: false,
-          error: error.message,
-        });
-      }
-    }
-
     // Select editor mode
     if (editorPreference && !deployFailed) {
       try {
@@ -600,7 +565,7 @@ class DomainWorkflow {
    * @param {string} [options.skinSlugOverride] - User-selected skin slug override
    */
   async applyDeploymentContext(siteId, siteUrl, context, options = {}) {
-    const { contentContext, skinSlugOverride, existingImageBankCreds, licenseKey } = options;
+    const { contentContext, skinSlugOverride, licenseKey } = options;
     const favicon = context.branding?.faviconUrl || DEFAULTS.FAVICON_URL;
     const site = this.extractSiteCredentials(siteUrl);
 
@@ -733,267 +698,13 @@ class DomainWorkflow {
       }
     }
 
-    // Generate all content (plugin-side AI rewrite)
-    try {
-      this.emitProgress('generating_all_content', {
-        message: 'Generating plugin-side content...',
-      });
-      await wp.generateAllContent({
-        onProgress: (progress) => {
-          this.emitProgress('generating_all_content', { message: progress.message, ...progress });
-        },
-      });
-      results.allContentGenerated = true;
-      console.log('  Plugin-side content generated');
-    } catch (error) {
-      console.error('Failed to generate all content:', error.message);
-      results.generateAllError = error.message;
-    }
-
-    try {
-      this.emitProgress('provisioning_image_bank_user', {
-        message: 'Creating image bank account for site...',
-      });
-      const siteForBank = {
-        id: siteId,
-        domain: options.domain || (typeof siteUrl === 'object' && siteUrl?.domain) || null,
-        wp_url: site.url,
-      };
-      const bankResult = await startSiteImageGeneration({
-        wp,
-        site: siteForBank,
-        deploymentContext: context,
-        contentContext: options.contentContext,
-        email: options.email,
-        callbackBaseUrl: options.callbackBaseUrl,
-        existingCreds: existingImageBankCreds,
-        onProgress: (progress) => {
-          this.emitProgress('generating_images', { message: progress.message, ...progress });
-        },
-      });
-      if (bankResult) {
-        results.imageBank = bankResult;
-        const ok = bankResult.status === 'ready';
-        if (ok) {
-          this.emitProgress('generating_images', {
-            phase: 'complete',
-            message: 'Image generation complete.',
-          });
-          results.imagesGenerated = true;
-        } else {
-          this.emitProgress('generating_images', {
-            phase: 'failed',
-            message: 'Image generation did not complete.',
-          });
-          results.imagesGenerated = false;
-          results.generateImagesError = 'Image generation did not reach terminal state';
-        }
-      }
-    } catch (error) {
-      console.warn('Image generation failed:', error.message);
-      results.generateImagesError = error.message;
-      this.emitProgress('generating_images', { phase: 'failed', message: error.message });
-    }
-
     const criticalFailures = [];
     if (results.wizardDataError) criticalFailures.push(`wizard_data_saved: ${results.wizardDataError}`);
-    if (results.generateAllError) criticalFailures.push(`generate_all_content: ${results.generateAllError}`);
-    if (results.generateImagesError) criticalFailures.push(`generate_images: ${results.generateImagesError}`);
     if (criticalFailures.length > 0) {
       throw new Error(criticalFailures.join('; '));
     }
 
     return results;
-  }
-
-  /**
-   * Generate and push content to a site
-   * @param {string} siteId - InstaWP site ID
-   * @param {string} siteUrl - Site URL
-   * @param {Object} context - Content context
-   */
-  async generateContent(siteId, siteUrl, context) {
-    console.log(`Generating content for site ${siteId}`);
-    console.log(`  Business: ${context.business?.name}`);
-    console.log(`  Tone: ${context.tone}`);
-    console.log(`  Pages: ${context.pages?.length || 0}`);
-
-    const site = this.extractSiteCredentials(siteUrl);
-    const wp = new WordPressService(site.url, {
-      username: site.username,
-      password: site.password,
-    });
-
-    const ai = new AIService({
-      openaiApiKey: config.openai?.apiKey,
-      geminiApiKey: config.gemini?.apiKey,
-    });
-
-    const results = { generated: false, pages: [], errors: [] };
-
-    // 1. Generate content via AI
-    let generatedContent = null;
-    if (ai.hasOpenAI) {
-      try {
-        this.emitProgress('generating_content', {
-          message: 'Generating AI content for pages...',
-        });
-        generatedContent = await ai.generateContent(context);
-      } catch (error) {
-        console.warn('AI content generation failed:', error.message);
-        results.errors.push(`AI generation: ${error.message}`);
-      }
-    }
-
-    // 2. Update site settings with business info
-    try {
-      await wp.updateSiteSettings({
-        title: context.business?.name || 'My Website',
-        tagline: context.business?.tagline || '',
-      });
-    } catch (error) {
-      console.warn('Failed to update site settings:', error.message);
-      results.errors.push(`Site settings: ${error.message}`);
-    }
-
-    // 3. Create pages with generated or fallback content
-    this.emitProgress('pushing_content', {
-      message: 'Pushing content to WordPress...',
-    });
-
-    const pagesToCreate = context.pages || [];
-    let homepageId = null;
-
-    for (const pageDef of pagesToCreate) {
-      try {
-        // Get AI-generated content for this page, or use a placeholder
-        const aiPageContent = generatedContent?.pages?.[pageDef.slug];
-        const htmlContent = aiPageContent
-          ? this.buildPageHtml(pageDef.slug, aiPageContent)
-          : this.buildFallbackPageHtml(pageDef, context.business);
-
-        const createdPage = await wp.createPage({
-          title: pageDef.title || pageDef.slug,
-          content: htmlContent,
-          slug: pageDef.slug,
-          status: 'publish',
-        });
-
-        results.pages.push({
-          slug: pageDef.slug,
-          id: createdPage.id,
-          success: true,
-        });
-
-        if (pageDef.slug === 'home') {
-          homepageId = createdPage.id;
-        }
-      } catch (error) {
-        console.warn(`Failed to create page ${pageDef.slug}:`, error.message);
-        results.pages.push({
-          slug: pageDef.slug,
-          success: false,
-          error: error.message,
-        });
-        results.errors.push(`Page ${pageDef.slug}: ${error.message}`);
-      }
-    }
-
-    // 4. Set homepage as front page if created
-    if (homepageId) {
-      try {
-        await wp.setFrontPage(homepageId);
-      } catch (error) {
-        console.warn('Failed to set front page:', error.message);
-      }
-    }
-
-    results.generated = results.pages.some(p => p.success);
-    return results;
-  }
-
-  /**
-   * Build HTML content for a page from AI-generated structured content
-   * @param {string} slug - Page slug
-   * @param {Object} pageContent - AI-generated content object
-   * @returns {string} HTML content
-   */
-  buildPageHtml(slug, pageContent) {
-    const sections = [];
-
-    if (pageContent.hero) {
-      sections.push(`
-<div class="hero-section">
-  <h1>${pageContent.hero.headline || ''}</h1>
-  <p>${pageContent.hero.subheadline || ''}</p>
-  ${pageContent.hero.cta ? `<a href="#contact" class="cta-button">${pageContent.hero.cta}</a>` : ''}
-</div>`);
-    }
-
-    if (pageContent.features && Array.isArray(pageContent.features)) {
-      const featureItems = pageContent.features
-        .map(f => `<div class="feature"><h3>${f.title || ''}</h3><p>${f.description || ''}</p></div>`)
-        .join('\n');
-      sections.push(`<div class="features-section">${featureItems}</div>`);
-    }
-
-    if (pageContent.about) {
-      const aboutContent = typeof pageContent.about === 'string'
-        ? pageContent.about
-        : (pageContent.about.content || pageContent.about.description || '');
-      sections.push(`<div class="about-section"><h2>${pageContent.about.title || 'About Us'}</h2><p>${aboutContent}</p></div>`);
-    }
-
-    if (pageContent.services && Array.isArray(pageContent.services)) {
-      const serviceItems = pageContent.services
-        .map(s => `<div class="service"><h3>${s.title || ''}</h3><p>${s.description || ''}</p></div>`)
-        .join('\n');
-      sections.push(`<div class="services-section"><h2>Our Services</h2>${serviceItems}</div>`);
-    }
-
-    if (pageContent.contact) {
-      sections.push(`<div class="contact-section"><h2>${pageContent.contact.title || 'Contact Us'}</h2><p>${pageContent.contact.description || 'Get in touch with us.'}</p></div>`);
-    }
-
-    // Fallback: if no sections matched, render all values as paragraphs
-    if (sections.length === 0) {
-      for (const [key, value] of Object.entries(pageContent)) {
-        if (typeof value === 'string') {
-          sections.push(`<p>${value}</p>`);
-        } else if (typeof value === 'object' && value !== null) {
-          const text = value.content || value.description || value.headline || JSON.stringify(value);
-          sections.push(`<div><h2>${value.title || key}</h2><p>${text}</p></div>`);
-        }
-      }
-    }
-
-    return sections.join('\n\n');
-  }
-
-  /**
-   * Build fallback HTML when AI content generation is unavailable
-   * @param {Object} pageDef - Page definition
-   * @param {Object} business - Business info
-   * @returns {string} HTML content
-   */
-  buildFallbackPageHtml(pageDef, business) {
-    const name = business?.name || 'Our Business';
-    const tagline = business?.tagline || '';
-
-    switch (pageDef.slug) {
-      case 'home':
-        return `<h1>Welcome to ${name}</h1>\n<p>${tagline}</p>\n<p>We are dedicated to providing exceptional service to our customers.</p>`;
-      case 'about':
-        return `<h2>About ${name}</h2>\n<p>Learn more about our story, mission, and the team behind ${name}.</p>`;
-      case 'services':
-        return `<h2>Our Services</h2>\n<p>Discover what ${name} can do for you.</p>`;
-      case 'contact':
-        return `<h2>Contact Us</h2>\n<p>Get in touch with ${name}. We'd love to hear from you.</p>`;
-      case 'blog':
-        return `<h2>Blog</h2>\n<p>Stay up to date with the latest news from ${name}.</p>`;
-      default:
-        return `<h2>${pageDef.title || pageDef.slug}</h2>\n<p>Welcome to the ${pageDef.title || pageDef.slug} page.</p>`;
-    }
   }
 
   /**
