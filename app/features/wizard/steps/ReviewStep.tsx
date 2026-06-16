@@ -30,7 +30,7 @@ export function ReviewStep() {
     setPaywall(null);
     setDeployError(null);
     setDeployResult(null);
-    stream.start(buildConfirmStreamPath(state));
+    stream.start(String(state.deployNonce), buildConfirmStreamPath(state));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.deployNonce, state.reviewView]);
 

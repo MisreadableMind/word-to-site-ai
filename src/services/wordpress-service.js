@@ -4,11 +4,10 @@
  */
 
 import pRetry, { AbortError } from 'p-retry';
+import pWaitFor, { TimeoutError } from 'p-wait-for';
 
-const TRANSIENT_NETWORK_CODES = new Set(['ENOTFOUND', 'ECONNREFUSED', 'EAI_AGAIN']);
 const isTransientNetworkError = (err) =>
-  TRANSIENT_NETWORK_CODES.has(err?.cause?.code) ||
-  (err?.message === 'fetch failed' && !err?.cause);
+  err?.cause != null || err?.name === 'AbortError' || err?.name === 'TimeoutError';
 
 class WordPressService {
   /**
@@ -50,6 +49,7 @@ class WordPressService {
         let response;
         try {
           response = await fetch(url, {
+            signal: AbortSignal.timeout(15000),
             ...options,
             headers: {
               'Authorization': this.authHeader,
@@ -58,6 +58,11 @@ class WordPressService {
             },
           });
         } catch (err) {
+          const cause = err?.cause;
+          console.warn(
+            `[WP REST] ${options.method ?? 'GET'} ${url} — ${err?.message}` +
+            (cause ? ` (cause: ${cause.code ?? cause.name ?? '?'}${cause.message ? ` ${cause.message}` : ''}${cause.syscall ? ` syscall=${cause.syscall}` : ''})` : ''),
+          );
           if (isTransientNetworkError(err)) throw err;
           throw new AbortError(err);
         }
@@ -75,7 +80,7 @@ class WordPressService {
         }
         return response.json();
       },
-      { retries: 2, factor: 2, minTimeout: 2000, maxTimeout: 5000 },
+      { retries: 4, factor: 2, minTimeout: 2000, maxTimeout: 10000 },
     );
   }
 
@@ -210,7 +215,7 @@ class WordPressService {
    * @returns {Promise<Object>} Uploaded media data (includes .id for site icon)
    */
   async uploadMediaFromUrl(imageUrl, filename) {
-    const response = await fetch(imageUrl);
+    const response = await fetch(imageUrl, { signal: AbortSignal.timeout(15000) });
     if (!response.ok) {
       throw new Error(`Failed to download image: ${response.status}`);
     }
@@ -220,15 +225,22 @@ class WordPressService {
     const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
     const name = filename || `upload-${Date.now()}.${ext}`;
 
-    const uploadResponse = await fetch(`${this.apiBase}/media`, {
-      method: 'POST',
-      headers: {
-        'Authorization': this.authHeader,
-        'Content-Disposition': `attachment; filename="${name}"`,
-        'Content-Type': contentType,
-      },
-      body: Buffer.from(buffer),
-    });
+    const uploadResponse = await pRetry(
+      () => fetch(`${this.apiBase}/media`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(15000),
+        headers: {
+          'Authorization': this.authHeader,
+          'Content-Disposition': `attachment; filename="${name}"`,
+          'Content-Type': contentType,
+        },
+        body: Buffer.from(buffer),
+      }).catch((err) => {
+        if (isTransientNetworkError(err)) throw err;
+        throw new AbortError(err);
+      }),
+      { retries: 4, factor: 2, minTimeout: 2000, maxTimeout: 10000 },
+    );
 
     if (!uploadResponse.ok) {
       const error = await uploadResponse.json().catch(() => ({}));
@@ -381,7 +393,7 @@ class WordPressService {
       console.log(`[license] activate ok site=${this.siteUrl}`);
       return result;
     } catch (error) {
-      console.log(`[license] activate fail site=${this.siteUrl} error=${error.message}`);
+      console.log(`[license] activate fail site=${this.siteUrl} error=${error.message}${error.cause?.code ? ` (${error.cause.code}${error.cause.syscall ? ` ${error.cause.syscall}` : ''})` : ''}`);
       throw error;
     }
   }
@@ -478,6 +490,7 @@ class WordPressService {
     // If status is already terminal from a stale run, the force flag should have restarted it.
     // If it's still error, the skin itself is invalid.
     if (postResult.status === 'rest_api_end') {
+      await this._waitForApiReady();
       onProgress?.({ phase: 'complete', message: `Skin "${skinSlug}" applied successfully` });
       return { success: true, skin: skinSlug, pollResult: postResult };
     }
@@ -497,8 +510,26 @@ class WordPressService {
     });
 
     console.log(`Skin switch to "${skinSlug}" completed successfully`);
+    await this._waitForApiReady();
     onProgress?.({ phase: 'complete', message: `Skin "${skinSlug}" applied successfully` });
     return { success: true, skin: skinSlug, pollResult };
+  }
+
+  async _waitForApiReady(maxWaitMs = 60000) {
+    try {
+      await pWaitFor(
+        () => fetch(`${this.siteUrl}/wp-json/`, { signal: AbortSignal.timeout(8000) })
+          .then((res) => res.ok)
+          .catch(() => false),
+        { interval: 3000, timeout: maxWaitMs },
+      );
+    } catch (err) {
+      if (err instanceof TimeoutError) {
+        console.warn(`[WP REST] ${this.siteUrl}/wp-json/ not responsive after ${maxWaitMs / 1000}s; proceeding`);
+        return;
+      }
+      throw err;
+    }
   }
 
   // ==========================================

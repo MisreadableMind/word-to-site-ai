@@ -1,3 +1,4 @@
+import { get } from 'lodash-es';
 import { config, validateConfig } from './config';
 import InstaWPAPI from './instawp';
 import DomainWorkflow from './domain-workflow';
@@ -39,31 +40,27 @@ class InstaWPSiteCreator {
       });
       console.log(`Site is ready!`);
 
-      // Final summary
+      const detail = await this.instawp.getSite(site.id).catch(() => readySite);
+      const siteUrl = readySite.wp_url || readySite.url || '';
+      const wpUsername = get(detail, 'site_meta.wp_username', '');
+      const wpPassword = get(detail, 'site_meta.wp_password', '');
+      const magicLoginUrl = (siteUrl && wpUsername && wpPassword)
+        ? `/api/wp-auto-login?${new URLSearchParams({ url: siteUrl, u: wpUsername, p: wpPassword })}`
+        : '';
+
       console.log('\n========================================');
       console.log('Site Creation Complete!');
       console.log('========================================\n');
-      const finalUsername = site.wp_username || readySite.wp_username || readySite.username || readySite.admin_user || readySite.site_meta?.wp_username || config.instawp.snapshotWpUsername || '';
-      const finalPassword = site.wp_password || readySite.wp_password || readySite.password || readySite.admin_pass || readySite.site_meta?.wp_password || config.instawp.snapshotWpPassword || '';
       console.log(`Site ID: ${site.id}`);
-      console.log(`Site URL: ${readySite.wp_url || readySite.url}`);
-      console.log(`WP Admin: ${readySite.wp_admin_url || (readySite.wp_url || readySite.url) + '/wp-admin'}`);
-      console.log(`WP Username: ${finalUsername}`);
-      console.log(`WP Password: ${finalPassword}`);
+      console.log(`Site URL: ${siteUrl}`);
+      console.log(`WP Admin: ${readySite.wp_admin_url || siteUrl + '/wp-admin'}`);
+      console.log(`WP Username: ${wpUsername}`);
+      console.log(`WP Password: ${wpPassword}`);
 
       console.log('\nNext Steps:');
       console.log('1. Visit your site URL to see your new WordPress site');
       console.log('2. Login to WordPress admin with the credentials above');
       console.log('3. You can optionally map a custom domain to your site later\n');
-
-      // Build direct auto-login URL that bypasses InstaWP dashboard
-      // Prefer credentials from API responses; fall back to snapshot defaults
-      const siteUrl = readySite.wp_url || readySite.url || '';
-      const wpUsername = site.wp_username || readySite.wp_username || readySite.username || readySite.admin_user || readySite.site_meta?.wp_username || config.instawp.snapshotWpUsername || '';
-      const wpPassword = site.wp_password || readySite.wp_password || readySite.password || readySite.admin_pass || readySite.site_meta?.wp_password || config.instawp.snapshotWpPassword || '';
-      const magicLoginUrl = (siteUrl && wpUsername && wpPassword)
-        ? `/api/wp-auto-login?url=${encodeURIComponent(siteUrl)}&u=${encodeURIComponent(wpUsername)}&p=${encodeURIComponent(wpPassword)}`
-        : '';
 
       return {
         success: true,

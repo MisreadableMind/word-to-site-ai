@@ -9,6 +9,7 @@ import { prepareWizardData } from './services/business-structurer';
 import { classify } from './lib/domain-classifier';
 import pRetry from 'p-retry';
 import { checkDnsMatches, waitForDnsResolves } from './lib/dns-ready';
+import { get } from 'lodash-es';
 
 const CRITICAL_ONBOARDING_STEPS = [
   'skin_switched',
@@ -231,7 +232,19 @@ class DomainWorkflow {
 
       const readySite = await this.instawp.waitForSiteReady(site.id);
       result.steps.push({ step: 'site_ready', success: true });
-      result.site = { ...site, ...readySite };
+      const detail = await this.instawp.getSite(site.id).catch(() => readySite);
+      const wpUrl = readySite.wp_url || readySite.url || '';
+      const wpUsername = get(detail, 'site_meta.wp_username', '');
+      const wpPassword = get(detail, 'site_meta.wp_password', '');
+      result.site = {
+        ...site,
+        ...readySite,
+        wp_username: wpUsername,
+        wp_password: wpPassword,
+        magic_login_url: (wpUrl && wpUsername && wpPassword)
+          ? `/api/wp-auto-login?${new URLSearchParams({ url: wpUrl, u: wpUsername, p: wpPassword })}`
+          : '',
+      };
 
       if (!registerNewDomain) {
         managed = await this.isManagedDomain(domain);
