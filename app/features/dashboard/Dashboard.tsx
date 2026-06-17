@@ -180,8 +180,8 @@ export function Dashboard() {
         )}
       </div>
 
-      <Dialog open={!!deletingId} onClose={() => setDeletingId(null)}>
-        <h3 className="wts-page-sub" style={{ fontSize: 16, marginBottom: 8 }}>Delete site?</h3>
+      <Dialog open={!!deletingId} onClose={() => setDeletingId(null)} ariaLabelledBy="del-site-title">
+        <h3 id="del-site-title" className="wts-page-sub" style={{ fontSize: 16, marginBottom: 8 }}>Delete site?</h3>
         <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 20 }}>
           This will remove the site from your dashboard. The WordPress instance will remain active.
         </p>

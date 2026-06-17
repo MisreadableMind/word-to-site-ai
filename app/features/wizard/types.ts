@@ -75,6 +75,7 @@ export interface SkinRecommendation {
   title: string;
   category: string;
   demo_url: string;
+  keywords: string;
   reason: string;
   confidence: number;
 }

@@ -879,3 +879,37 @@
 .wts-paywall-footer a:hover {
   color: var(--ink);
 }
+
+/* — Dialog modal — */
+.dialog-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 14, 12, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.dialog-overlay.open {
+  display: flex;
+}
+.dialog {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+.dialog:focus {
+  outline: none;
+}
+.dialog.dialog-wide {
+  max-width: min(900px, 90vw);
+}

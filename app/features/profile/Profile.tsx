@@ -290,8 +290,8 @@ export function Profile() {
         </div>
       </div>
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <h3 className="wts-page-sub" style={{ fontSize: 16, marginBottom: 8 }}>
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} ariaLabelledBy="del-acct-title">
+        <h3 id="del-acct-title" className="wts-page-sub" style={{ fontSize: 16, marginBottom: 8 }}>
           Delete account?
         </h3>
         <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 20 }}>

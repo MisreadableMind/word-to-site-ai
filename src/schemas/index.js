@@ -15,3 +15,5 @@ export {
   validateContentContext,
   buildContentContextFromInterview,
 } from './content-context';
+
+export { SkinItem, SkinItems } from './skin';

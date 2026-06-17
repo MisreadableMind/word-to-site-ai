@@ -41,7 +41,8 @@ import { PLATFORM_HOSTS, PRIMARY_PLATFORM_HOST, classify as classifyDomain } fro
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth';
 import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement';
 import { getEntitlements as getPlanEntitlements } from './billing/entitlements';
-import { get, isEmpty, isNil } from "lodash-es";
+import { get, isNil } from "lodash-es";
+import { recommendSkins } from './services/skin-recommender';
 
 const CRITICAL_ONBOARDING_STEPS = [
   'skin_switched',
@@ -278,79 +279,10 @@ const nonStrictTextFormat = <T extends z.ZodType>(schema: T, name: string) => {
   );
 };
 
-// POST /api/skins/recommend — AI-ranked skins based on user onboarding input
-const SkinRecommendation = z.object({
-  recommended: z.array(z.object({
-    slug: z.string().describe('Skin slug from the available list'),
-    reason: z.string().describe('Short reason why this skin fits, 1 sentence'),
-    confidence: z.number().describe('Match confidence from 0 to 1'),
-  })).describe('Top 5-8 skins ranked by relevance, best first'),
-});
-
 app.post('/api/skins/recommend', async (req, res) => {
   try {
-    const { industry, services, aboutUs, companyName } = req.body;
-
-    const allSkins = await baseSiteService.getSkins();
-    const skinList = allSkins.map(s => `${s.slug} (${s.title}) [${s.category}] — ${s.keywords}`).join('\n');
-
-    if (!config.openai?.apiKey || !industry) {
-      // Fallback: keyword matching
-      const query = [industry, services, aboutUs].filter(Boolean).join(' ').toLowerCase();
-      const scored = allSkins.map(skin => {
-        const kw = (skin.keywords + ' ' + skin.category + ' ' + skin.title).toLowerCase();
-        const words = query.split(/[\s,]+/);
-        const hits = words.filter(w => w.length > 2 && kw.includes(w)).length;
-        return { ...skin, score: hits };
-      }).sort((a, b) => b.score - a.score).slice(0, 6);
-
-      return res.json({
-        success: true,
-        recommended: scored.map(s => ({
-          slug: s.slug,
-          title: s.title,
-          category: s.category,
-          demo_url: s.demo_url,
-          reason: `Matches your ${industry || 'business'} keywords`,
-          confidence: Math.min(0.9, 0.3 + s.score * 0.15),
-        })),
-      });
-    }
-
-    const openai = new OpenAI({ apiKey: config.openai.apiKey });
-
-    const response = await openai.responses.parse({
-      model: 'gpt-5-mini',
-      input: [
-        {
-          role: 'system',
-          content: `You recommend website skins/templates. Given a user's business info, pick the 5-8 most relevant skins from this catalog. Rank by relevance, best first.\n\nAvailable skins:\n${skinList}`,
-        },
-        {
-          role: 'user',
-          content: `Company: ${companyName || 'N/A'}\nIndustry: ${industry}\nServices: ${services || 'N/A'}\nAbout: ${aboutUs || 'N/A'}`,
-        },
-      ],
-      text: { format: nonStrictTextFormat(SkinRecommendation, 'skin_recommendation') },
-      reasoning: { effort: 'minimal' },
-    });
-
-    const recs = response.output_parsed?.recommended || [];
-
-    // Enrich with full skin data
-    const enriched = recs.map(rec => {
-      const skin = allSkins.find(s => s.slug === rec.slug);
-      return {
-        slug: rec.slug,
-        title: skin?.title || rec.slug,
-        category: skin?.category || '',
-        demo_url: skin?.demo_url || '',
-        reason: rec.reason,
-        confidence: rec.confidence,
-      };
-    });
-
-    res.json({ success: true, recommended: enriched });
+    const skins = await baseSiteService.getSkins();
+    res.json({ success: true, recommended: await recommendSkins(skins, req.body) });
   } catch (error) {
     console.error('Skin recommendation error:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -1903,66 +1835,6 @@ function startServer(port) {
         }
       }, 60 * 60 * 1000);
     }
-
-    console.log(`\nWordToSite Server v3.0.0`);
-    console.log(`Server running at http://localhost:${port}`);
-    console.log(`\nCore endpoints:`);
-    console.log(`  GET  /api/health - Health check`);
-    console.log(`  GET  /api/config - Configuration status`);
-    console.log(`  POST /api/create-site - Create site (no domain)`);
-    console.log(`  POST /api/create-site-with-domain - Full domain workflow`);
-    console.log(`\nVoice endpoints:`);
-    console.log(`  POST /api/voice/transcribe - Transcribe audio file`);
-    console.log(`\nOnboarding endpoints:`);
-    console.log(`  POST /api/skins/recommend - AI-ranked skin recommendations`);
-    console.log(`  POST /api/onboard/match-industry - Match voice input to industry option`);
-    console.log(`  POST /api/onboard/suggest-options - AI-suggested services & about chips`);
-    console.log(`  POST /api/onboard/suggest-step2 - AI-generated team & advantages text`);
-    console.log(`  POST /api/onboard/generate-tagline - Generate AI tagline`);
-    console.log(`  POST /api/onboard/interview/complete - Flow B: Submit interview`);
-    console.log(`  POST /api/onboard/confirm - Confirm and deploy`);
-    console.log(`  GET  /api/onboard/confirm/stream - SSE deploy progress`);
-    console.log(`\nWizard endpoints:`);
-    console.log(`  POST /api/wizard/deploy - Apply deployment context`);
-    console.log(`  POST /api/wizard/generate-content - Generate AI content`);
-    console.log(`  POST /api/wizard/generate-excerpt - Generate excerpt`);
-    console.log(`\nEditor endpoints:`);
-    console.log(`  POST /api/editor/test - Test Light Editor capability`);
-    console.log(`  POST /api/editor/select - Select editor mode`);
-    console.log(`  GET  /api/editor/options - Get editor options`);
-    if (config.pluginApi?.enabled !== false) {
-      console.log(`\nPlugin API endpoints:`);
-      console.log(`  GET  /api/plugin/ping - Connectivity test`);
-      console.log(`  POST /api/plugin/register - Site registration`);
-      console.log(`  POST /api/plugin/heartbeat - Heartbeat`);
-      console.log(`  GET  /api/plugin/config - Pull config`);
-      console.log(`  POST /api/plugin/sync/traffic - Push traffic data`);
-      console.log(`  GET  /api/plugin/agent/actions - Get pending actions`);
-    }
-    if (config.proxy?.enabled !== false) {
-      console.log(`\nAI Proxy endpoints:`);
-      console.log(`  GET  /api/proxy/ping - Connectivity test`);
-      console.log(`  POST /api/proxy/admin/register-site - Register site`);
-      console.log(`  POST /api/proxy/admin/push-key - Push key to WP site`);
-      console.log(`  GET  /api/proxy/admin/sites - List registered sites`);
-      console.log(`  POST /api/proxy/v1/responses - OpenAI Responses API passthrough`);
-      console.log(`  GET  /api/proxy/v1/usage - Usage stats`);
-    }
-    if (config.auth?.enabled !== false) {
-      console.log(`\nUser Auth endpoints:`);
-      console.log(`  POST /api/auth/register - Register new account`);
-      console.log(`  POST /api/auth/login - Log in`);
-      console.log(`  POST /api/auth/logout - Log out`);
-      console.log(`  GET  /api/auth/me - Current user`);
-      console.log(`  GET  /api/sites - List user's sites`);
-    }
-    if (config.features?.voiceFlow) {
-      console.log(`\nWebSocket:`);
-      console.log(`  WS   /ws/voice - Voice interview handler`);
-    }
-    console.log(`\n  → App:    http://localhost:${port}/app`);
-    console.log(`  → Health: http://localhost:${port}/api/health`);
-    console.log(`  → Config: http://localhost:${port}/api/config\n`);
   });
 }
 
