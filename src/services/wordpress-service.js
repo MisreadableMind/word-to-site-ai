@@ -3,11 +3,11 @@
  * Interacts with deployed WordPress sites via WP REST API using basic auth
  */
 
-import pRetry, { AbortError } from 'p-retry';
-import pWaitFor, { TimeoutError } from 'p-wait-for';
+import axios from 'axios';
+import axiosRetry from 'axios-retry';
+import { HttpsAgent } from 'agentkeepalive';
 
-const isTransientNetworkError = (err) =>
-  err?.cause != null || err?.name === 'AbortError' || err?.name === 'TimeoutError';
+const keepAliveAgent = new HttpsAgent({ freeSocketTimeout: 4000 });
 
 class WordPressService {
   /**
@@ -20,6 +20,14 @@ class WordPressService {
     this.siteUrl = siteUrl.replace(/\/+$/, '');
     this.auth = auth;
     this.apiBase = `${this.siteUrl}/wp-json/wp/v2`;
+    this.http = axios.create({ httpsAgent: keepAliveAgent, timeout: 15000 });
+    axiosRetry(this.http, {
+      retries: 4,
+      retryDelay: (retryCount) => Math.min(2000 * 2 ** (retryCount - 1), 10000),
+      retryCondition: (error) => !error.response,
+      onRetry: (count, error, config) =>
+        console.warn(`[WP REST] retry ${count} ${config.method?.toUpperCase()} ${config.url} — ${error.code ?? error.message}`),
+    });
   }
 
   /**
@@ -44,44 +52,31 @@ class WordPressService {
       ? endpoint
       : `${this.apiBase}${endpoint}`;
 
-    return pRetry(
-      async () => {
-        let response;
-        try {
-          response = await fetch(url, {
-            signal: AbortSignal.timeout(15000),
-            ...options,
-            headers: {
-              'Authorization': this.authHeader,
-              'Content-Type': 'application/json',
-              ...options.headers,
-            },
-          });
-        } catch (err) {
-          const cause = err?.cause;
-          console.warn(
-            `[WP REST] ${options.method ?? 'GET'} ${url} — ${err?.message}` +
-            (cause ? ` (cause: ${cause.code ?? cause.name ?? '?'}${cause.message ? ` ${cause.message}` : ''}${cause.syscall ? ` syscall=${cause.syscall}` : ''})` : ''),
-          );
-          if (isTransientNetworkError(err)) throw err;
-          throw new AbortError(err);
-        }
-
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          if (response.status === 401 || response.status === 403) {
-            console.error(
-              `[WP REST ${response.status}] ${url} — code="${body.code ?? ''}" message="${body.message ?? ''}" data=${JSON.stringify(body.data ?? {})}`,
-            );
-          }
-          throw new AbortError(
-            new Error(body.message || `WP REST API error: ${response.status} ${response.statusText}`),
+    try {
+      const { data } = await this.http.request({
+        url,
+        method: options.method ?? 'GET',
+        data: options.body,
+        headers: {
+          'Authorization': this.authHeader,
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
+      return data;
+    } catch (error) {
+      const response = error.response;
+      if (response) {
+        const body = response.data ?? {};
+        if (response.status === 401 || response.status === 403) {
+          console.error(
+            `[WP REST ${response.status}] ${url} — code="${body.code ?? ''}" message="${body.message ?? ''}" data=${JSON.stringify(body.data ?? {})}`,
           );
         }
-        return response.json();
-      },
-      { retries: 4, factor: 2, minTimeout: 2000, maxTimeout: 10000 },
-    );
+        throw new Error(body.message || `WP REST API error: ${response.status} ${response.statusText}`);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -215,39 +210,20 @@ class WordPressService {
    * @returns {Promise<Object>} Uploaded media data (includes .id for site icon)
    */
   async uploadMediaFromUrl(imageUrl, filename) {
-    const response = await fetch(imageUrl, { signal: AbortSignal.timeout(15000) });
-    if (!response.ok) {
-      throw new Error(`Failed to download image: ${response.status}`);
-    }
+    const download = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 15000 });
 
-    const contentType = response.headers.get('content-type') || 'image/png';
-    const buffer = await response.arrayBuffer();
+    const contentType = download.headers['content-type'] || 'image/png';
     const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
     const name = filename || `upload-${Date.now()}.${ext}`;
 
-    const uploadResponse = await pRetry(
-      () => fetch(`${this.apiBase}/media`, {
-        method: 'POST',
-        signal: AbortSignal.timeout(15000),
-        headers: {
-          'Authorization': this.authHeader,
-          'Content-Disposition': `attachment; filename="${name}"`,
-          'Content-Type': contentType,
-        },
-        body: Buffer.from(buffer),
-      }).catch((err) => {
-        if (isTransientNetworkError(err)) throw err;
-        throw new AbortError(err);
-      }),
-      { retries: 4, factor: 2, minTimeout: 2000, maxTimeout: 10000 },
-    );
-
-    if (!uploadResponse.ok) {
-      const error = await uploadResponse.json().catch(() => ({}));
-      throw new Error(error.message || `Media upload failed: ${uploadResponse.status}`);
-    }
-
-    return uploadResponse.json();
+    const { data } = await this.http.post(`${this.apiBase}/media`, Buffer.from(download.data), {
+      headers: {
+        'Authorization': this.authHeader,
+        'Content-Disposition': `attachment; filename="${name}"`,
+        'Content-Type': contentType,
+      },
+    });
+    return data;
   }
 
   // ==========================================
@@ -393,7 +369,7 @@ class WordPressService {
       console.log(`[license] activate ok site=${this.siteUrl}`);
       return result;
     } catch (error) {
-      console.log(`[license] activate fail site=${this.siteUrl} error=${error.message}${error.cause?.code ? ` (${error.cause.code}${error.cause.syscall ? ` ${error.cause.syscall}` : ''})` : ''}`);
+      console.log(`[license] activate fail site=${this.siteUrl} error=${error.message}${error.code ? ` (${error.code})` : ''}`);
       throw error;
     }
   }
@@ -490,7 +466,6 @@ class WordPressService {
     // If status is already terminal from a stale run, the force flag should have restarted it.
     // If it's still error, the skin itself is invalid.
     if (postResult.status === 'rest_api_end') {
-      await this._waitForApiReady();
       onProgress?.({ phase: 'complete', message: `Skin "${skinSlug}" applied successfully` });
       return { success: true, skin: skinSlug, pollResult: postResult };
     }
@@ -510,26 +485,8 @@ class WordPressService {
     });
 
     console.log(`Skin switch to "${skinSlug}" completed successfully`);
-    await this._waitForApiReady();
     onProgress?.({ phase: 'complete', message: `Skin "${skinSlug}" applied successfully` });
     return { success: true, skin: skinSlug, pollResult };
-  }
-
-  async _waitForApiReady(maxWaitMs = 60000) {
-    try {
-      await pWaitFor(
-        () => fetch(`${this.siteUrl}/wp-json/`, { signal: AbortSignal.timeout(8000) })
-          .then((res) => res.ok)
-          .catch(() => false),
-        { interval: 3000, timeout: maxWaitMs },
-      );
-    } catch (err) {
-      if (err instanceof TimeoutError) {
-        console.warn(`[WP REST] ${this.siteUrl}/wp-json/ not responsive after ${maxWaitMs / 1000}s; proceeding`);
-        return;
-      }
-      throw err;
-    }
   }
 
   // ==========================================
