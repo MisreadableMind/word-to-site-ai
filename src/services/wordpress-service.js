@@ -359,6 +359,13 @@ class WordPressService {
     });
   }
 
+  async registerImageBankCredentials({ login, password, threshold = 85 }) {
+    return this.requestRaw('trx-waas-wizard/v1/generate-images/image-bank-credentials', {
+      method: 'POST',
+      body: JSON.stringify({ login, password, threshold }),
+    });
+  }
+
   async activateLicense(key, options = {}) {
     const { userName = null, userEmail = null } = options;
     try {

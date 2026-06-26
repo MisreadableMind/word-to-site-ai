@@ -1,6 +1,16 @@
 import { Router } from 'express';
+import multer from 'multer';
+import { toFile } from 'openai';
 import { config } from '../config';
 import createProxyAuth from '../middleware/proxy-auth';
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+
+const TRANSCRIPTION_MODEL = /^whisper|transcribe/i;
+
+function isTranscriptionModel(model) {
+  return typeof model === 'string' && TRANSCRIPTION_MODEL.test(model);
+}
 
 /**
  * Create AI proxy router
@@ -196,19 +206,40 @@ export default function createProxyRouter(proxyService) {
   // AUTHENTICATED PROXY ENDPOINTS
   // ==========================================
 
-  // OpenAI Responses API passthrough
-  router.post('/v1/responses', auth, async (req, res) => {
+  router.post('/v1/responses', auth, upload.any(), async (req, res) => {
     const startTime = Date.now();
     const site = req.proxySite;
+    const model = req.body?.model || null;
+    const fileUpload = (req.files || []).find((f) => f.fieldname === 'file') || (req.files || [])[0];
+    const useTranscription = isTranscriptionModel(model) || Boolean(fileUpload);
+    const endpoint = useTranscription ? '/v1/audio/transcriptions' : '/v1/responses';
 
     try {
-      const data = await proxyService.forwardToOpenAI(req.body);
+      let data;
+      if (useTranscription) {
+        if (!fileUpload) {
+          return res.status(400).json({
+            error: { message: "Missing required parameter: 'file'", type: 'validation_error' },
+          });
+        }
+        const file = await toFile(fileUpload.buffer, fileUpload.originalname || 'audio.webm', {
+          type: fileUpload.mimetype || 'audio/webm',
+        });
+        data = await proxyService.forwardTranscription({
+          file,
+          model: model || 'whisper-1',
+          ...(req.body?.response_format ? { response_format: req.body.response_format } : {}),
+          ...(req.body?.language ? { language: req.body.language } : {}),
+        });
+      } else {
+        data = await proxyService.forwardToOpenAI(req.body);
+      }
+
       const latencyMs = Date.now() - startTime;
 
-      // Log asynchronously
       proxyService.logRequest(site.id, site.domain, {
-        model: data.model || req.body.model || null,
-        endpoint: '/v1/responses',
+        model: data.model || model || null,
+        endpoint,
         method: 'POST',
         prompt_tokens: data.usage?.input_tokens || 0,
         completion_tokens: data.usage?.output_tokens || 0,
@@ -222,8 +253,8 @@ export default function createProxyRouter(proxyService) {
       const latencyMs = Date.now() - startTime;
 
       proxyService.logRequest(site.id, site.domain, {
-        model: req.body?.model || 'unknown',
-        endpoint: '/v1/responses',
+        model: model || 'unknown',
+        endpoint,
         method: 'POST',
         response_status: error.status || 502,
         latency_ms: latencyMs,
@@ -232,7 +263,6 @@ export default function createProxyRouter(proxyService) {
 
       console.error('Proxy forwarding error:', error.message);
 
-      // Forward OpenAI error response as-is when available
       if (error.openaiError) {
         return res.status(error.status).json(error.openaiError);
       }

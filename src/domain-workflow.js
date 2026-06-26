@@ -5,6 +5,7 @@ import { config, validateDomainConfig, toWpLocale } from './config';
 import { DEFAULTS } from './constants';
 import EditorService from './services/editor-service';
 import WordPressService from './services/wordpress-service';
+import ContentBankService from './services/content-bank-service';
 import { prepareWizardData } from './services/business-structurer';
 import { classify } from './lib/domain-classifier';
 import pRetry from 'p-retry';
@@ -484,7 +485,7 @@ class DomainWorkflow {
       });
 
       try {
-        await this.applyDeploymentContext(result.site.id, result.site, deploymentContext, {
+        const deployResults = await this.applyDeploymentContext(result.site.id, result.site, deploymentContext, {
           contentContext,
           skinSlugOverride: params.templateSlug,
           email,
@@ -492,6 +493,9 @@ class DomainWorkflow {
           callbackBaseUrl,
           licenseKey,
         });
+        if (deployResults?.imageBank) {
+          result.imageBank = deployResults.imageBank;
+        }
         result.steps.push({
           step: 'deployment_applied',
           success: true,
@@ -689,6 +693,28 @@ class DomainWorkflow {
         console.error('Failed to save wizard data:', error.message);
         results.wizardDataError = error.message;
       }
+    }
+
+    try {
+      const bank = new ContentBankService();
+      if (bank.enabled) {
+        const domain = options.domain || new URL(site.url).hostname;
+        const creds = await bank.createUser({
+          domain,
+          name: context.branding?.siteTitle || contentContext?.business?.name,
+          email: options.email,
+        });
+        await wp.registerImageBankCredentials({
+          login: creds.login,
+          password: creds.password,
+          threshold: config.imageBank.threshold,
+        });
+        results.imageBank = { login: creds.login, password: creds.password, status: 'pending' };
+        console.log('  Image bank credentials registered');
+      }
+    } catch (error) {
+      console.warn('Failed to register image bank credentials:', error.message);
+      results.imageBankError = error.message;
     }
 
     // Translate plugin (if non-English)

@@ -113,6 +113,12 @@ export const config = {
     appPassword: process.env.BASE_SITE_APP_PASSWORD,
   },
 
+  imageBank: {
+    login: process.env.IMAGE_BANK_LOGIN || '',
+    password: process.env.IMAGE_BANK_PASSWORD || '',
+    threshold: parseInt(process.env.IMAGE_BANK_SCORE_THRESHOLD, 10) || 85,
+  },
+
   // Server Configuration
   server: {
     port: parseInt(process.env.PORT) || 3000,

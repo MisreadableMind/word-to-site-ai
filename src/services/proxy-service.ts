@@ -252,4 +252,25 @@ export default class ProxyService {
       throw error;
     }
   }
+
+  async forwardTranscription(body: OpenAI.Audio.TranscriptionCreateParamsNonStreaming) {
+    if (!this.openai) throw new Error('OpenAI API key not configured on proxy server');
+
+    try {
+      return await this.openai.audio.transcriptions.create(body);
+    } catch (error) {
+      if (error instanceof OpenAI.APIError) {
+        const wrapped = new Error(error.error?.message || error.message) as Error & {
+          status?: number;
+          openaiError?: { error: unknown };
+        };
+        wrapped.status = error.status || 502;
+        if (error.error) {
+          wrapped.openaiError = { error: error.error };
+        }
+        throw wrapped;
+      }
+      throw error;
+    }
+  }
 }
