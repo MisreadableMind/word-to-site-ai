@@ -40,6 +40,7 @@ import createLicenseRouter from './routes/license-routes';
 import { PLATFORM_HOSTS, PRIMARY_PLATFORM_HOST, classify as classifyDomain } from './lib/domain-classifier';
 import { createUserAuth, createOptionalUserAuth } from './middleware/user-auth';
 import { requireSiteCreate, requireCustomDomain, getVoiceLimit } from './middleware/entitlement';
+import { provisionImageBank } from './lib/image-bank-flow';
 import { getEntitlements as getPlanEntitlements } from './billing/entitlements';
 import { get, isNil } from "lodash-es";
 import { recommendSkins } from './services/skin-recommender';
@@ -1142,6 +1143,22 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
         result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
       }
 
+      try {
+        const imageBank = await provisionImageBank({
+          wp,
+          domain: site.domain || new URL(site.wp_url).hostname,
+          name: deploymentContext.branding?.siteTitle || contentContext?.business?.name,
+          email: req.user?.email,
+        });
+        if (imageBank) {
+          result.imageBank = imageBank;
+          result.steps.push({ step: 'image_bank_registered', success: true });
+        }
+      } catch (error) {
+        console.warn('Image bank provisioning failed:', error.message);
+        result.steps.push({ step: 'image_bank_registered', success: false, error: error.message });
+      }
+
       // Auto-register proxy key (non-blocking)
       const proxyStep = await autoRegisterProxyKey(
         site.wp_url,
@@ -1468,6 +1485,22 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
         } catch (error) {
           console.error('Failed to save wizard data:', error.message);
           result.steps.push({ step: 'wizard_data_saved', success: false, error: error.message });
+        }
+
+        try {
+          const imageBank = await provisionImageBank({
+            wp,
+            domain: site.domain || new URL(site.wp_url).hostname,
+            name: deploymentContext.branding?.siteTitle || contentContext?.business?.name,
+            email: req.user?.email,
+          });
+          if (imageBank) {
+            result.imageBank = imageBank;
+            result.steps.push({ step: 'image_bank_registered', success: true });
+          }
+        } catch (error) {
+          console.warn('Image bank provisioning failed:', error.message);
+          result.steps.push({ step: 'image_bank_registered', success: false, error: error.message });
         }
 
         // Auto-register proxy key (non-blocking)
