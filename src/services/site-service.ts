@@ -20,6 +20,8 @@ const fullSiteColumns = {
   image_bank_login: userSites.imageBankLogin,
   image_bank_password: userSites.imageBankPassword,
   images_status: userSites.imagesStatus,
+  expires_at: userSites.expiresAt,
+  bought_out_at: userSites.boughtOutAt,
 };
 
 interface CreateSiteData {
@@ -35,6 +37,7 @@ interface CreateSiteData {
   imageBankLogin: string | null;
   imageBankPassword: string | null;
   imagesStatus: string | null;
+  expiresAt: string | null;
 }
 
 interface UpdateSiteData {
@@ -73,6 +76,7 @@ export default class SiteService {
         imageBankLogin: data.imageBankLogin || null,
         imageBankPassword: data.imageBankPassword || null,
         imagesStatus: data.imagesStatus || "pending",
+        expiresAt: data.expiresAt || null,
       })
       .returning(fullSiteColumns);
 
@@ -107,6 +111,8 @@ export default class SiteService {
         onboard_type: userSites.onboardType,
         created_at: userSites.createdAt,
         updated_at: userSites.updatedAt,
+        expires_at: userSites.expiresAt,
+        bought_out_at: userSites.boughtOutAt,
       })
       .from(userSites)
       .where(and(eq(userSites.userId, userId), ne(userSites.status, "deleted")))

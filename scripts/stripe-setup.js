@@ -1,23 +1,26 @@
 #!/usr/bin/env node
 import { config } from '../src/config';
 import { getStripe } from '../src/billing/stripe-client';
-import { buildTargets, diffTargets, applyPlan } from '../src/billing/stripe-setup';
+import { buildTargets, diffTargets, applyPlan, migrateStarterSubscriptions } from '../src/billing/stripe-setup';
 
 const EXIT_OK = 0;
 const EXIT_ERROR = 1;
 const EXIT_DRIFT = 2;
 
-const HELP = `Stripe setup — creates Products + Prices for each paid plan tier.
+const HELP = `Stripe setup — creates Products + Prices for each paid plan tier and the
+one-time buyout price, then migrates any legacy wts_starter subscribers to wts_pro.
 
 Usage:
   npm run stripe:setup                 apply changes against the configured Stripe account
-  npm run stripe:setup -- --dry-run    preview the diff, make no API writes
+  npm run stripe:setup -- --dry-run    preview the diff + would-migrate subs, make no API writes
   npm run stripe:setup -- --yes-live   required when STRIPE_SECRET_KEY starts with sk_live_
 
 Behavior:
-  • Idempotent — already-correct Prices are left alone.
+  • Idempotent — already-correct Prices and already-migrated subscribers are left alone.
   • If a Price's amount drifts from entitlements.js, exits 2 without applying anything.
   • If Price creation fails, the orphan Product is archived in the same operation.
+  • Active/trialing/past_due subscriptions on wts_starter are moved to wts_pro
+    (proration_behavior: none — they pay the new price from the next renewal).
 
 Exit codes:
   0  success (created, or nothing to do)
@@ -47,7 +50,8 @@ const fmtUsd = (cents) => `$${(cents / 100).toFixed(2)}`;
 const pad = (s, n) => String(s).padEnd(n);
 
 function printPlanLine(symbol, target, suffix = '') {
-  console.log(`${symbol} ${pad(target.lookupKey, 14)} ${pad(`${fmtUsd(target.priceCents)}/${target.interval}`, 12)}${suffix ? '  ' + suffix : ''}`);
+  const rate = target.interval ? `${fmtUsd(target.priceCents)}/${target.interval}` : `${fmtUsd(target.priceCents)} one-time`;
+  console.log(`${symbol} ${pad(target.lookupKey, 14)} ${pad(rate, 12)}${suffix ? '  ' + suffix : ''}`);
 }
 
 async function main() {
@@ -71,7 +75,7 @@ async function main() {
   }
 
   const stripe = getStripe();
-  const targets = buildTargets();
+  const targets = buildTargets(undefined, { buyoutFeeCents: config.buyout.licenseFeeCents });
   const lookupKeys = targets.map((t) => t.lookupKey);
 
   const mode = isLive ? 'LIVE MODE' : 'test mode';
@@ -116,30 +120,46 @@ No changes were applied.`);
     process.exit(EXIT_DRIFT);
   }
 
-  if (args.dryRun) {
-    console.log(`\nDry run complete — ${plan.create.length} would be created, ${plan.unchanged.length} unchanged.`);
-    process.exit(EXIT_OK);
-  }
-
+  let createdCount = 0;
   if (plan.create.length === 0) {
-    console.log('\nNothing to do — all targets already present and matching.');
-    process.exit(EXIT_OK);
+    console.log('\nPrices: nothing to create — all present and matching.');
+  } else if (args.dryRun) {
+    console.log(`\nPrices: ${plan.create.length} would be created.`);
+  } else {
+    try {
+      const result = await applyPlan(stripe, plan, { log: (m) => console.log(`  ${m}`) });
+      for (const { target, priceId } of result.applied) {
+        console.log(`  ${target.lookupKey} → ${priceId}`);
+      }
+      createdCount = result.applied.length;
+    } catch (err) {
+      console.error(`\nApply failed: ${err.message}`);
+      if (err.orphanProductId) {
+        console.error(`(Orphan product ${err.orphanProductId} was archived.)`);
+      }
+      process.exit(EXIT_ERROR);
+    }
   }
 
+  console.log('\nLegacy subscribers (wts_starter → wts_pro):');
+  let migratedCount = 0;
   try {
-    const result = await applyPlan(stripe, plan, { log: (m) => console.log(`  ${m}`) });
-    for (const { target, priceId } of result.applied) {
-      console.log(`  ${target.lookupKey} → ${priceId}`);
-    }
-    console.log(`\nDone — created ${result.applied.length}, unchanged ${plan.unchanged.length}.`);
-    process.exit(EXIT_OK);
+    const result = await migrateStarterSubscriptions(stripe, {
+      dryRun: args.dryRun,
+      prorationBehavior: 'none',
+      log: (m) => console.log(`  ${m}`),
+    });
+    migratedCount = result.migrated;
+    if (result.migrated === 0) console.log('  none to migrate');
   } catch (err) {
-    console.error(`\nApply failed: ${err.message}`);
-    if (err.orphanProductId) {
-      console.error(`(Orphan product ${err.orphanProductId} was archived.)`);
-    }
+    console.error(`  migration failed: ${err.message}`);
     process.exit(EXIT_ERROR);
   }
+
+  const createdLabel = args.dryRun ? `${plan.create.length} would be created` : `created ${createdCount}`;
+  const migratedLabel = args.dryRun ? `${migratedCount} would migrate` : `migrated ${migratedCount}`;
+  console.log(`\nDone — ${createdLabel}, ${migratedLabel}, ${plan.unchanged.length} unchanged.`);
+  process.exit(EXIT_OK);
 }
 
 main().catch((err) => {

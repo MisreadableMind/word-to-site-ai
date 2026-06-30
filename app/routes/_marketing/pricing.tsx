@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_marketing/pricing")({
   }),
 });
 
-type PlanTier = "free" | "starter" | "pro" | "business";
+type PlanTier = "free" | "pro" | "business";
 
 type Plan = {
   tier: PlanTier;
@@ -33,61 +33,46 @@ const PLANS: Plan[] = [
   {
     tier: "free",
     label: "Free",
-    tagline: "Try the basics",
+    tagline: "Try the platform",
     monthlyPriceUsd: 0,
     features: [
-      "1 site",
-      "Subdomain on wts.ai only",
-      "50K AI tokens / month",
-      "5 voice / day",
+      "1 live site",
+      "Site expires after 7 days",
+      "All 200 designs",
+      "Live preview URL",
       "WordToSite badge in footer",
     ],
-    cta: "Use free plan",
+    cta: "Start free",
     to: "/dashboard",
-  },
-  {
-    tier: "starter",
-    label: "Starter",
-    tagline: "For your first real site",
-    monthlyPriceUsd: 19,
-    features: [
-      "1 site",
-      "Bring your own domain",
-      "250K AI tokens / month",
-      "25 voice / day",
-      "No platform branding",
-    ],
-    cta: "Subscribe →",
-    to: "",
   },
   {
     tier: "pro",
     label: "Pro",
-    tagline: "Best for growing teams",
+    tagline: "For studios running client projects",
     monthlyPriceUsd: 49,
     features: [
-      "3 sites",
-      "Buy custom domains (wholesale + 20%)",
-      "1M AI tokens / month",
-      "100 voice / day",
-      "No platform branding",
+      "5 live sites included",
+      "Extra live sites: $0.40 / day each",
+      "Unlimited sites per month",
+      "AI texts & images on every site",
+      "All 200 designs · no platform branding",
     ],
-    cta: "Subscribe →",
+    cta: "Start Pro →",
     to: "",
   },
   {
     tier: "business",
     label: "Business",
-    tagline: "For agencies and publishers",
+    tagline: "For agencies and teams with lots of projects",
     monthlyPriceUsd: 99,
     features: [
-      "10 sites",
-      "Buy custom domains (wholesale + 20%)",
-      "5M AI tokens / month",
-      "500 voice / day",
-      "No platform branding",
+      "20 live sites included",
+      "Extra live sites: $0.30 / day each",
+      "Unlimited sites per month",
+      "Everything in Pro",
+      "Priority support",
     ],
-    cta: "Subscribe →",
+    cta: "Start Business →",
     to: "",
   },
 ];

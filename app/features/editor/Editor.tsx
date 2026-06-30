@@ -26,6 +26,8 @@ const MOCK_SITE: Site = {
   template_slug: null,
   onboard_type: null,
   created_at: new Date().toISOString(),
+  expires_at: null,
+  bought_out_at: null,
 };
 
 interface SiteWithCreds extends Site {

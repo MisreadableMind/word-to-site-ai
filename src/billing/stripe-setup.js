@@ -2,8 +2,8 @@ import { PLAN_ENTITLEMENTS } from './entitlements';
 
 const SCRIPT_VERSION = 'v1';
 
-export function buildTargets(planEntitlements = PLAN_ENTITLEMENTS) {
-  return Object.entries(planEntitlements)
+export function buildTargets(planEntitlements = PLAN_ENTITLEMENTS, { buyoutFeeCents = null } = {}) {
+  const planTargets = Object.entries(planEntitlements)
     .filter(([, ent]) => ent.lookupKey)
     .map(([tier, ent]) => ({
       tier,
@@ -13,6 +13,20 @@ export function buildTargets(planEntitlements = PLAN_ENTITLEMENTS) {
       currency: 'usd',
       interval: 'month',
     }));
+
+  if (buyoutFeeCents == null) return planTargets;
+
+  return [
+    ...planTargets,
+    {
+      tier: 'buyout',
+      lookupKey: 'wts_buyout',
+      productName: 'WordToSite — Site buyout (lifetime license)',
+      priceCents: buyoutFeeCents,
+      currency: 'usd',
+      interval: null,
+    },
+  ];
 }
 
 export function diffTargets(currentPrices, targets) {
@@ -37,11 +51,12 @@ export function diffTargets(currentPrices, targets) {
       continue;
     }
 
-    if (existing.currency !== target.currency || existing.recurring?.interval !== target.interval) {
+    const existingInterval = existing.recurring?.interval ?? null;
+    if (existing.currency !== target.currency || existingInterval !== target.interval) {
       driftWarnings.push({
         existing,
         target,
-        reason: `Stripe has ${existing.currency}/${existing.recurring?.interval}, entitlements.js expects ${target.currency}/${target.interval}`,
+        reason: `Stripe has ${existing.currency}/${existingInterval || 'one-time'}, entitlements.js expects ${target.currency}/${target.interval || 'one-time'}`,
       });
       continue;
     }
@@ -74,7 +89,7 @@ export async function applyPlan(stripe, plan, { log = () => {} } = {}) {
           product: product.id,
           unit_amount: target.priceCents,
           currency: target.currency,
-          recurring: { interval: target.interval },
+          recurring: target.interval ? { interval: target.interval } : undefined,
           lookup_key: target.lookupKey,
           metadata: { plan_tier: target.tier, managed_by: 'wts-stripe-setup' },
         },
@@ -95,4 +110,44 @@ export async function applyPlan(stripe, plan, { log = () => {} } = {}) {
   }
 
   return { applied };
+}
+
+export async function migrateStarterSubscriptions(
+  stripe,
+  { dryRun = false, prorationBehavior = 'none', log = () => {} } = {},
+) {
+  const starterList = await stripe.prices.list({ lookup_keys: ['wts_starter'], limit: 1 });
+  const starterPrice = starterList.data[0];
+  if (!starterPrice) {
+    log('no wts_starter price found — nothing to migrate');
+    return { migrated: 0 };
+  }
+
+  const proList = await stripe.prices.list({ lookup_keys: ['wts_pro'], active: true, limit: 1 });
+  const proPrice = proList.data[0];
+  if (!proPrice && !dryRun) {
+    throw new Error('wts_pro price not found — create plan prices before migrating subscribers');
+  }
+
+  let migrated = 0;
+  for await (const sub of stripe.subscriptions.list({ price: starterPrice.id, status: 'all', limit: 100 })) {
+    if (!['active', 'trialing', 'past_due'].includes(sub.status)) continue;
+    const item = sub.items.data.find((i) => i.price.id === starterPrice.id);
+    if (!item) continue;
+
+    if (dryRun || !proPrice) {
+      log(`would migrate ${sub.id} → wts_pro`);
+      migrated += 1;
+      continue;
+    }
+
+    await stripe.subscriptions.update(sub.id, {
+      items: [{ id: item.id, price: proPrice.id }],
+      proration_behavior: prorationBehavior,
+    });
+    log(`migrated ${sub.id} → wts_pro`);
+    migrated += 1;
+  }
+
+  return { migrated };
 }

@@ -94,3 +94,16 @@ export async function listResolvedPrices() {
   }
   return out;
 }
+
+export const BUYOUT_LOOKUP_KEY = 'wts_buyout';
+
+export async function getBuyoutPrice() {
+  const list = await getStripe().prices.list({
+    lookup_keys: [BUYOUT_LOOKUP_KEY],
+    active: true,
+    limit: 1,
+  });
+  const price = list.data[0];
+  if (!price) return null;
+  return { priceId: price.id, unitAmountCents: price.unit_amount };
+}

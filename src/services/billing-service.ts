@@ -1,17 +1,58 @@
-import { db, users, subscriptions, billingEvents } from '../db/client';
+import { db, users, subscriptions, billingEvents, userSites } from '../db/client';
 import { eq, and, inArray, desc, sql } from 'drizzle-orm';
 import { getStripe, planForPriceId, invalidatePriceCache } from '../billing/stripe-client';
 import { getEntitlements, PLAN_TIERS } from '../billing/entitlements';
 import { DomainStatus } from './domain-service';
 import type DomainService from './domain-service';
 import { classify } from '../lib/domain-classifier';
+import { config } from '../config';
+import WordPressService from './wordpress-service';
+import { generateLicenseKey } from './license-service';
+import { BuyoutStatus } from './buyout-service';
 
 interface ProxyServiceLike {
   [key: string]: unknown;
 }
 
+interface IssueLicenseInput {
+  instawpId: string;
+  wpUrl: string | null;
+  userId: string | null;
+  userSiteId: string | null;
+  status: string;
+  licenseKey: string;
+}
+
 interface LicenseServiceLike {
   syncFromBilling(userId: string, status: string, expiresAt?: string | null): Promise<void>;
+  setLifetimeForSite(userSiteId: string): Promise<{ license_key: string } | null>;
+  markActivated(key: string): Promise<unknown>;
+  issueForSite(input: IssueLicenseInput): Promise<unknown>;
+}
+
+interface BuyoutRowLike {
+  status: string;
+}
+
+interface BuyoutServiceLike {
+  getByCheckoutSession(sessionId: string): Promise<BuyoutRowLike | null>;
+  markPaid(sessionId: string, paymentIntentId: string | null): Promise<unknown>;
+  markCompleted(sessionId: string): Promise<unknown>;
+  markFailed(params: { sessionId: string; errorMessage: string }): Promise<unknown>;
+}
+
+interface InstaWPLike {
+  reserveSite(instawpId: string): Promise<unknown>;
+}
+
+interface DomainWorkflowLike {
+  instawp: InstaWPLike;
+  mapOwnedDomainToExistingSite(params: {
+    instawpId: string;
+    wpUrl: string;
+    domain: string;
+    includeWww: boolean;
+  }): Promise<{ success: boolean; domainMapping: string | null }>;
 }
 
 interface NamecheapLike {
@@ -24,6 +65,8 @@ interface BillingServiceDeps {
   domainService?: DomainService | null;
   namecheap?: NamecheapLike | null;
   licenseService?: LicenseServiceLike | null;
+  buyoutService?: BuyoutServiceLike | null;
+  domainWorkflowFactory?: (() => DomainWorkflowLike) | null;
 }
 
 interface UserContext {
@@ -58,7 +101,7 @@ interface StripeSession {
   mode: string;
   customer: string | StripeCustomerRef | null;
   payment_intent: string | StripeCustomerRef | null;
-  metadata?: { intent?: string; domain?: string; user_id?: string };
+  metadata?: { intent?: string; domain?: string; user_id?: string; site_id?: string };
 }
 
 interface StripeSubscriptionItem {
@@ -92,13 +135,17 @@ export default class BillingService {
   domainService: DomainService | null;
   namecheap: NamecheapLike | null;
   licenseService: LicenseServiceLike | null;
+  buyoutService: BuyoutServiceLike | null;
+  domainWorkflowFactory: (() => DomainWorkflowLike) | null;
 
-  constructor({ proxyService = null, domainService = null, namecheap = null, licenseService = null }: BillingServiceDeps = {}) {
+  constructor({ proxyService = null, domainService = null, namecheap = null, licenseService = null, buyoutService = null, domainWorkflowFactory = null }: BillingServiceDeps = {}) {
     this.initialized = false;
     this.proxyService = proxyService;
     this.domainService = domainService;
     this.namecheap = namecheap;
     this.licenseService = licenseService;
+    this.buyoutService = buyoutService;
+    this.domainWorkflowFactory = domainWorkflowFactory;
   }
 
   async initialize() {
@@ -180,6 +227,38 @@ export default class BillingService {
       WHERE user_id = ${userId} AND status != 'deleted'
     `);
     return rows[0].count;
+  }
+
+  async countLiveSites(userId: string) {
+    await this.initialize();
+    const { rows } = await db.execute<{ count: number }>(sql`
+      SELECT COUNT(*)::int AS count
+      FROM user_sites
+      WHERE user_id = ${userId} AND status IN ('active', 'provisioning')
+    `);
+    return rows[0].count;
+  }
+
+  async countBillableLiveSites(userId: string) {
+    await this.initialize();
+    const { rows } = await db.execute<{ count: number }>(sql`
+      SELECT COUNT(*)::int AS count
+      FROM user_sites
+      WHERE user_id = ${userId} AND status = 'active' AND bought_out_at IS NULL
+    `);
+    return rows[0].count;
+  }
+
+  async getMonthOverage(userId: string) {
+    await this.initialize();
+    const { rows } = await db.execute<{ site_days: number; amount_cents: number }>(sql`
+      SELECT COALESCE(SUM(overage_sites), 0)::int AS site_days,
+             COALESCE(SUM(amount_cents), 0)::int AS amount_cents
+      FROM site_usage_days
+      WHERE user_id = ${userId}
+        AND usage_date >= date_trunc('month', (now() AT TIME ZONE 'utc'))::date
+    `);
+    return rows[0];
   }
 
   async markEventProcessed(eventId: string, eventType: string, payload: StripeEvent) {
@@ -283,6 +362,9 @@ export default class BillingService {
     if (intent === 'domain_purchase') {
       return this._handleDomainPurchase(session);
     }
+    if (intent === 'buyout') {
+      return this._handleBuyout(session);
+    }
     if (session.mode !== 'subscription') {
       return { processed: true, reason: 'non-subscription checkout' };
     }
@@ -379,6 +461,174 @@ export default class BillingService {
     }
   }
 
+  async _handleBuyout(session: StripeSession) {
+    if (!this.buyoutService || !this.licenseService || !this.domainWorkflowFactory) {
+      console.error('Buyout webhook received but buyoutService/licenseService/domainWorkflowFactory not wired');
+      return { processed: true, reason: 'misconfigured' };
+    }
+
+    const sessionId = session.id;
+    const paymentIntentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id || null;
+    const userId = session.metadata?.user_id;
+    const siteId = session.metadata?.site_id;
+    const domain = session.metadata?.domain || null;
+
+    if (!userId || !siteId) {
+      console.error('Buyout missing metadata:', { sessionId, userId, siteId });
+      return { processed: true, reason: 'missing metadata' };
+    }
+
+    const row = await this.buyoutService.getByCheckoutSession(sessionId);
+    if (!row) {
+      console.warn('Buyout webhook for unknown session:', sessionId);
+      return { processed: true, reason: 'unknown session' };
+    }
+    if (row.status === BuyoutStatus.Completed) {
+      return { processed: true, reason: 'already bought out' };
+    }
+
+    const [site] = await db
+      .select({
+        id: userSites.id,
+        instawp_id: userSites.instawpId,
+        wp_url: userSites.wpUrl,
+        domain: userSites.domain,
+      })
+      .from(userSites)
+      .where(and(eq(userSites.id, siteId), eq(userSites.userId, userId)))
+      .limit(1);
+
+    if (!site) {
+      const errorMessage = `Buyout site ${siteId} not found for user ${userId}`;
+      console.error(errorMessage);
+      await this._refundBuyout(paymentIntentId);
+      await this.buyoutService.markFailed({ sessionId, errorMessage });
+      return { processed: true, reason: 'site-not-found-refunded', error: errorMessage };
+    }
+
+    if (domain) {
+      const c = classify(domain);
+      if (c.kind === 'invalid' || c.kind === 'reserved' || c.kind === 'platform_subdomain') {
+        const errorMessage = `Buyout domain "${domain}" is not usable (${c.kind})`;
+        console.error(errorMessage);
+        await this._refundBuyout(paymentIntentId);
+        await this.buyoutService.markFailed({ sessionId, errorMessage });
+        return { processed: true, reason: 'invalid-domain-refunded', error: errorMessage };
+      }
+    }
+
+    await this.buyoutService.markPaid(sessionId, paymentIntentId);
+
+    let license = await this.licenseService.setLifetimeForSite(siteId);
+    if (!license && site.instawp_id) {
+      const key = generateLicenseKey();
+      await this.licenseService.issueForSite({
+        instawpId: site.instawp_id,
+        wpUrl: site.wp_url || null,
+        userId,
+        userSiteId: siteId,
+        status: 'active',
+        licenseKey: key,
+      });
+      license = await this.licenseService.setLifetimeForSite(siteId);
+    }
+
+    const workflow = this.domainWorkflowFactory();
+
+    if (site.instawp_id) {
+      await workflow.instawp.reserveSite(site.instawp_id).catch((err: Error) => {
+        console.warn('Failed to reserve InstaWP site on buyout:', err.message);
+      });
+    }
+
+    await db
+      .update(userSites)
+      .set({ boughtOutAt: sql`now()`, expiresAt: null, domain: domain || site.domain, updatedAt: sql`now()` })
+      .where(eq(userSites.id, siteId));
+
+    const buyerUser = await this._loadUser(userId);
+
+    if (license?.license_key && site.wp_url) {
+      try {
+        const wp = new WordPressService(site.wp_url, {
+          username: config.instawp.snapshotWpUsername,
+          password: config.instawp.snapshotWpPassword,
+        });
+        await wp.activateLicense(license.license_key, {
+          userName: buyerUser?.display_name || null,
+          userEmail: buyerUser?.email || null,
+        });
+        await this.licenseService.markActivated(license.license_key);
+      } catch (err) {
+        console.warn('Failed to activate license on buyout:', (err as Error).message);
+      }
+    }
+
+    if (domain && site.instawp_id && site.wp_url) {
+      await workflow
+        .mapOwnedDomainToExistingSite({
+          instawpId: site.instawp_id,
+          wpUrl: site.wp_url,
+          domain,
+          includeWww: true,
+        })
+        .catch((err: Error) => {
+          console.warn('Buyout domain mapping pending/failed:', err.message);
+        });
+    }
+
+    await this.buyoutService.markCompleted(sessionId);
+    return { processed: true, userId, siteId, domain };
+  }
+
+  async _refundBuyout(paymentIntentId: string | null) {
+    if (!paymentIntentId) return;
+    try {
+      await getStripe().refunds.create({ payment_intent: paymentIntentId });
+    } catch (refundErr) {
+      console.error('Buyout refund creation failed:', (refundErr as Error).message);
+    }
+  }
+
+  async _reviveSuspendedSites(userId: string) {
+    const suspended = await db
+      .select({ id: userSites.id, instawp_id: userSites.instawpId })
+      .from(userSites)
+      .where(and(eq(userSites.userId, userId), eq(userSites.status, 'suspended')));
+    if (suspended.length === 0) return;
+
+    await db
+      .update(userSites)
+      .set({ status: 'active', expiresAt: null, updatedAt: sql`now()` })
+      .where(and(eq(userSites.userId, userId), eq(userSites.status, 'suspended')));
+
+    if (this.domainWorkflowFactory) {
+      const workflow = this.domainWorkflowFactory();
+      for (const s of suspended) {
+        if (s.instawp_id) {
+          await workflow.instawp.reserveSite(s.instawp_id).catch((err: Error) => {
+            console.warn(`Failed to reserve revived site ${s.id}:`, err.message);
+          });
+        }
+      }
+    }
+  }
+
+  async _loadUser(userId: string): Promise<BillingUserRow | null> {
+    const result = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        display_name: users.displayName,
+        plan_tier: users.planTier,
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+    return result[0] || null;
+  }
+
   async _handleSubscriptionChange(subscription: StripeSubscription) {
     const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
     const user = customerId ? await this.getUserByCustomerId(customerId) : null;
@@ -413,6 +663,10 @@ export default class BillingService {
       : PLAN_TIERS.FREE;
     await this.setUserPlanTier(user.id, effectivePlan);
 
+    if (['active', 'trialing'].includes(subscription.status) && effectivePlan !== PLAN_TIERS.FREE) {
+      await this._reviveSuspendedSites(user.id);
+    }
+
     if (this.licenseService) {
       const licenseStatus = ['active', 'trialing'].includes(subscription.status)
         ? 'active'
@@ -438,6 +692,15 @@ export default class BillingService {
       .set({ status: 'canceled', updatedAt: sql`NOW()` })
       .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
     await this.setUserPlanTier(user.id, PLAN_TIERS.FREE);
+
+    await db.execute(sql`
+      UPDATE user_sites
+      SET expires_at = now() + interval '7 days', updated_at = now()
+      WHERE user_id = ${user.id}
+        AND status = 'active'
+        AND bought_out_at IS NULL
+        AND expires_at IS NULL
+    `);
 
     if (this.licenseService) {
       await this.licenseService.syncFromBilling(user.id, 'expired').catch((err) => {

@@ -127,6 +127,8 @@ export interface BillingPlan {
   tagline: string;
   monthlyPriceUsd: number;
   maxSites: number;
+  extraSiteDayUsd: number | null;
+  siteTtlDays: number | null;
   monthlyTokens: number;
   voicePerDay: number;
   customDomain: string | false;

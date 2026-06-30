@@ -2,7 +2,7 @@
 // Source of truth is the SQL migrations in src/db/migrations — do NOT run
 // drizzle-kit pull (it would re-introspect timestamps as mode:'string' and
 // revert the tstz() ISO typing).
-import { pgTable, index, unique, pgEnum, uuid, varchar, jsonb, boolean, foreignKey, bigserial, smallint, text, integer, bigint, check } from "drizzle-orm/pg-core"
+import { pgTable, index, unique, pgEnum, uuid, varchar, jsonb, boolean, foreignKey, bigserial, smallint, text, integer, bigint, check, date } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { tstz } from "./timestamp"
 
@@ -260,10 +260,13 @@ export const userSites = pgTable("user_sites", {
 	imageBankLogin: text("image_bank_login"),
 	imageBankPassword: text("image_bank_password"),
 	imagesStatus: text("images_status").default('pending').notNull(),
+	expiresAt: tstz("expires_at"),
+	boughtOutAt: tstz("bought_out_at"),
 }, (table) => [
 	index("idx_user_sites_domain").using("btree", table.domain.asc().nullsLast().op("text_ops")),
 	index("idx_user_sites_status").using("btree", table.status.asc().nullsLast().op("text_ops")),
 	index("idx_user_sites_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
+	index("idx_user_sites_expires_at").using("btree", table.expiresAt.asc().nullsLast().op("timestamptz_ops")),
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],
@@ -285,6 +288,7 @@ export const siteLicenses = pgTable("site_licenses", {
 	activatedAt: tstz("activated_at"),
 	createdAt: tstz("created_at").default(sql`now()`).notNull(),
 	updatedAt: tstz("updated_at").default(sql`now()`).notNull(),
+	lifetime: boolean().default(false).notNull(),
 }, (table) => [
 	unique("site_licenses_license_key_key").on(table.licenseKey),
 	unique("site_licenses_instawp_id_key").on(table.instawpId),
@@ -300,6 +304,57 @@ export const siteLicenses = pgTable("site_licenses", {
 			foreignColumns: [users.id],
 			name: "site_licenses_user_id_fkey"
 		}).onDelete("set null"),
+]);
+
+export const siteUsageDays = pgTable("site_usage_days", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	userId: uuid("user_id").notNull(),
+	usageDate: date("usage_date").notNull(),
+	planTier: text("plan_tier").notNull(),
+	liveSites: integer("live_sites").default(0).notNull(),
+	includedSites: integer("included_sites").default(0).notNull(),
+	overageSites: integer("overage_sites").default(0).notNull(),
+	perSiteCents: integer("per_site_cents").default(0).notNull(),
+	amountCents: integer("amount_cents").default(0).notNull(),
+	stripeInvoiceItemId: text("stripe_invoice_item_id"),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
+}, (table) => [
+	index("idx_site_usage_days_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "site_usage_days_user_id_fkey"
+		}).onDelete("cascade"),
+	unique("site_usage_days_user_id_usage_date_key").on(table.userId, table.usageDate),
+]);
+
+export const siteBuyouts = pgTable("site_buyouts", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	userId: uuid("user_id").notNull(),
+	siteId: uuid("site_id"),
+	domain: text(),
+	feeCents: integer("fee_cents").notNull(),
+	status: text().default('awaiting_payment').notNull(),
+	stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+	stripePaymentIntentId: text("stripe_payment_intent_id"),
+	errorMessage: text("error_message"),
+	createdAt: tstz("created_at").default(sql`now()`).notNull(),
+	completedAt: tstz("completed_at"),
+}, (table) => [
+	index("idx_site_buyouts_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
+	index("idx_site_buyouts_session_id").using("btree", table.stripeCheckoutSessionId.asc().nullsLast().op("text_ops")),
+	index("idx_site_buyouts_status").using("btree", table.status.asc().nullsLast().op("text_ops")),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "site_buyouts_user_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.siteId],
+			foreignColumns: [userSites.id],
+			name: "site_buyouts_site_id_fkey"
+		}).onDelete("set null"),
+	unique("site_buyouts_stripe_checkout_session_id_key").on(table.stripeCheckoutSessionId),
 ]);
 
 export const editorSessions = pgTable("editor_sessions", {

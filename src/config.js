@@ -84,6 +84,11 @@ export const config = {
     adminSecret: process.env.LICENSE_ADMIN_SECRET || '',
   },
 
+  // Site buyout (one-time license fee to hand a site to a client with a lifetime license)
+  buyout: {
+    licenseFeeCents: parseInt(process.env.BUYOUT_LICENSE_FEE_CENTS, 10) || 6900,
+  },
+
   // Plugin API Configuration (hub-and-spoke)
   pluginApi: {
     enabled: process.env.ENABLE_PLUGIN_API !== 'false',
@@ -99,7 +104,7 @@ export const config = {
   },
 
   // Stripe Billing Configuration — feature is enabled iff secretKey is set.
-  // Per-plan Price IDs are resolved at runtime via Stripe lookup_keys (wts_starter, wts_pro, wts_business).
+  // Per-plan Price IDs are resolved at runtime via Stripe lookup_keys (wts_pro, wts_business).
   // Redirect URLs are derived from the request origin (trust proxy is set on the Express app).
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY || '',

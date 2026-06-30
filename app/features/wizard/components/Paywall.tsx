@@ -13,15 +13,16 @@ type LoadState = "loading" | "loaded" | "error";
 
 function planFeatures(plan: BillingPlan): string[] {
   const out: string[] = [];
-  out.push(plan.maxSites === 1 ? "1 site" : `${plan.maxSites} sites`);
+  out.push(plan.maxSites === 1 ? "1 live site" : `${plan.maxSites} live sites included`);
+  if (plan.extraSiteDayUsd != null) {
+    out.push(`Extra sites $${plan.extraSiteDayUsd.toFixed(2)} / day`);
+  }
   const tokens =
     plan.monthlyTokens >= 1_000_000
       ? `${(plan.monthlyTokens / 1_000_000).toFixed(plan.monthlyTokens % 1_000_000 === 0 ? 0 : 1)}M tokens / mo`
       : `${Math.round(plan.monthlyTokens / 1000)}k tokens / mo`;
   out.push(tokens);
-  out.push(`${plan.voicePerDay} voice / day`);
-  if (plan.customDomain === "managed") out.push("Custom domain included");
-  else if (plan.customDomain === "byod") out.push("Bring your own domain");
+  if (plan.customDomain === "managed") out.push("Custom domains supported");
   return out;
 }
 

@@ -71,7 +71,7 @@ export const DEPLOY_FEATURES: string[] = ["contact-form", "ai-blog-posts", "seo"
 
 export const MAX_DEPLOY_RETRIES = 3;
 
-export const PLAN_ORDER: string[] = ["free", "starter", "pro", "business"];
+export const PLAN_ORDER: string[] = ["free", "pro", "business"];
 
 export const RESUME_TTL_MS = 30 * 60 * 1000;
 export const RESUME_POLL_INTERVAL_MS = 3000;

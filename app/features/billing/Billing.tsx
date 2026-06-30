@@ -268,14 +268,16 @@ export function Billing() {
                     letterSpacing: "0.04em",
                   }}
                 >
-                  Sites
+                  Live sites
                 </div>
                 <div className="wts-serif" style={{ fontSize: 22, marginTop: 4 }}>
-                  {data ? `${data.usage.sitesUsed} / ${data.entitlements.maxSites}` : "—"}
+                  {data ? `${data.usage.sitesUsed}` : "—"}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
                   {data
-                    ? `${Math.max(0, data.entitlements.maxSites - data.usage.sitesUsed)} remaining`
+                    ? data.usage.overageSites > 0 && data.usage.extraSiteDayUsd != null
+                      ? `${data.usage.includedSites} included · ${data.usage.overageSites} extra @ $${data.usage.extraSiteDayUsd.toFixed(2)}/day`
+                      : `${data.usage.includedSites} included`
                     : "included"}
                 </div>
               </div>

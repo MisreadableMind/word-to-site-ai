@@ -70,14 +70,21 @@ export default function createBillingRouter(billingService, authService) {
       const sub = await billingService.getActiveSubscription(req.user.id);
       const planTier = req.user.planTier || PLAN_TIERS.FREE;
       const ent = getEntitlements(planTier);
-      const siteCount = await billingService.getSiteCount(req.user.id);
+      const liveSites = await billingService.countLiveSites(req.user.id);
+      const billableSites = await billingService.countBillableLiveSites(req.user.id);
+      const monthOverage = await billingService.getMonthOverage(req.user.id);
 
       res.json({
         success: true,
         planTier,
         entitlements: ent,
         usage: {
-          sitesUsed: siteCount,
+          sitesUsed: liveSites,
+          includedSites: ent.maxSites,
+          overageSites: Math.max(0, billableSites - ent.maxSites),
+          extraSiteDayUsd: ent.extraSiteDayUsd,
+          monthOverageSiteDays: monthOverage.site_days,
+          monthOverageAmountCents: monthOverage.amount_cents,
         },
         subscription: sub
           ? {

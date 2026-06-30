@@ -425,6 +425,108 @@ class DomainWorkflow {
     return zone;
   }
 
+  async mapOwnedDomainToExistingSite({ instawpId, wpUrl, domain, includeWww = true }) {
+    const result = {
+      success: false,
+      domain,
+      cloudflare: null,
+      ssl: null,
+      domainMapping: null,
+      steps: [],
+      error: null,
+    };
+
+    try {
+      validateDomainConfig(false);
+
+      const classification = classify(domain);
+      if (classification.kind === 'platform_subdomain') {
+        throw new Error(`Cannot map platform subdomain "${domain}".`);
+      }
+      if (classification.kind === 'reserved' || classification.kind === 'invalid') {
+        throw new Error(`Invalid domain "${domain}" (${classification.kind}${classification.reason ? `:${classification.reason}` : ''}).`);
+      }
+      if (!wpUrl) {
+        throw new Error('Existing site has no WordPress URL to map the domain to.');
+      }
+      if (!instawpId) {
+        throw new Error('Existing site has no InstaWP id to map the domain to.');
+      }
+
+      const host = new URL(wpUrl).hostname;
+      const isMapDomainDnsError = (err) => err?.status === 422 && err?.fieldErrors?.name?.length > 0;
+
+      const managed = await this.isManagedDomain(domain);
+
+      let zone = null;
+      if (managed) {
+        zone = await this.ensureCloudflareDelegationAndDns(domain, { wp_url: wpUrl }, { includeWww });
+      } else {
+        zone = await this.cloudflare.getOrCreateZone(domain);
+        await this.cloudflare.setCnameRecords(zone.id, domain, host, includeWww, { proxied: false });
+        await this.cloudflare.triggerActivationCheck(zone.id);
+      }
+      result.cloudflare = { zoneId: zone.id, nameservers: zone.name_servers };
+      result.steps.push({ step: 'dns_configured', success: true, data: { cname: host, www: includeWww, managed } });
+
+      try {
+        if (!config.namecheap.sandbox) {
+          await waitForDnsResolves(domain, host, { includeWww, timeout: 6 * 60_000 });
+        }
+        const domainMapping = await pRetry(
+          async () => {
+            if (!config.namecheap.sandbox) {
+              const dns = await checkDnsMatches(domain, host, { includeWww });
+              if (!dns.ok) {
+                const e = new Error('DNS not matching at map time');
+                e.status = 422;
+                e.fieldErrors = { name: ['dns'] };
+                throw e;
+              }
+            }
+            return this.instawp.mapDomain(instawpId, domain, { www: includeWww, routeWww: includeWww });
+          },
+          { retries: 2, minTimeout: 30_000, factor: 1, shouldRetry: ({ error }) => isMapDomainDnsError(error) }
+        );
+        result.domainMapping = 'mapped';
+        result.steps.push({ step: 'domain_mapped', success: true, data: domainMapping });
+      } catch (error) {
+        if (error.code === 'DNS_TIMEOUT' || error.code === 'ZONE_PENDING' || isMapDomainDnsError(error)) {
+          result.domainMapping = 'pending';
+          result.domainMappingError = error.message;
+          result.steps.push({ step: 'domain_mapped', success: false, pending: true, error: error.message });
+        } else {
+          throw error;
+        }
+      }
+
+      try {
+        await this.cloudflare.configureSecurity(zone.id);
+        result.steps.push({ step: 'security_configured', success: true });
+      } catch (error) {
+        result.steps.push({ step: 'security_configured', success: false, error: error.message });
+      }
+
+      result.ssl = {
+        status: 'pending',
+        message: 'SSL certificate will be issued automatically by InstaWP once DNS propagates.',
+      };
+      result.steps.push({ step: 'ssl_pending', success: true });
+
+      result.success = true;
+      result.finalUrls = {
+        site: `https://${domain}`,
+        siteWww: includeWww ? `https://www.${domain}` : null,
+        wpAdmin: `https://${domain}/wp-admin`,
+        temporaryUrl: wpUrl,
+      };
+      return result;
+    } catch (error) {
+      result.error = error.message;
+      return result;
+    }
+  }
+
   /**
    * Check domain availability without running full workflow
    */

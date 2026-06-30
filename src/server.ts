@@ -30,11 +30,14 @@ import AuthService from './services/auth-service';
 import SiteService from './services/site-service';
 import BillingService from './services/billing-service';
 import DomainService from './services/domain-service';
+import BuyoutService from './services/buyout-service';
+import JobsService from './services/jobs-service';
 import createAuthRouter from './routes/auth-routes';
 import createSiteRouter from './routes/site-routes';
 import createEditorRouter from './routes/editor-routes';
 import createBillingRouter, { createBillingWebhookRouter } from './routes/billing-routes';
 import createDomainRouter from './routes/domain-routes';
+import createAdminJobsRouter from './routes/admin-jobs-routes';
 import LicenseService, { generateLicenseKey } from './services/license-service';
 import createLicenseRouter from './routes/license-routes';
 import { PLATFORM_HOSTS, PRIMARY_PLATFORM_HOST, classify as classifyDomain } from './lib/domain-classifier';
@@ -72,6 +75,15 @@ class CriticalStepError extends Error {
   }
 }
 
+function computeSiteExpiry(planTier) {
+  const ttl = getPlanEntitlements(planTier || 'free').siteTtlDays;
+  return ttl ? new Date(Date.now() + ttl * 86400000).toISOString() : null;
+}
+
+function isReservedForPlan(planTier) {
+  return getPlanEntitlements(planTier || 'free').siteTtlDays == null;
+}
+
 const app = express();
 const PORT = config.server.port;
 
@@ -98,14 +110,20 @@ const licenseService = new LicenseService();
 app.use('/api/license', express.json(), createLicenseRouter(licenseService));
 const namecheapForBilling = config.stripe?.secretKey ? new NamecheapAPI() : null;
 const domainService = config.stripe?.secretKey ? new DomainService() : null;
+const buyoutService = config.stripe?.secretKey ? new BuyoutService() : null;
+const domainWorkflowFactory = () => new DomainWorkflow({
+  instawpApiKey: config.instawp.apiKey,
+  proxyService,
+});
 const billingService = config.stripe?.secretKey
-  ? new BillingService({ proxyService, domainService, namecheap: namecheapForBilling, licenseService })
+  ? new BillingService({ proxyService, domainService, namecheap: namecheapForBilling, licenseService, buyoutService, domainWorkflowFactory })
   : null;
+const jobsService = billingService ? new JobsService({ billingService, licenseService }) : null;
 const aiService = new AIService({ openaiApiKey: config.openai?.apiKey, geminiApiKey: config.gemini?.apiKey });
 const editorService = new EditorService({ aiService, siteService });
 if (config.auth?.enabled !== false) {
   app.use('/api/auth', express.json(), createAuthRouter(authService));
-  app.use('/api/sites', express.json(), createSiteRouter(siteService, authService, proxyService));
+  app.use('/api/sites', express.json(), createSiteRouter(siteService, authService, proxyService, billingService, buyoutService));
   app.use('/api/editor/chat', express.json(), createEditorRouter(editorService, authService));
 }
 
@@ -140,10 +158,7 @@ if (billingService) {
     namecheap: namecheapForBilling,
     billingService,
     domainService,
-    domainWorkflowFactory: () => new DomainWorkflow({
-      instawpApiKey: config.instawp.apiKey,
-      proxyService,
-    }),
+    domainWorkflowFactory,
   }));
 } else {
   const featureDisabled = (req, res) => {
@@ -309,7 +324,7 @@ app.post('/api/create-site', requireAuthForBilling, siteCreateGate, async (req, 
     const result = await creator.createSite({
       siteName: siteName || undefined,
       isShared: isShared !== undefined ? isShared : false,
-      isReserved: isReserved !== undefined ? isReserved : true,
+      isReserved: isReserved !== undefined ? isReserved : isReservedForPlan(req.user?.planTier),
     });
 
     res.json(result);
@@ -541,6 +556,10 @@ function requireAdminKey(req, res, next) {
     return res.status(404).json({ error: 'Not found' });
   }
   next();
+}
+
+if (jobsService) {
+  app.use('/api/admin/jobs', express.json(), requireAdminKey, createAdminJobsRouter(jobsService));
 }
 
 // Updated: Config check with domain workflow and AI status
@@ -1011,6 +1030,7 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
             imageBankLogin: result.imageBank?.login || null,
             imageBankPassword: result.imageBank?.password || null,
             imagesStatus: result.imageBank?.status || null,
+            expiresAt: computeSiteExpiry(req.user.planTier),
           });
           if (licenseService && result.site.id && createdRow?.id) {
             await licenseService
@@ -1045,6 +1065,7 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
     const siteResult = await creator.createSite({
       siteName: requestedSiteName,
       templateSlug: templateSlug || deploymentContext.template?.slug,
+      isReserved: isReservedForPlan(req.user?.planTier),
     });
 
     const site = normalizeSiteData(siteResult.site || siteResult);
@@ -1211,6 +1232,7 @@ app.post('/api/onboard/confirm', confirmAuth, refuseLegacyDomainRegistration, si
           imageBankLogin: result.imageBank?.login || null,
           imageBankPassword: result.imageBank?.password || null,
           imagesStatus: result.imageBank?.status || null,
+          expiresAt: computeSiteExpiry(req.user.planTier),
         });
         if (licenseService && site.id && createdRow?.id) {
           await licenseService
@@ -1329,6 +1351,7 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
             imageBankLogin: result.imageBank?.login || null,
             imageBankPassword: result.imageBank?.password || null,
             imagesStatus: result.imageBank?.status || null,
+            expiresAt: computeSiteExpiry(req.user.planTier),
           });
           if (licenseService && result.site.id && createdRow?.id) {
             await licenseService
@@ -1387,6 +1410,7 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
       const siteResult = await creator.createSite({
         siteName,
         templateSlug: templateSlug || deploymentContext.template?.slug,
+        isReserved: isReservedForPlan(req.user?.planTier),
         onProgress: ({ phase, message }) => {
           sendProgress('creating_site', { message, phase });
         },
@@ -1551,6 +1575,7 @@ app.get('/api/onboard/confirm/stream', confirmAuth, refuseLegacyDomainRegistrati
             imageBankLogin: result.imageBank?.login || null,
             imageBankPassword: result.imageBank?.password || null,
             imagesStatus: result.imageBank?.status || null,
+            expiresAt: computeSiteExpiry(req.user.planTier),
           });
           if (licenseService && site.id && createdRow?.id) {
             await licenseService

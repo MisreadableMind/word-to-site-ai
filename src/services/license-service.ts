@@ -199,6 +199,30 @@ export default class LicenseService {
     return row || null;
   }
 
+  async setLifetimeForSite(userSiteId: string) {
+    await this.initialize();
+
+    const [row] = await db
+      .update(siteLicenses)
+      .set({ lifetime: true, status: "active", expiresAt: null, activatedAt: sql`now()`, updatedAt: sql`now()` })
+      .where(eq(siteLicenses.userSiteId, userSiteId))
+      .returning(licenseColumns);
+
+    return row || null;
+  }
+
+  async setSiteLicenseStatusBySite(userSiteId: string, status: PersistableLicenseStatus) {
+    await this.initialize();
+
+    const [row] = await db
+      .update(siteLicenses)
+      .set({ status, updatedAt: sql`now()` })
+      .where(and(eq(siteLicenses.userSiteId, userSiteId), eq(siteLicenses.lifetime, false)))
+      .returning({ id: siteLicenses.id, status: siteLicenses.status });
+
+    return row || null;
+  }
+
   async syncFromBilling(userId: string, status: string, expiresAt: string | null = null) {
     if (!isPersistableStatus(status)) return;
     await this.initialize();
@@ -207,13 +231,13 @@ export default class LicenseService {
       await db
         .update(siteLicenses)
         .set({ status, expiresAt, updatedAt: sql`now()` })
-        .where(and(eq(siteLicenses.userId, userId), ne(siteLicenses.status, "disabled")));
+        .where(and(eq(siteLicenses.userId, userId), ne(siteLicenses.status, "disabled"), eq(siteLicenses.lifetime, false)));
       return;
     }
 
     await db
       .update(siteLicenses)
       .set({ status, updatedAt: sql`now()` })
-      .where(and(eq(siteLicenses.userId, userId), ne(siteLicenses.status, "disabled")));
+      .where(and(eq(siteLicenses.userId, userId), ne(siteLicenses.status, "disabled"), eq(siteLicenses.lifetime, false)));
   }
 }

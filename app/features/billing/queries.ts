@@ -5,10 +5,17 @@ export interface Entitlements {
   label: string;
   maxSites: number;
   monthlyTokens: number;
+  extraSiteDayUsd: number | null;
+  siteTtlDays: number | null;
 }
 
 export interface SubscriptionUsage {
   sitesUsed: number;
+  includedSites: number;
+  overageSites: number;
+  extraSiteDayUsd: number | null;
+  monthOverageSiteDays: number;
+  monthOverageAmountCents: number;
 }
 
 export interface Subscription {

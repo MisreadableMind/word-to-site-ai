@@ -1,6 +1,5 @@
 export const PLAN_TIERS = {
   FREE: 'free',
-  STARTER: 'starter',
   PRO: 'pro',
   BUSINESS: 'business',
 };
@@ -10,32 +9,25 @@ export const DOMAIN_MARKUP_PERCENT = 0.20;
 export const PLAN_ENTITLEMENTS = {
   free: {
     label: 'Free',
-    tagline: 'Try the basics',
+    tagline: 'Try the platform, free for 7 days',
     monthlyPriceUsd: 0,
     lookupKey: null,
     maxSites: 1,
+    extraSiteDayUsd: null,
+    siteTtlDays: 7,
     customDomain: false,
     monthlyTokens: 50_000_000,
     voicePerDay: 5,
     watermark: true,
   },
-  starter: {
-    label: 'Starter',
-    tagline: 'For your first real site',
-    monthlyPriceUsd: 19,
-    lookupKey: 'wts_starter',
-    maxSites: 1,
-    customDomain: 'byod',
-    monthlyTokens: 100_000_000,
-    voicePerDay: 25,
-    watermark: false,
-  },
   pro: {
     label: 'Pro',
-    tagline: 'Best for growing teams',
+    tagline: 'For studios running client projects',
     monthlyPriceUsd: 49,
     lookupKey: 'wts_pro',
-    maxSites: 3,
+    maxSites: 5,
+    extraSiteDayUsd: 0.40,
+    siteTtlDays: null,
     customDomain: 'managed',
     monthlyTokens: 100_000_000,
     voicePerDay: 100,
@@ -43,10 +35,12 @@ export const PLAN_ENTITLEMENTS = {
   },
   business: {
     label: 'Business',
-    tagline: 'For agencies and publishers',
+    tagline: 'For agencies and teams with lots of projects',
     monthlyPriceUsd: 99,
     lookupKey: 'wts_business',
-    maxSites: 10,
+    maxSites: 20,
+    extraSiteDayUsd: 0.30,
+    siteTtlDays: null,
     customDomain: 'managed',
     monthlyTokens: 100_000_000,
     voicePerDay: 500,
@@ -80,4 +74,21 @@ export function allowsCustomDomainRegistration(planTier) {
 
 export function allowsCustomDomain(planTier) {
   return getEntitlements(planTier).customDomain !== false;
+}
+
+export function getIncludedSites(planTier) {
+  return getEntitlements(planTier).maxSites;
+}
+
+export function isMeteredPlan(planTier) {
+  return getEntitlements(planTier).extraSiteDayUsd != null;
+}
+
+export function getOverageDayCents(planTier) {
+  const rate = getEntitlements(planTier).extraSiteDayUsd;
+  return rate == null ? 0 : Math.round(rate * 100);
+}
+
+export function getSiteTtlDays(planTier) {
+  return getEntitlements(planTier).siteTtlDays;
 }

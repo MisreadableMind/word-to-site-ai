@@ -173,6 +173,13 @@ class InstaWPAPI {
     return response;
   }
 
+  async reserveSite(siteId) {
+    console.log(`Reserving InstaWP site ID: ${siteId} (making permanent)`);
+
+    const response = await this.makeRequest(`/sites/${siteId}`, 'PUT', { is_reserved: true });
+    return response.data || response;
+  }
+
   async listSitesByName(name) {
     const sanitized = sanitizeSiteName(name);
     if (!sanitized) return [];

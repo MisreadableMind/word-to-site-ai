@@ -10,6 +10,8 @@ export interface Site {
   template_slug: string | null;
   onboard_type: string | null;
   created_at: string;
+  expires_at: string | null;
+  bought_out_at: string | null;
 }
 
 interface SitesResponse {
@@ -53,5 +55,18 @@ export function useDeleteSite() {
     mutationFn: (id: string) =>
       apiSend<{ success: boolean }>(`/api/sites/${id}`, "DELETE"),
     onSuccess: () => qc.invalidateQueries({ queryKey: sitesKey }),
+  });
+}
+
+interface BuyoutResponse {
+  success: boolean;
+  url: string;
+  sessionId: string;
+}
+
+export function useBuyout() {
+  return useMutation({
+    mutationFn: ({ siteId, domain }: { siteId: string; domain: string }) =>
+      apiSend<BuyoutResponse>(`/api/sites/${siteId}/buyout`, "POST", { domain }),
   });
 }

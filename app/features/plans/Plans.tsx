@@ -19,12 +19,19 @@ function formatTokens(n: number): string {
 
 function planFeatures(plan: BillingPlan): string[] {
   const lines: string[] = [];
-  lines.push(plan.maxSites === 1 ? "1 site" : `${plan.maxSites} sites`);
-  if (plan.customDomain === false) lines.push("Subdomain on wts.ai only");
-  else if (plan.customDomain === "byod") lines.push("Bring your own domain");
-  else lines.push("Buy custom domains (wholesale + 20%)");
+  lines.push(
+    plan.maxSites === 1
+      ? "1 live site"
+      : `${plan.maxSites} live sites included`,
+  );
+  if (plan.extraSiteDayUsd != null) {
+    lines.push(`Extra live sites: $${plan.extraSiteDayUsd.toFixed(2)} / day each`);
+  }
+  if (plan.siteTtlDays != null) {
+    lines.push(`Sites expire after ${plan.siteTtlDays} days`);
+  }
+  lines.push(plan.customDomain === false ? "Live preview URL" : "Custom domains supported");
   lines.push(`${formatTokens(plan.monthlyTokens)} AI tokens / month`);
-  lines.push(`${plan.voicePerDay} voice / day`);
   lines.push(plan.tier === "free" ? "WordToSite badge in footer" : "No platform branding");
   return lines;
 }

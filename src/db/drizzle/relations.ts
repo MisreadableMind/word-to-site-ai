@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { apiKeys, siteRegistrations, pluginTrafficData, agentActions, users, subscriptions, proxySites, proxyRequestLog, domainRegistrations, userSites, userSessions, editorSessions, editorMessages, siteLicenses } from "./schema";
+import { apiKeys, siteRegistrations, pluginTrafficData, agentActions, users, subscriptions, proxySites, proxyRequestLog, domainRegistrations, userSites, userSessions, editorSessions, editorMessages, siteLicenses, siteUsageDays, siteBuyouts } from "./schema";
 
 export const siteRegistrationsRelations = relations(siteRegistrations, ({one, many}) => ({
 	apiKey: one(apiKeys, {
@@ -42,6 +42,8 @@ export const usersRelations = relations(users, ({many}) => ({
 	userSites: many(userSites),
 	editorSessions: many(editorSessions),
 	siteLicenses: many(siteLicenses),
+	siteUsageDays: many(siteUsageDays),
+	siteBuyouts: many(siteBuyouts),
 }));
 
 export const siteLicensesRelations = relations(siteLicenses, ({one}) => ({
@@ -85,6 +87,25 @@ export const userSitesRelations = relations(userSites, ({one, many}) => ({
 	}),
 	editorSessions: many(editorSessions),
 	siteLicenses: many(siteLicenses),
+	siteBuyouts: many(siteBuyouts),
+}));
+
+export const siteUsageDaysRelations = relations(siteUsageDays, ({one}) => ({
+	user: one(users, {
+		fields: [siteUsageDays.userId],
+		references: [users.id]
+	}),
+}));
+
+export const siteBuyoutsRelations = relations(siteBuyouts, ({one}) => ({
+	user: one(users, {
+		fields: [siteBuyouts.userId],
+		references: [users.id]
+	}),
+	userSite: one(userSites, {
+		fields: [siteBuyouts.siteId],
+		references: [userSites.id]
+	}),
 }));
 
 export const userSessionsRelations = relations(userSessions, ({one}) => ({

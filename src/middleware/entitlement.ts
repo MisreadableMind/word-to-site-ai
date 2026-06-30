@@ -1,6 +1,6 @@
 import { and, eq, ne, desc } from 'drizzle-orm';
 import { db, userSites } from '../db/client';
-import { getEntitlements, allowsCustomDomain, allowsCustomDomainRegistration } from '../billing/entitlements';
+import { getEntitlements, allowsCustomDomain, allowsCustomDomainRegistration, isMeteredPlan } from '../billing/entitlements';
 
 interface Entitlements {
   label: string;
@@ -30,6 +30,7 @@ type Next = () => void;
 
 interface BillingService {
   getSiteCount(userId: string): Promise<number>;
+  countLiveSites(userId: string): Promise<number>;
 }
 
 interface PaymentRequiredBody {
@@ -83,7 +84,13 @@ export function requireSiteCreate(billingService: BillingService) {
     }
     const planTier = req.user.planTier || 'free';
     const ent = getEntitlements(planTier) as Entitlements;
-    const used = await billingService.getSiteCount(req.user.id);
+
+    if (isMeteredPlan(planTier)) {
+      req.entitlements = ent;
+      return next();
+    }
+
+    const used = await billingService.countLiveSites(req.user.id);
     if (used >= ent.maxSites) {
       const blockingSiteName = await getMostRecentSiteName(req.user.id);
       return paymentRequired(res, {
