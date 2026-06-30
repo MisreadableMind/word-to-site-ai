@@ -14,7 +14,8 @@
     "db:migration": "bash scripts/create-db-migration.sh",
     "typecheck": "tsc",
     "typecheck:server": "tsc -p tsconfig.server.json",
-    "stripe:setup": "node --import tsx scripts/stripe-setup.js"
+    "stripe:setup": "node --import tsx scripts/stripe-setup.js",
+    "job:daily": "node --import tsx src/run-daily-job.ts"
   },
   "keywords": [
     "instawp",
