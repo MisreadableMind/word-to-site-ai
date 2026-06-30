@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useWizard } from "../WizardContext";
+import { useMe } from "~/lib/auth";
 import { SkinPicker } from "../components/SkinPicker";
 import { FIELD_LABELS } from "../constants";
 import { checkDomainDns, classifyDomain } from "../wizardApi";
@@ -32,6 +33,8 @@ function truncate(value: string): string {
 
 export function ConfigureStep() {
   const { state, dispatch } = useWizard();
+  const { data: user } = useMe();
+  const canUseCustomDomain = (user?.planTier ?? "free") !== "free";
   const answers = state.interviewAnswers;
   const [hint, setHint] = useState<{ text: string; error: boolean } | null>(null);
   const [checking, setChecking] = useState(false);
@@ -47,7 +50,7 @@ export function ConfigureStep() {
     dispatch({ type: "RESET_RETRIES" });
     setHint(null);
 
-    const domain = state.domain.trim();
+    const domain = canUseCustomDomain ? state.domain.trim() : "";
     if (!domain || state.registerNewDomain) {
       dispatch({ type: "START_DEPLOY" });
       return;
@@ -145,19 +148,51 @@ export function ConfigureStep() {
             <div className="wts-card">
               <div className="wts-card-body">
                 <div className="wts-field">
-                  <label className="wts-field-label">Custom domain</label>
+                  <label className="wts-field-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    Custom domain
+                    {!canUseCustomDomain ? (
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                          color: "var(--accent)",
+                          background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                          padding: "2px 7px",
+                          borderRadius: 999,
+                        }}
+                      >
+                        Pro
+                      </span>
+                    ) : null}
+                  </label>
                   <input
                     className="wts-input"
                     type="text"
-                    value={state.domain}
-                    placeholder="example.com"
+                    value={canUseCustomDomain ? state.domain : ""}
+                    placeholder={canUseCustomDomain ? "example.com" : "Available on Pro & Business"}
+                    disabled={!canUseCustomDomain}
                     onChange={(e) => dispatch({ type: "SET_DOMAIN", domain: e.target.value })}
                   />
                   <div
                     className="wts-field-hint"
                     style={hint?.error ? { color: "var(--danger)" } : undefined}
                   >
-                    {hint ? (
+                    {!canUseCustomDomain ? (
+                      <>
+                        Custom domains are available on <b>Pro</b> and <b>Business</b>.{" "}
+                        <Link
+                          to="/pricing"
+                          target="_blank"
+                          rel="noopener"
+                          style={{ color: "var(--accent)", fontWeight: 500 }}
+                        >
+                          Upgrade
+                        </Link>{" "}
+                        to connect your own domain — free sites publish to a wts subdomain.
+                      </>
+                    ) : hint ? (
                       hint.text
                     ) : (
                       <>
