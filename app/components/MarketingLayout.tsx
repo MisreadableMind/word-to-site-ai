@@ -31,6 +31,14 @@ function MarketingNav() {
             <span className="pulse" />
             v3.0
           </div>
+          <a
+            className="nav-link"
+            href="https://calendly.com/leo-welch-rex/30-minute-welcome-call/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Book a call
+          </a>
           {user ? (
             <Link className="nav-link" to="/dashboard">Dashboard</Link>
           ) : (
@@ -65,6 +73,14 @@ function MarketingFooter() {
           <a className="footer-link" href="/#how">How it works</a>
           <a className="footer-link" href="/#pricing">Pricing</a>
           <a className="footer-link" href="/#faq">FAQ</a>
+          <a
+            className="footer-link"
+            href="https://calendly.com/leo-welch-rex/30-minute-welcome-call/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Book a call
+          </a>
           <Link className="footer-link" to="/privacy">Privacy</Link>
           <Link className="footer-link" to="/terms">Terms</Link>
           <Link className="footer-link" to="/mission">Mission</Link>
