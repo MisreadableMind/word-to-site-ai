@@ -20,6 +20,7 @@ const siteBuyoutColumns = {
   error_message: siteBuyouts.errorMessage,
   created_at: siteBuyouts.createdAt,
   completed_at: siteBuyouts.completedAt,
+  license_activated: siteBuyouts.licenseActivated,
 };
 
 interface CreatePendingParams {
@@ -109,6 +110,24 @@ export default class BuyoutService {
       .where(eq(siteBuyouts.stripeCheckoutSessionId, sessionId))
       .returning(siteBuyoutColumns);
     return rows[0] || null;
+  }
+
+  async markLicenseActivated(sessionId: string) {
+    await this.initialize();
+    const rows = await db
+      .update(siteBuyouts)
+      .set({ licenseActivated: true })
+      .where(eq(siteBuyouts.stripeCheckoutSessionId, sessionId))
+      .returning(siteBuyoutColumns);
+    return rows[0] || null;
+  }
+
+  async listPendingActivation() {
+    await this.initialize();
+    return db
+      .select(siteBuyoutColumns)
+      .from(siteBuyouts)
+      .where(and(eq(siteBuyouts.status, BuyoutStatus.Completed), eq(siteBuyouts.licenseActivated, false)));
   }
 
   async markFailed({ sessionId, errorMessage }: MarkFailedParams) {

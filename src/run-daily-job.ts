@@ -1,10 +1,12 @@
 import BillingService from "./services/billing-service";
 import LicenseService from "./services/license-service";
+import BuyoutService from "./services/buyout-service";
 import JobsService from "./services/jobs-service";
 
 async function main() {
-  const billingService = new BillingService();
   const licenseService = new LicenseService();
+  const buyoutService = new BuyoutService();
+  const billingService = new BillingService({ licenseService, buyoutService });
   const jobs = new JobsService({ billingService, licenseService });
   const result = await jobs.runDaily();
   console.log("[daily-job]", JSON.stringify(result));

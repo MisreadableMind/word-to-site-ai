@@ -340,6 +340,7 @@ export const siteBuyouts = pgTable("site_buyouts", {
 	errorMessage: text("error_message"),
 	createdAt: tstz("created_at").default(sql`now()`).notNull(),
 	completedAt: tstz("completed_at"),
+	licenseActivated: boolean("license_activated").default(false).notNull(),
 }, (table) => [
 	index("idx_site_buyouts_user_id").using("btree", table.userId.asc().nullsLast().op("uuid_ops")),
 	index("idx_site_buyouts_session_id").using("btree", table.stripeCheckoutSessionId.asc().nullsLast().op("text_ops")),

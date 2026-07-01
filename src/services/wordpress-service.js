@@ -6,6 +6,7 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import { HttpsAgent } from 'agentkeepalive';
+import { config } from '../config';
 
 const keepAliveAgent = new HttpsAgent({ freeSocketTimeout: 4000 });
 
@@ -381,6 +382,19 @@ class WordPressService {
     }
   }
 
+  async deactivateLicense() {
+    try {
+      const result = await this.requestRaw('trx-waas-wizard/v1/license/deactivate', {
+        method: 'POST',
+      });
+      console.log(`[license] deactivate ok site=${this.siteUrl}`);
+      return result;
+    } catch (error) {
+      console.log(`[license] deactivate fail site=${this.siteUrl} error=${error.message}${error.code ? ` (${error.code})` : ''}`);
+      throw error;
+    }
+  }
+
   // ==========================================
   // Async Endpoint Polling (WaaS Wizard)
   // ==========================================
@@ -524,6 +538,15 @@ class WordPressService {
     onProgress?.({ phase: 'complete', message: `Translation to ${locale} complete` });
     return result;
   }
+}
+
+export async function deactivateSiteLicense(wpUrl) {
+  if (!wpUrl) return null;
+  const wp = new WordPressService(wpUrl, {
+    username: config.instawp.snapshotWpUsername,
+    password: config.instawp.snapshotWpPassword,
+  });
+  return wp.deactivateLicense();
 }
 
 export default WordPressService;

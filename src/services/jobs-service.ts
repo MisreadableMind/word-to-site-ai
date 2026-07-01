@@ -3,11 +3,13 @@ import { DateTime } from "luxon";
 import { db } from "../db/client";
 import { getStripe } from "../billing/stripe-client";
 import { getIncludedSites, getOverageDayCents } from "../billing/entitlements";
+import { deactivateSiteLicense } from "./wordpress-service";
 
 type LicenseStatusValue = "active" | "expired" | "not_paid" | "disabled";
 
 interface BillingServiceLike {
   countBillableLiveSites(userId: string): Promise<number>;
+  retryPendingBuyoutActivations(): Promise<{ activated: number; pending: number }>;
 }
 
 interface LicenseServiceLike {
@@ -33,6 +35,7 @@ interface OverageResult {
 type SuspendRow = {
   id: string;
   instawp_id: string | null;
+  wp_url: string | null;
 };
 
 type PaidUserRow = {
@@ -57,12 +60,13 @@ export default class JobsService {
   async runDaily() {
     const expired = await this.expireFreeSites();
     const overage = await this.accrueOverage();
-    return { expired, overage };
+    const buyouts = await this.billingService.retryPendingBuyoutActivations();
+    return { expired, overage, buyouts };
   }
 
   async expireFreeSites(): Promise<ExpireResult> {
     const { rows } = await db.execute<SuspendRow>(sql`
-      SELECT s.id, s.instawp_id
+      SELECT s.id, s.instawp_id, s.wp_url
       FROM user_sites s
       JOIN users u ON u.id = s.user_id
       WHERE u.plan_tier = 'free'
@@ -75,6 +79,9 @@ export default class JobsService {
     `);
 
     for (const row of rows) {
+      await deactivateSiteLicense(row.wp_url).catch((err: Error) => {
+        console.warn(`[jobs] failed to deactivate WP license for site ${row.id}:`, err.message);
+      });
       await db.execute(sql`
         UPDATE user_sites SET status = 'suspended', updated_at = now() WHERE id = ${row.id}
       `);

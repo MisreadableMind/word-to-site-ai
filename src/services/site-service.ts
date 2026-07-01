@@ -1,6 +1,7 @@
 import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 import { db, userSites } from "../db/client";
 import InstaWPAPI from "../instawp";
+import { deactivateSiteLicense } from "./wordpress-service";
 
 const fullSiteColumns = {
   id: userSites.id,
@@ -162,6 +163,15 @@ export default class SiteService {
       .returning(fullSiteColumns);
 
     const site = row || null;
+
+    if (site && site.wp_url) {
+      await deactivateSiteLicense(site.wp_url).catch((error) => {
+        console.warn(
+          `Failed to deactivate WP license for site ${site.id}:`,
+          error instanceof Error ? error.message : String(error),
+        );
+      });
+    }
 
     if (site && site.instawp_id) {
       try {

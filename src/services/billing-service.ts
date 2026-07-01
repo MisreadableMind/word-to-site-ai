@@ -1,4 +1,4 @@
-import { db, users, subscriptions, billingEvents, userSites } from '../db/client';
+import { db, users, subscriptions, billingEvents, userSites, siteLicenses } from '../db/client';
 import { eq, and, inArray, desc, sql } from 'drizzle-orm';
 import { getStripe, planForPriceId, invalidatePriceCache } from '../billing/stripe-client';
 import { getEntitlements, PLAN_TIERS } from '../billing/entitlements';
@@ -32,6 +32,10 @@ interface LicenseServiceLike {
 
 interface BuyoutRowLike {
   status: string;
+  user_id: string;
+  site_id: string | null;
+  domain: string | null;
+  stripe_checkout_session_id: string | null;
 }
 
 interface BuyoutServiceLike {
@@ -39,6 +43,8 @@ interface BuyoutServiceLike {
   markPaid(sessionId: string, paymentIntentId: string | null): Promise<unknown>;
   markCompleted(sessionId: string): Promise<unknown>;
   markFailed(params: { sessionId: string; errorMessage: string }): Promise<unknown>;
+  markLicenseActivated(sessionId: string): Promise<unknown>;
+  listPendingActivation(): Promise<BuyoutRowLike[]>;
 }
 
 interface InstaWPLike {
@@ -548,24 +554,6 @@ export default class BillingService {
       .set({ boughtOutAt: sql`now()`, expiresAt: null, domain: domain || site.domain, updatedAt: sql`now()` })
       .where(eq(userSites.id, siteId));
 
-    const buyerUser = await this._loadUser(userId);
-
-    if (license?.license_key && site.wp_url) {
-      try {
-        const wp = new WordPressService(site.wp_url, {
-          username: config.instawp.snapshotWpUsername,
-          password: config.instawp.snapshotWpPassword,
-        });
-        await wp.activateLicense(license.license_key, {
-          userName: buyerUser?.display_name || null,
-          userEmail: buyerUser?.email || null,
-        });
-        await this.licenseService.markActivated(license.license_key);
-      } catch (err) {
-        console.warn('Failed to activate license on buyout:', (err as Error).message);
-      }
-    }
-
     if (domain && site.instawp_id && site.wp_url) {
       await workflow
         .mapOwnedDomainToExistingSite({
@@ -579,8 +567,64 @@ export default class BillingService {
         });
     }
 
+    await this._transferBuyoutLicense({
+      status: BuyoutStatus.Paid,
+      user_id: userId,
+      site_id: siteId,
+      domain: domain || site.domain,
+      stripe_checkout_session_id: sessionId,
+    });
+
     await this.buyoutService.markCompleted(sessionId);
     return { processed: true, userId, siteId, domain };
+  }
+
+  async _transferBuyoutLicense(buyout: BuyoutRowLike) {
+    if (!this.buyoutService || !this.licenseService) return false;
+
+    const clientDomain = buyout.domain;
+    const sessionId = buyout.stripe_checkout_session_id;
+    if (!clientDomain || !buyout.site_id || !sessionId) return false;
+
+    const [lic] = await db
+      .select({ license_key: siteLicenses.licenseKey })
+      .from(siteLicenses)
+      .where(eq(siteLicenses.userSiteId, buyout.site_id))
+      .limit(1);
+    if (!lic?.license_key) return false;
+
+    const buyer = await this._loadUser(buyout.user_id);
+
+    try {
+      const wp = new WordPressService(`https://${clientDomain}`, {
+        username: config.instawp.snapshotWpUsername,
+        password: config.instawp.snapshotWpPassword,
+      });
+      await wp.deactivateLicense().catch((err: Error) => {
+        console.warn(`[buyout] temp deactivate skipped for ${clientDomain}:`, err.message);
+      });
+      await wp.activateLicense(lic.license_key, {
+        userName: buyer?.display_name || null,
+        userEmail: buyer?.email || null,
+      });
+      await this.licenseService.markActivated(lic.license_key);
+      await this.buyoutService.markLicenseActivated(sessionId);
+      console.log(`[buyout] license transferred to ${clientDomain}`);
+      return true;
+    } catch (err) {
+      console.warn(`[buyout] client-domain activation pending for ${clientDomain}:`, (err as Error).message);
+      return false;
+    }
+  }
+
+  async retryPendingBuyoutActivations() {
+    if (!this.buyoutService) return { activated: 0, pending: 0 };
+    const rows = await this.buyoutService.listPendingActivation();
+    let activated = 0;
+    for (const buyout of rows) {
+      if (await this._transferBuyoutLicense(buyout)) activated += 1;
+    }
+    return { activated, pending: rows.length };
   }
 
   async _refundBuyout(paymentIntentId: string | null) {
