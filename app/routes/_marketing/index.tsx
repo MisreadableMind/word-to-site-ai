@@ -4,11 +4,13 @@ import { Faq, type FaqItem } from "~/components/Faq";
 import "~/styles/pricing.css";
 import "~/styles/landing.css";
 
+const CALL_URL = "https://calendly.com/leo-welch-rex/30-minute-welcome-call/";
+
 export const Route = createFileRoute("/_marketing/")({
   component: Home,
   head: () => ({
     meta: [
-      { title: "WordToSite — Client-ready WordPress sites in about a minute" },
+      { title: "WordToSite: Client-ready WordPress sites in about a minute" },
       {
         name: "description",
         content:
@@ -155,14 +157,14 @@ const TRIO_CARDS = [
     bg: "--accent-dim",
     fg: "--accent",
     title: "Instant, not blank",
-    desc: "Every page comes pre-filled with copy and images written around your client's business — not placeholder text. Ready to present in about a minute.",
+    desc: "Every page comes pre-filled with copy and images written around your client's business, not placeholder text. Ready to present in about a minute.",
     icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />,
   },
   {
     bg: "--pink-dim",
     fg: "--pink",
     title: "200 designs to choose from",
-    desc: "A polished design for almost any niche — clinics, cafés, gyms, law firms, shops and more. Pick one and it deploys live, fully styled.",
+    desc: "A polished design for almost any niche: clinics, cafés, gyms, law firms, shops and more. Pick one and it deploys live, fully styled.",
     icon: (
       <>
         <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -175,7 +177,7 @@ const TRIO_CARDS = [
     bg: "--green-dim",
     fg: "--green",
     title: "Pay only for what's live",
-    desc: "Run several client projects at once. The moment a client decides — or you're done — delete the site and billing for it stops on the spot.",
+    desc: "Run several client projects at once. The moment a client decides, or you're done, delete the site and billing for it stops on the spot.",
     icon: (
       <>
         <rect x="1" y="4" width="22" height="16" rx="2" />
@@ -200,7 +202,7 @@ const HOW_STEPS = [
   },
   {
     n: "3",
-    title: "AI builds & fills it — live",
+    title: "AI builds & fills it, live",
     desc: "The site is deployed to a live preview URL and AI generates tailored texts and images across every page. No hosting setup on your side.",
   },
   {
@@ -211,12 +213,12 @@ const HOW_STEPS = [
   {
     n: "5",
     title: "Keep it or delete it",
-    desc: "Client's in? Move it forward. Client passed? Delete the site — and you stop being billed for it immediately.",
+    desc: "Client's in? Move it forward. Client passed? Delete the site and you stop being billed for it immediately.",
   },
   {
     n: "↻",
     title: "Run many at once",
-    desc: "Spin up sites for different clients in parallel — each is independent, and you only ever pay for the ones that are live.",
+    desc: "Spin up sites for different clients in parallel. Each one is independent, and you only ever pay for the ones that are live.",
     highlight: true,
   },
 ];
@@ -240,7 +242,7 @@ const WHO_CARDS = [
     bg: "--yellow-dim",
     fg: "--yellow",
     title: "Digital agencies",
-    desc: "Give your sales and delivery teams a way to produce live client demos on demand — without tying up developers.",
+    desc: "Give your sales and delivery teams a way to produce live client demos on demand, without tying up developers.",
     icon: (
       <>
         <path d="M3 11l18-5v12L3 14v-3z" />
@@ -266,11 +268,11 @@ const WHO_CARDS = [
 
 const FEATURES: [string, string][] = [
   ["200 professional designs", "A professionally designed template for every kind of business."],
-  ["AI-written copy", "Headlines, services, about pages — written around your client's business and structured so AI search engines can cite it."],
+  ["AI-written copy", "Headlines, services, about pages, all written around your client's business and structured so AI search engines can cite it."],
   ["AI-generated images", "Relevant visuals placed across the site automatically."],
   ["Premium content library", "Royalty-free premium templates, images, and texts included with every project."],
-  ["One-click live deploy", "Each site goes live on a shareable preview URL — no hosting to set up."],
-  ["Safe sandbox", "Experiment freely in an isolated environment — never your client's production server."],
+  ["One-click live deploy", "Each site goes live on a shareable preview URL, with no hosting to set up."],
+  ["Safe sandbox", "Experiment freely in an isolated environment, never your client's production server."],
   ["Full editing", "Tweak design and content before the client ever sees it."],
   ["Many projects at once", "Run several client sites in parallel, for one client or many."],
   ["Delete = stop billing", "No long-term commitment per site. Remove it and the meter stops."],
@@ -466,14 +468,14 @@ const SCENARIOS: Record<"pro" | "biz", Scenario> = {
     sub: (
       <>
         Your <b>Pro</b> plan covers <b>5 live sites at once</b>. Across the month 17 client sites
-        flowed through those 5 slots — each time you finish and delete one, the next project takes
+        flowed through those 5 slots. Each time you finish and delete one, the next project takes
         its place. Only the 2 sites you ran <i>beyond</i> 5 are billed per day.
       </>
     ),
     cap: (
       <>
         Watch the slots get reused: as each site is approved or dropped and deleted, the freed slot
-        instantly serves your next client — all for the one flat <b>$49</b>. The 2 sites that went
+        instantly serves your next client, all for the one flat <b>$49</b>. The 2 sites that went
         over your plan cost just <b>$8</b> for the days they were live, and stop the moment you
         delete them.
       </>
@@ -489,14 +491,14 @@ const SCENARIOS: Record<"pro" | "biz", Scenario> = {
     sub: (
       <>
         Your <b>Business</b> plan covers <b>20 live sites at once</b>. A busy agency cycled{" "}
-        <b>40+ client sites</b> through those 20 slots this month — slots free up and refill as
+        <b>40+ client sites</b> through those 20 slots this month. Slots free up and refill as
         projects wrap. Only the 2 sites beyond 20 are billed per day.
       </>
     ),
     cap: (
       <>
         Run an entire agency from one plan. As each client site is finished and deleted, its slot
-        immediately serves the next — 40 sites for one flat <b>$99</b>. The 2 sites beyond your 20
+        immediately serves the next: 40 sites for one flat <b>$99</b>. The 2 sites beyond your 20
         added just <b>$6</b>, billed only for the days they were live.
       </>
     ),
@@ -530,12 +532,12 @@ function BillingGantt() {
         </button>
       </div>
 
-      <div className="gtitle">How your bill adds up — a real month</div>
+      <div className="gtitle">How your bill adds up over a real month</div>
       <p className="gsub">{s.sub}</p>
 
       <div className="glegend">
         <span><i style={{ background: "linear-gradient(135deg,#3148e8,#6e5ae6)" }} />Covered by your plan</span>
-        <span><i style={{ background: "linear-gradient(135deg,#e3992e,#b86e00)" }} />Extra site — billed per day live</span>
+        <span><i style={{ background: "linear-gradient(135deg,#e3992e,#b86e00)" }} />Extra site, billed per day live</span>
       </div>
 
       <div className="gscroll">
@@ -566,7 +568,7 @@ function BillingGantt() {
                   <div
                     className={`gbar ${j % 2 ? "plan2" : "plan"}`}
                     style={barPos(from, to)}
-                    title={`${name}: day ${from}–${to}`}
+                    title={`${name}: day ${from} to ${to}`}
                     key={j}
                   >
                     {name}
@@ -577,7 +579,7 @@ function BillingGantt() {
           ))}
 
           <div className="gseprow">
-            <span className="t">Above your plan's {s.included} sites — billed per day</span>
+            <span className="t">Above your plan's {s.included} sites, billed per day</span>
           </div>
 
           {s.extras.map(([name, from, to], i) => (
@@ -595,11 +597,11 @@ function BillingGantt() {
 
       <div className="ginv">
         <div className="ir">
-          <span>{s.plan} plan — covers {s.included} live sites</span>
+          <span>{s.plan} plan, covers {s.included} live sites</span>
           <span>${s.price.toFixed(2)}</span>
         </div>
         <div className="ir">
-          <span>{s.extras.length} extra sites — {extraDays} site-days × ${s.rate.toFixed(2)}</span>
+          <span>{s.extras.length} extra sites, {extraDays} site-days × ${s.rate.toFixed(2)}</span>
           <span>${extraCost.toFixed(2)}</span>
         </div>
         <div className="ir tot">
@@ -618,7 +620,7 @@ function BillingGantt() {
 const GOLIVE_STEPS = [
   {
     title: "Your client approves",
-    desc: <>Hit <b>"Take it live"</b> on the site you built. No re-work — it's the same site they already reviewed.</>,
+    desc: <>Hit <b>"Take it live"</b> on the site you built. No re-work, it's the same site they already reviewed.</>,
   },
   {
     title: "Choose where it lives",
@@ -626,11 +628,11 @@ const GOLIVE_STEPS = [
   },
   {
     title: "Get the official theme license",
-    desc: <>A genuine ThemeREX license — <b>$69 once</b>, with lifetime updates and support. Charged only now, only for this won project.</>,
+    desc: <>A genuine ThemeREX license for <b>$69 once</b>, with lifetime updates and support. Charged only now, only for this won project.</>,
   },
   {
     title: "It's yours to hand over",
-    desc: <>A real, licensed, update-ready WordPress site you deliver to your client and bill for — at your full project price.</>,
+    desc: <>A real, licensed, update-ready WordPress site you deliver to your client and bill for at your full project price.</>,
   },
 ];
 
@@ -650,7 +652,7 @@ const TESTIMONIALS = [
     role: "Digital Strategist, BrightPath",
   },
   {
-    quote: "We white-label the demos for our clients. They see a finished-looking site in the first meeting, we get the contract — and we only pay for what stays live.",
+    quote: "We white-label the demos for our clients. They see a finished-looking site in the first meeting, we get the contract, and we only pay for what stays live.",
     avatar: "linear-gradient(135deg,#6e5ae6,#4b38c9)",
     name: "Tom Andersen",
     role: "CEO, Nordic Digital",
@@ -666,27 +668,27 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'What exactly is an "AI generation"?',
-    a: "One generation is a full build of a site's content — all the texts and images, written and placed around your client's business. Each time you create a new site or regenerate its content, that's one generation. Your plan includes a monthly amount, and extras are billed at a flat per-generation rate.",
+    a: "One generation is a full build of a site's content: all the texts and images, written and placed around your client's business. Each time you create a new site or regenerate its content, that's one generation. Your plan includes a monthly amount, and extras are billed at a flat per-generation rate.",
   },
   {
     q: "What happens when I delete a site?",
-    a: "The site is removed and you immediately stop being billed for it. There's no per-site commitment — keep a site for three days or three weeks, it's entirely up to you.",
+    a: "The site is removed and you immediately stop being billed for it. There's no per-site commitment. Keep a site for three days or three weeks, it's entirely up to you.",
   },
   {
     q: "Can I work on several client sites at the same time?",
-    a: "Yes. Each plan includes a number of sites you can run at once (1 on Free, 5 on Pro, 20 on Business). Need more than your plan includes? Add extra live sites anytime — they're billed only for the days they're online.",
+    a: "Yes. Each plan includes a number of sites you can run at once (1 on Free, 5 on Pro, 20 on Business). Need more than your plan includes? Add extra live sites anytime, and they're billed only for the days they're online.",
   },
   {
     q: "What does the client see?",
-    a: "A live, fully styled WordPress site on a shareable preview URL — already filled with relevant content, ready to review. You can tweak everything before sharing it.",
+    a: "A live, fully styled WordPress site on a shareable preview URL, already filled with relevant content and ready to review. You can tweak everything before sharing it.",
   },
   {
     q: "Do I pay for the theme on every site?",
-    a: "No. Building and previewing sites costs you nothing in theme licensing — you only buy the theme license ($69 one-time, lifetime updates) on a project when your client approves it and you take it live. Every demo that never converts is completely free.",
+    a: "No. Building and previewing sites costs you nothing in theme licensing. You only buy the theme license ($69 one-time, lifetime updates) on a project when your client approves it and you take it live. Every demo that never converts is completely free.",
   },
   {
     q: "Is the theme license genuine, and why is it cheaper here?",
-    a: "Yes — WordToSite works directly with ThemeREX, the studio behind all 200 designs. The go-live license is a real, official license with lifetime updates and support, offered at an exclusive one-time price we arranged with them — a better deal than buying it on your own and re-subscribing for every project.",
+    a: "Yes. WordToSite works directly with ThemeREX, the studio behind all 200 designs. The go-live license is a real, official license with lifetime updates and support, offered at an exclusive one-time price we arranged with them. That's a better deal than buying it on your own and re-subscribing for every project.",
   },
   {
     q: "Is there a contract or setup fee?",
@@ -694,7 +696,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "What if I go over my plan's limits?",
-    a: "You're never blocked. Extra live sites and extra AI generations are simply added to your monthly bill at the rates shown on each plan — so you can keep working without interruption.",
+    a: "You're never blocked. Extra live sites and extra AI generations are simply added to your monthly bill at the rates shown on each plan, so you can keep working without interruption.",
   },
 ];
 
@@ -746,15 +748,16 @@ function Home() {
         <p className="hero-sub">
           Pick a design, add your client's details, and watch AI fill a <b>live</b>, polished
           WordPress site with tailored copy and images. Show it, tweak it, then keep it or delete
-          it — <b>you only pay for the time a site is really live.</b>
+          it. <b>You only pay for the time a site is really live.</b>
         </p>
         <div className="hero-actions">
           <Link className="btn-hero btn-hero-primary" to="/app">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
-            Start free — no card needed
+            Start free, no card needed
           </Link>
+          <a className="btn-hero btn-hero-secondary" href={CALL_URL} target="_blank" rel="noopener noreferrer">Book a call</a>
           <a className="btn-hero btn-hero-secondary" href="#how">See how it works</a>
           <a className="btn-hero btn-hero-secondary" href="#pricing">Pricing</a>
         </div>
@@ -799,7 +802,7 @@ function Home() {
             <h2 className="section-title">Stop showing clients empty templates.</h2>
             <p className="section-desc">
               Skip the blank-theme, lorem-ipsum stage. Hand your client something that already
-              looks finished — white-labeled and ready to present.
+              looks finished, white-labeled and ready to present.
             </p>
           </div>
           <div className="hood-grid fade-in">
@@ -839,7 +842,7 @@ function Home() {
             <h2 className="section-title">Built for people who pitch WordPress sites.</h2>
             <p className="section-desc">
               If you create WordPress sites for clients and want a faster, more impressive way to
-              win the project — this is for you.
+              win the project, this is for you.
             </p>
           </div>
           <div className="hood-grid fade-in">
@@ -878,7 +881,7 @@ function Home() {
             <div className="section-eyebrow">how we compare</div>
             <h2 className="section-title">A faster way to put a site in front of a client.</h2>
             <p className="section-desc">
-              The usual ways to produce a client website &mdash; versus building the same
+              The usual ways to produce a client website, versus building the same
               pitch-ready demo in WordToSite.
             </p>
           </div>
@@ -911,7 +914,7 @@ function Home() {
           <p className="cmp-note">
             Need bespoke, pixel-level design? Framer and Webflow lead there. WordToSite
             wins when you need a <em>finished-looking</em>, content-filled WordPress site in
-            front of a client today &mdash; and only want to pay for the ones that stick.
+            front of a client today, and you only want to pay for the ones that stick.
           </p>
         </div>
       </section>
@@ -923,7 +926,7 @@ function Home() {
             <div className="section-eyebrow">pricing</div>
             <h2 className="section-title">Simple plans. Pay for what you actually use.</h2>
             <p className="section-desc">
-              Every plan includes a set of live sites. Need more? Add them — and only pay for the
+              Every plan includes a set of live sites. Need more? Add them, and only pay for the
               days they're online.
             </p>
           </div>
@@ -947,7 +950,7 @@ function Home() {
                   <ul>
                     {plan.items.map((item, i) => (
                       <li className={item.muted ? "muted" : undefined} key={i}>
-                        {item.muted ? <span className="li-dash">–</span> : <CheckIcon />}
+                        {item.muted ? <span className="li-dash">-</span> : <CheckIcon />}
                         <span>
                           {item.text}
                           {item.sub ? <span className="li-sub">{item.sub}</span> : null}
@@ -965,13 +968,18 @@ function Home() {
             ))}
           </div>
           <p className="plans-note">No contracts. Cancel anytime. Usage is added up and billed once a month.</p>
+          <p className="plans-note">
+            Not sure which plan fits?{" "}
+            <a href={CALL_URL} target="_blank" rel="noopener noreferrer">Book a 30-minute call</a>{" "}
+            and we'll help you pick.
+          </p>
 
           {/* BILLING EXPLAINER */}
           <div className="bill fade-in">
             <div className="bill-head">
               <h3>How "pay for what's live" works</h3>
               <p>
-                Your plan covers a set number of live sites. Spin up more whenever you need them —
+                Your plan covers a set number of live sites. Spin up more whenever you need them, and
                 each extra site is billed only for the days it's actually online. Delete a site and
                 its billing stops the same day.
               </p>
@@ -982,7 +990,7 @@ function Home() {
             <div className="bill-points">
               <div className="bill-point">
                 <h3>🟢 You're in control</h3>
-                <p>Create and delete sites whenever you like. Nothing runs — or bills — without you.</p>
+                <p>Create and delete sites whenever you like. Nothing runs, or bills, without you.</p>
               </div>
               <div className="bill-point">
                 <h3>⏱️ Daily, not monthly</h3>
@@ -1002,10 +1010,10 @@ function Home() {
         <div className="section-container">
           <div className="section-header center fade-in">
             <div className="section-eyebrow">when your client says yes</div>
-            <h2 className="section-title">Take it live — and own it.</h2>
+            <h2 className="section-title">Take it live, and own it.</h2>
             <p className="section-desc">
               Building and showing demos is always free. You only pay for the theme license on the
-              projects your client actually buys — then it's a flat <b>one-time</b> fee with{" "}
+              projects your client actually buys. Then it's a flat <b>one-time</b> fee with{" "}
               <b>lifetime updates</b>.
             </p>
           </div>
@@ -1030,14 +1038,14 @@ function Home() {
                 $69<small> one-time</small>
               </div>
               <div className="lic-sub">
-                per won project — the official white-label license, sourced directly from ThemeREX,
+                per won project: the official white-label license, sourced directly from ThemeREX,
                 the studio behind all 200 designs. We pass it through at cost.
               </div>
               <ul>
                 <li>Lifetime theme updates &amp; support included</li>
                 <li>Genuine, official ThemeREX license</li>
                 <li>Export to your own hosting, or keep it with us</li>
-                <li>Only charged when your client buys — every demo is free</li>
+                <li>Only charged when your client buys, so every demo is free</li>
               </ul>
               <div className="lic-foot">
                 A better deal than buying the license on its own: one flat price, lifetime updates,
@@ -1048,7 +1056,7 @@ function Home() {
 
           <div className="demo-free">
             🎉 <b>Build as many demos as you want at no theme cost.</b> The $69 license applies only
-            on projects you win and take live — never on demos that don't convert.
+            on projects you win and take live, never on demos that don't convert.
           </div>
         </div>
       </section>
@@ -1093,7 +1101,7 @@ function Home() {
       <section className="border-t cta-section">
         <div className="section-container">
           <div className="fade-in">
-            <h2 className="cta-title">Show your next client<br />a finished site — today.</h2>
+            <h2 className="cta-title">Show your next client<br />a finished site, today.</h2>
             <p className="cta-desc">
               Start free, build your first AI-filled preview, and see why studios stop pitching
               empty templates.
@@ -1103,8 +1111,9 @@ function Home() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" width="16" height="16">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                 </svg>
-                Start free — no card needed
+                Start free, no card needed
               </Link>
+              <a className="btn-hero btn-hero-secondary" href={CALL_URL} target="_blank" rel="noopener noreferrer">Book a welcome call</a>
               <a className="btn-hero btn-hero-secondary" href="#pricing">Compare plans</a>
             </div>
             <div className="cta-powered">
